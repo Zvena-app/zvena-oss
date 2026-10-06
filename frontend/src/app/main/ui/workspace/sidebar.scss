@@ -1,0 +1,185 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
+
+// Component: collapse-button*
+
+.collapse-button {
+  --collapse-icon-color: var(--color-foreground-secondary);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  background: none;
+  block-size: 100%;
+  inline-size: $sz-24;
+  color: var(--collapse-icon-color);
+  transform: rotate(180deg);
+
+  &:hover {
+    --collapse-icon-color: var(--color-foreground-primary);
+  }
+}
+
+// Component: collapsed-button*
+
+.collapsed-sidebar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  inset-block-start: px2rem(48);
+  inset-inline-start: 0;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  background: var(--color-background-primary);
+  margin-inline-start: var(--sp-m);
+}
+
+.collapsed-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-36;
+  inline-size: $sz-24;
+  border-radius: $br-8;
+  background: var(--color-background-secondary);
+}
+
+.collapsed-button {
+  --collapsed-icon-color: var(--color-foreground-secondary);
+
+  border: none;
+  background: none;
+  block-size: $sz-24;
+  inline-size: $sz-16;
+  padding: 0;
+
+  &:hover {
+    --collapsed-icon-color: var(--color-foreground-primary);
+  }
+}
+
+.collapsed-button-icon {
+  color: var(--collapsed-icon-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// Component: layers-content*
+
+.layers-tab {
+  padding-block-start: var(--sp-xs);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-block-size: 0;
+}
+
+.layers-tab-resize-area {
+  background-color: var(--color-background-primary);
+  flex: 0 0 auto;
+  inline-size: 100%;
+  padding: px2rem(3) 0 px2rem(1);
+  block-size: $sz-6;
+  cursor: ns-resize;
+}
+
+.layers-tab-resize-handle {
+  border-block-end: $b-2 solid var(--color-background-quaternary);
+  cursor: ns-resize;
+}
+
+// Component: left-sidebar*
+
+.left-sidebar {
+  display: grid;
+  grid-template: "header header" px2rem(52) "content resize" 1fr / 1fr 0;
+  position: relative;
+  grid-area: left-sidebar;
+  min-inline-size: var(--left-sidebar-width);
+  max-inline-size: var(--left-sidebar-width-max);
+  inline-size: var(--left-sidebar-width);
+  background-color: var(--color-background-primary);
+  block-size: 100vh;
+  max-block-size: 100vh;
+  z-index: var(--z-index-panels);
+}
+
+.left-sidebar-header {
+  grid-area: header;
+}
+
+.left-sidebar-content {
+  grid-area: content;
+  inset-inline-end: calc(-1 * var(--sp-s));
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.left-sidebar-tabs {
+  --tabs-nav-padding-inline-start: var(--sp-m);
+  --tabs-nav-padding-inline-end: var(--sp-m);
+
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.left-sidebar-resize-area {
+  grid-area: resize;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: unset;
+  inline-size: var(--sp-s);
+  block-size: 100%;
+  cursor: ew-resize;
+}
+
+// Component: right-sidebar*
+
+.right-sidebar {
+  grid-area: right-sidebar;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  block-size: 100vh;
+  inline-size: var(--right-sidebar-width);
+  background-color: var(--color-background-primary);
+  z-index: var(--z-index-panels);
+
+  &.not-expand {
+    max-inline-size: var(--right-sidebar-width);
+  }
+
+  &.expanded {
+    inline-size: var(--right-sidebar-width, var(--right-sidebar-width));
+  }
+}
+
+.right-sidebar-content {
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 100%;
+  block-size: calc(100vh - px2rem(52));
+  overflow: hidden;
+}
+
+// Component: history-content*
+
+.history-tab {
+  overflow-y: auto;
+}
+
+.versions-tab {
+  inline-size: 100%;
+  overflow: hidden;
+  block-size: calc(100vh - $sz-88);
+}

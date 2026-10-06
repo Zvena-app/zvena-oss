@@ -1,0 +1,162 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_utils" as *;
+@use "ds/_sizes" as *;
+@use "ds/_borders" as *;
+@use "ds/spacing" as *;
+@use "ds/typography" as *;
+@use "ds/z-index" as *;
+
+.menu-wrapper {
+  position: absolute;
+  inset-block-start: $sz-40;
+  inset-inline-start: px2rem(736);
+  z-index: var(--z-index-dropdown);
+}
+
+.menu,
+.submenu {
+  box-shadow: 0 0 0.75rem 0 var(--color-shadow-dark);
+  display: grid;
+  inline-size: px2rem(240);
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  border: $b-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+  max-block-size: 100vh;
+  overflow-y: auto;
+}
+
+.submenu {
+  position: absolute;
+}
+
+.menu-item {
+  --menu-item-bg-color: var(--color-background-tertiary);
+  --menu-item-title-color: var(--color-foreground-primary);
+  --menu-item-shortcut-color: var(--color-foreground-secondary);
+  --menu-item-shortcut-border-color: transparent;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  block-size: $sz-28;
+  inline-size: 100%;
+  padding: px2rem(6);
+  border-radius: $br-8;
+  background-color: var(--menu-item-bg-color);
+  border: $b-1 solid var(--menu-item-shortcut-border-color);
+
+  &:hover {
+    --menu-item-title-color: var(--color-foreground-primary);
+    --menu-item-bg-color: var(--color-background-quaternary);
+    --menu-item-shortcut-color: var(--color-foreground-primary);
+  }
+
+  &:focus {
+    --menu-item-bg-color: var(--color-background-tertiary);
+    --menu-item-shortcut-border-color: var(--color-accent-primary);
+  }
+}
+
+.menu-item-icon {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: px2rem(6);
+  block-size: $sz-28;
+  padding: px2rem(6);
+  border-radius: $br-8;
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
+}
+
+.menu-item-icon[disabled],
+.menu-item[disabled] {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.menu-item-icon-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.menu-item-title {
+  @include use-typography("body-small");
+
+  color: var(--menu-item-title-color);
+}
+
+.shortcut {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-xxs);
+  color: var(--menu-item-shortcut-color);
+}
+
+.shortcut-key {
+  @include use-typography("body-small");
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: px2rem(20);
+  padding: var(--sp-xxs) px2rem(6);
+  border-radius: $br-6;
+  background-color: var(--color-background-primary);
+
+  &.customized-key {
+    background-color: var(--color-background-info);
+    color: var(--color-foreground-primary);
+  }
+}
+
+.icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-16;
+  color: var(--color-foreground-primary);
+  stroke-width: 1.33px;
+}
+
+.separator {
+  block-size: $sz-12;
+}
+
+.guide-color-label {
+  cursor: default;
+  pointer-events: none;
+}
+
+.guide-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px2rem(6);
+  padding: var(--sp-xs) px2rem(6) var(--sp-s);
+  list-style: none;
+}
+
+.guide-color-swatch {
+  inline-size: px2rem(20);
+  block-size: px2rem(20);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: $b-2 solid var(--color-background-quaternary);
+
+  &.selected {
+    border: $b-2 solid var(--color-foreground-primary);
+  }
+}

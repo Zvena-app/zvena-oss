@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -ex
+
+export CURRENT_VERSION=$1;
+export NODE_ENV=production;
+
+pnpm install || exit 1;
+rm -rf target
+
+# Build the application
+pnpm run build;
+
+cp pnpm-lock.yaml target/;
+cp pnpm-workspace.yaml target/;
+cp package.json target/;
+touch target/pnpm-workspace.yaml;
+
+cat <<EOF | tee target/setup
+#/usr/bin/env bash
+set -e;
+command -v pnpm >/dev/null || { echo "error: pnpm not found in PATH" >&2; exit 1; };
+pnpm install
+pnpm exec playwright install chromium;
+EOF
+
+chmod +x target/setup;
+
+sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/app.js;

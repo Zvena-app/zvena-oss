@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+TARGET=${1:-app};
+
+set -ex
+
+pnpm install;
+pnpm run watch:$TARGET
