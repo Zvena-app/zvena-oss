@@ -96,7 +96,7 @@ jobs:
         run: npm test
 
   tools:
-    name: backup engine and shell scripts
+    name: backup engine, shell scripts, log masking
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -113,3 +113,5 @@ jobs:
         run: |
           shellcheck --version | head -2
           git ls-files -z -- 'deploy/*.sh' 'tools/*.sh' 'tools/hooks/*' 'design/bin/*.sh' | xargs -0 shellcheck -x -S warning
+      - name: Access logs keep no secrets (real Caddyfile, dummy token, Docker)
+        run: deploy/caddy/test-log-masking.sh
