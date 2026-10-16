@@ -66,7 +66,7 @@
     "eslint-config-next": "16.4.0",
     "hoodiecrow-imap": "3.3.1",
     "smtp-server": "3.19.22",
-    "typescript": "^5"
+    "typescript": "^7"
   },
   "overrides": {
     "mermaid": {
