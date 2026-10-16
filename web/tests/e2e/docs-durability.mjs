@@ -96,9 +96,37 @@ async function run(who, signIn) {
   }
 }
 
+/** A guest's pages move into the personal workspace on sign-up (and reach the server). */
+async function migrate() {
+  const ctx = await context(browser);
+  const p = await ctx.newPage();
+  const name = `Migrant ${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    const url = await typed(p, "Guest draft", "written before signing up");
+    await p.reload();
+    await p.waitForSelector(".nt-main .bn-editor", { timeout: 60000 });
+    await devSignIn(p, name, { next: "/docs" });
+    await p.waitForSelector(".nt-sidebar, .nt-side, nav", { timeout: 60000 });
+    await p.waitForFunction(() => document.body.innerText.includes("Guest draft"), null, { timeout: 30000 }).catch(() => undefined);
+    check("migrate: 1 the guest page is in the new account's workspace", (await p.locator("body").innerText()).includes("Guest draft"));
+    const fresh = await context(browser);
+    const q = await fresh.newPage();
+    await devSignIn(q, name, { next: "/docs" });
+    await p.waitForTimeout(3000);
+    await opened(q, `${BASE}/docs#${new URL(url).hash.slice(1)}`);
+    check("migrate: 2 it reached the server with its text", (await body(q)).includes("written before signing up"), (await body(q)).slice(0, 80));
+    await fresh.close();
+  } catch (e) {
+    check("migrate: ran", false, String(e).slice(0, 300));
+  } finally {
+    await ctx.close();
+  }
+}
+
 try {
   await run("guest", false);
   await run("account", true);
+  await migrate();
 } finally {
   await browser.close();
 }
