@@ -9,7 +9,9 @@
 // before anything is inflated, and the inflated bytes are counted again on
 // the way (a header can lie: inflation stops right past the declared size,
 // and the input is fed in small slices, so one slice inflates to ~8 MB at
-// most). Peak memory is thus about the archive itself + `maxTotal` + one
+// most). An entry is charged before it is read, damaged or not, so entries
+// that fail their CRC cannot make the import inflate without end, and two
+// entries can't share one local header (one blob read over and over). Peak memory is thus about the archive itself + `maxTotal` + one
 // slice in flight. Whatever is left out comes back in `skipped`, with why.
 
 import { crc32, zipStore } from "../science/zip";
@@ -99,6 +101,8 @@ interface State {
   skipped: SkippedEntry[];
   more: number;
   bytes: number;
+  /** Declared bytes of every entry read so far, damaged ones too (≥ bytes); checked against maxTotal. */
+  spent: number;
   entries: number;
   /** Bytes since the last yield to the page. */
   sinceYield: number;
@@ -168,6 +172,7 @@ async function readArchive(u8: Uint8Array, depth: number, prefix: string, st: St
   if (cdEnd > eocd) throw new ZipError("corrupt");
   const dec = new TextDecoder("utf-8");
   let p = cdOff;
+  const locals = new Set<number>();
   for (let i = 0; i < count; i++) {
     signal?.throwIfAborted();
     if (st.entries >= lim.maxEntries) {
@@ -198,7 +203,7 @@ async function readArchive(u8: Uint8Array, depth: number, prefix: string, st: St
       skip(st, path, "unsupported");
       continue;
     }
-    if (local + 30 > u8.length || dv.getUint32(local, true) !== 0x04034b50) {
+    if (local + 30 > u8.length || dv.getUint32(local, true) !== 0x04034b50 || locals.has(local)) {
       skip(st, path, "corrupt");
       continue;
     }
@@ -220,10 +225,12 @@ async function readArchive(u8: Uint8Array, depth: number, prefix: string, st: St
       skip(st, path, "ratio");
       continue;
     }
-    if (st.bytes + usize > lim.maxTotal) {
+    if (st.spent + usize > lim.maxTotal) {
       skip(st, path, "budget");
       continue;
     }
+    locals.add(local);
+    st.spent += usize;
     const raw = u8.subarray(start, start + csize);
     let data: Uint8Array;
     try {
@@ -264,7 +271,7 @@ async function readArchive(u8: Uint8Array, depth: number, prefix: string, st: St
  * cancelled; single entries that can't be read land in `skipped`.
  */
 export async function unzip(buf: ArrayBuffer | Uint8Array, opts: UnzipOptions = {}): Promise<UnzipResult> {
-  const st: State = { lim: { ...UNZIP_LIMITS, ...opts.limits }, signal: opts.signal, files: [], skipped: [], more: 0, bytes: 0, entries: 0, sinceYield: 0 };
+  const st: State = { lim: { ...UNZIP_LIMITS, ...opts.limits }, signal: opts.signal, files: [], skipped: [], more: 0, bytes: 0, spent: 0, entries: 0, sinceYield: 0 };
   opts.signal?.throwIfAborted();
   await readArchive(buf instanceof Uint8Array ? buf : new Uint8Array(buf), 0, "", st);
   return { files: st.files, skipped: st.skipped, more: st.more, bytes: st.bytes };
