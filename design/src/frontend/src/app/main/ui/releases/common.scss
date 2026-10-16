@@ -1,0 +1,32 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.step-dots {
+  display: grid;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  gap: var(--sp-s);
+  block-size: fit-content;
+  inline-size: fit-content;
+  margin: 0;
+  padding: 0;
+  place-self: center flex-start;
+}
+
+.dot {
+  block-size: $sz-12;
+  inline-size: $sz-12;
+  border-radius: $br-circle;
+  background-color: var(--color-background-quaternary);
+}
+
+.current {
+  background-color: var(--color-accent-primary);
+}

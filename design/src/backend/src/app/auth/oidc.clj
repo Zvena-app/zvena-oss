@@ -1,0 +1,1192 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.auth.oidc
+  "OIDC client implementation."
+  (:require
+   [app.auth.oidc.providers :as-alias providers]
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
+   [app.common.logging :as l]
+   [app.common.schema :as sm]
+   [app.common.time :as ct]
+   [app.common.uri :as u]
+   [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.db :as db]
+   [app.email.blacklist :as email.blacklist]
+   [app.email.whitelist :as email.whitelist]
+   [app.http.client :as http]
+   [app.http.errors :as errors]
+   [app.http.session :as session]
+   [app.loggers.audit :as audit]
+   [app.nitrate :as nitrate]
+   [app.rpc.commands.profile :as profile]
+   [app.setup :as-alias setup]
+   [app.tokens :as tokens]
+   [app.util.cache :as cache]
+   [app.util.inet :as inet]
+   [app.util.json :as json]
+   [buddy.sign.jwk :as jwk]
+   [buddy.sign.jwt :as jwt]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
+   [integrant.core :as ig]
+   [yetti.response :as-alias yres]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; OIDC PROVIDER (GENERIC)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- raise-invalid-sso-config
+  "Raise a controlled validation error for OIDC provider configuration failures."
+  [& {:keys [hint cause] :as params}]
+  (throw (ex-info (or hint "invalid-sso-config")
+                  (-> params
+                      (dissoc :cause)
+                      (assoc :type :validation
+                             :code :invalid-sso-config))
+                  cause)))
+
+(defn- discover-oidc-config
+  [cfg {:keys [base-uri skip-ssrf-check?] :as provider}]
+  (let [uri (u/join base-uri ".well-known/openid-configuration")]
+    (try
+      (let [rsp (http/req cfg {:method :get :uri (dm/str uri)} {:skip-ssrf-check? skip-ssrf-check?})]
+        (if (= 200 (:status rsp))
+          (let [data       (-> rsp :body json/decode)
+                token-uri  (get data :token_endpoint)
+                auth-uri   (get data :authorization_endpoint)
+                user-uri   (get data :userinfo_endpoint)
+                jwks-uri   (get data :jwks_uri)
+                logout-uri (get data :end_session_endpoint)]
+
+            (-> provider
+                (assoc :token-uri token-uri)
+                (assoc :auth-uri  auth-uri)
+                (assoc :user-uri  user-uri)
+                (assoc :jwks-uri jwks-uri)
+                (assoc :logout-uri logout-uri)))
+
+          (raise-invalid-sso-config
+           :hint "unable to discover OIDC configuration"
+           :discover-uri uri
+           :response-status-code (:status rsp))))
+      (catch Throwable cause
+        ;; Controlled raises above are ExceptionInfo and would otherwise be
+        ;; re-wrapped by this catch, dropping fields like :response-status-code.
+        (if (and (ex/error? cause)
+                 (= :invalid-sso-config (:code (ex-data cause))))
+          (throw cause)
+          ;; Wrap SSRF blocks, DNS failures, TLS errors, etc. — from the caller's
+          ;; perspective these are all "bad/unreachable issuer URL".
+          (raise-invalid-sso-config
+           :hint "unable to discover OIDC configuration"
+           :discover-uri uri
+           :cause cause))))))
+
+(def ^:private default-oidc-scopes
+  #{"openid" "profile" "email"})
+
+(defn- get-oidc-config
+  "Get the OIDC config params from global config"
+  []
+  (d/without-nils
+   {:base-uri         (cf/get :oidc-base-uri)
+    :client-id        (cf/get :oidc-client-id)
+    :client-secret    (cf/get :oidc-client-secret)
+    :token-uri        (cf/get :oidc-token-uri)
+    :auth-uri         (cf/get :oidc-auth-uri)
+    :user-uri         (cf/get :oidc-user-uri)
+    :jwks-uri         (cf/get :oidc-jwks-uri)
+    :scopes           (cf/get :oidc-scopes default-oidc-scopes)
+    :roles            (cf/get :oidc-roles)
+    :user-info-source (cf/get :oidc-user-info-source)
+    :roles-attr       (cf/get :oidc-roles-attr)
+    :email-attr       (cf/get :oidc-email-attr "email")
+    :name-attr        (cf/get :oidc-name-attr "name")
+    :type             "oidc"
+    :id               "oidc"}))
+
+(defn- process-oidc-jwks
+  [keys]
+  (reduce (fn [result {:keys [kid] :as kdata}]
+            (let [pkey (ex/try! (jwk/public-key kdata))]
+              (if (ex/exception? pkey)
+                (do
+                  (l/warn :hint "unable to create public key"
+                          :kid (:kid kdata)
+                          :cause pkey)
+                  result)
+                (assoc result kid pkey))))
+          {}
+          keys))
+
+(defn- fetch-oidc-jwks
+  [cfg jwks-uri {:keys [skip-ssrf-check?]}]
+  (try
+    (let [{:keys [status body]} (http/req cfg {:method :get :uri jwks-uri} {:skip-ssrf-check? skip-ssrf-check?})]
+      (if (= 200 status)
+        (-> body json/decode :keys process-oidc-jwks)
+        (raise-invalid-sso-config
+         :hint "unable to retrieve JWKs (unexpected response status code)"
+         :jwks-uri jwks-uri
+         :response-status-code status)))
+    (catch Throwable cause
+      (if (and (ex/error? cause)
+               (= :invalid-sso-config (:code (ex-data cause))))
+        (throw cause)
+        (raise-invalid-sso-config
+         :hint "unable to retrieve JWKs"
+         :jwks-uri jwks-uri
+         :cause cause)))))
+
+(defn- populate-jwks
+  "Fetch and add JWKs to the OIDC provider.
+
+  When `:strict-jwks?` is set (organization SSO), failures raise a controlled
+  validation error. Otherwise JWKS is best-effort: log and continue without keys
+  so global OIDC/GitLab providers can still initialize if JWKS is temporarily down."
+  [cfg provider]
+  (try
+    (if-let [jwks (when-let [jwks-uri (:jwks-uri provider)]
+                    (fetch-oidc-jwks cfg jwks-uri {:skip-ssrf-check? (:skip-ssrf-check? provider)}))]
+      (assoc provider :jwks jwks)
+      provider)
+    (catch Throwable cause
+      (if (:strict-jwks? provider)
+        (if (and (ex/error? cause)
+                 (= :invalid-sso-config (:code (ex-data cause))))
+          (throw cause)
+          (raise-invalid-sso-config
+           :hint "unable to retrieve JWKs"
+           :provider (:id provider)
+           :cause cause))
+        (do
+          (l/warn :hint "unable to fetch JWKs for the OIDC provider"
+                  :provider (str (:id provider))
+                  :cause cause)
+          provider)))))
+
+(defn- prepare-oidc-provider
+  [cfg params]
+  (when-not (and (string? (:base-uri params))
+                 (string? (:client-id params))
+                 (string? (:client-secret params)))
+    (raise-invalid-sso-config
+     :hint "missing params for provider initialization"
+     :provider (:id params)))
+
+  (try
+    (if (and (string? (:token-uri params))
+             (string? (:user-uri params))
+             (string? (:auth-uri params)))
+      (populate-jwks cfg params)
+      (let [provider (->> params
+                          (discover-oidc-config cfg)
+                          (populate-jwks cfg))]
+        (with-meta provider {::discovered true})))
+
+    (catch Throwable cause
+      (if (and (ex/error? cause)
+               (= :invalid-sso-config (:code (ex-data cause))))
+        (throw cause)
+        (raise-invalid-sso-config
+         :hint "unexpected exception on configuring provider"
+         :provider (:id params)
+         :cause cause)))))
+
+(defmethod ig/assert-key ::providers/generic
+  [_ params]
+  (assert (http/client? (::http/client params)) "expected a valid http client"))
+
+(defmethod ig/init-key ::providers/generic
+  [_ cfg]
+  (when (contains? cf/flags :login-with-oidc)
+    (try
+      (let [provider (->> (get-oidc-config)
+                          (prepare-oidc-provider cfg))]
+        (l/inf :hint "provider initialized"
+               :provider (:id provider)
+               :client-id (:client-id provider)
+               :client-secret (d/obfuscate-string (:client-secret provider)))
+        provider)
+
+      (catch Throwable cause
+        (l/warn :hint "unable to initialize auth provider"
+                :provider "oidc"
+                :cause cause)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GOOGLE AUTH PROVIDER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-google-config
+  []
+  (d/without-nils
+   {:client-id        (cf/get :google-client-id)
+    :client-secret    (cf/get :google-client-secret)
+    :scopes           #{"openid" "email" "profile"}
+    :auth-uri         "https://accounts.google.com/o/oauth2/v2/auth"
+    :token-uri        "https://oauth2.googleapis.com/token"
+    :user-uri         "https://openidconnect.googleapis.com/v1/userinfo"
+    :user-info-source "userinfo"
+    :type             "google"
+    :id               "google"}))
+
+(defn- prepare-google-provider
+  [params]
+  (when-not (and (string? (:client-id params))
+                 (string? (:client-secret params)))
+    (ex/raise :type ::internal
+              :code :invalid-sso-config
+              :hint "missing params for provider initialization"
+              :provider (:id params)))
+
+  params)
+
+(defmethod ig/init-key ::providers/google
+  [_ _]
+  (when (contains? cf/flags :login-with-google)
+    (try
+      (let [provider (->> (get-google-config)
+                          (prepare-google-provider))]
+        (l/inf :hint "provider initialized"
+               :provider (:id provider)
+               :client-id (:client-id provider)
+               :client-secret (d/obfuscate-string (:client-secret provider)))
+        provider)
+
+      (catch Throwable cause
+        (l/warn :hint "unable to initialize auth provider"
+                :provider "google"
+                :cause cause)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GITHUB AUTH PROVIDER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- int-in-range?
+  [val start end]
+  (and (<= start val) (< val end)))
+
+(defn- lookup-github-email
+  [cfg tdata props]
+  (or (some-> props :github/email)
+      (let [params {:uri "https://api.github.com/user/emails"
+                    :headers {"Authorization" (dm/str (:token/type tdata) " " (:token/access tdata))}
+                    :timeout 6000
+                    :method :get}
+
+            {:keys [status body]} (http/req cfg params)]
+
+        (when-not (int-in-range? status 200 300)
+          (ex/raise :type :internal
+                    :code :unable-to-retrieve-github-emails
+                    :hint "unable to retrieve github emails"
+                    :request-uri (:uri params)
+                    :response-status status
+                    :response-body body))
+
+        (->> body json/decode (filter :primary) first :email))))
+
+(defn- get-github-config
+  [cfg]
+  (d/without-nils
+   {:client-id        (cf/get :github-client-id)
+    :client-secret    (cf/get :github-client-secret)
+    :scopes           #{"read:user" "user:email"}
+    :auth-uri         "https://github.com/login/oauth/authorize"
+    :token-uri        "https://github.com/login/oauth/access_token"
+    :user-uri         "https://api.github.com/user"
+    :type             "github"
+    :id               "github"
+    :user-info-source "userinfo"
+
+    ;; Additional hooks for provider specific way of
+    ;; retrieve emails.
+    ::get-email-fn  (partial lookup-github-email cfg)}))
+
+(defn- prepare-github-provider
+  [params]
+  (when-not (and (string? (:client-id params))
+                 (string? (:client-secret params)))
+    (ex/raise :type ::internal
+              :code :invalid-sso-config
+              :hint "several required params for configuring GITHUB SSO are missing"
+              :provider (:id params)))
+
+  params)
+
+(defmethod ig/assert-key ::providers/github
+  [_ params]
+  (assert (http/client? (::http/client params)) "expected a valid http client"))
+
+(defmethod ig/init-key ::providers/github
+  [_ cfg]
+  (when (contains? cf/flags :login-with-github)
+    (try
+      (let [provider (->> (get-github-config cfg)
+                          (prepare-github-provider))]
+        (l/inf :hint "provider initialized"
+               :provider (:id provider)
+               :client-id (:client-id provider)
+               :client-secret (d/obfuscate-string (:client-secret provider)))
+        provider)
+
+      (catch Throwable cause
+        (l/warn :hint "unable to initialize auth provider"
+                :provider "github"
+                :cause cause)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GITLAB AUTH PROVIDER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-gitlab-config
+  []
+  (let [base (cf/get :gitlab-base-uri "https://gitlab.com")
+        opts {:base-uri      base
+              :client-id     (cf/get :gitlab-client-id)
+              :client-secret (cf/get :gitlab-client-secret)
+              :scopes        #{"openid" "profile" "email"}
+              :auth-uri      (str base "/oauth/authorize")
+              :token-uri     (str base "/oauth/token")
+              :user-uri      (str base "/oauth/userinfo")
+              :jwks-uri      (str base "/oauth/discovery/keys")
+              :type          "gitlab"
+              :id            "gitlab"}]
+    (d/without-nils opts)))
+
+(defn- prepare-gitlab-provider
+  [cfg params]
+  (when-not (and (string? (:client-id params))
+                 (string? (:client-secret params)))
+    (raise-invalid-sso-config
+     :hint "missing params for provider initialization"
+     :provider (:id params)))
+
+  (try
+    (let [provider (populate-jwks cfg params)]
+      (l/inf :hint "provider initialized"
+             :provider "gitlab"
+             :base-uri (:base-uri provider)
+             :client-id (:client-id provider)
+             :client-secret (d/obfuscate-string (:client-secret provider)))
+      provider)
+    (catch Throwable cause
+      (if (and (ex/error? cause)
+               (= :invalid-sso-config (:code (ex-data cause))))
+        (throw cause)
+        (raise-invalid-sso-config
+         :hint "unexpected exception on configuring provider"
+         :provider (:id params)
+         :cause cause)))))
+
+(defmethod ig/init-key ::providers/gitlab
+  [_ cfg]
+
+  (when (contains? cf/flags :login-with-gitlab)
+    (try
+      (let [provider (->> (get-gitlab-config)
+                          (prepare-gitlab-provider cfg))]
+
+        (l/inf :hint "provider initialized"
+               :provider (:id provider)
+               :client-id (:client-id provider)
+               :client-secret (d/obfuscate-string (:client-secret provider)))
+        provider)
+
+      (catch Throwable cause
+        (l/warn :hint "unable to initialize auth provider"
+                :provider "gitlab"
+                :cause cause)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PROVIDERS COLLECTOR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:provider
+  [:map {:title "Provider"}
+   [:type ::sm/text]
+   [:client-id ::sm/text]
+   [:client-secret ::sm/text]
+
+   [:id [:or :string ::sm/uuid]]
+   [:base-uri {:optional true} ::sm/text]
+   [:token-uri {:optional true} ::sm/text]
+   [:auth-uri {:optional true} ::sm/text]
+   [:user-uri {:optional true} ::sm/text]
+   [:scopes {:optional true}
+    [::sm/set ::sm/text]]
+   [:roles {:optional true}
+    [::sm/set ::sm/text]]
+   [:roles-attr {:optional true} ::sm/text]
+   [:email-attr {:optional true} ::sm/text]
+   [:name-attr {:optional true} ::sm/text]])
+
+(def ^:private schema:providers
+  [:map-of :string schema:provider])
+
+(defmethod ig/assert-key ::providers
+  [_ providers]
+  (let [check-provider (sm/check-fn schema:provider)]
+    (assert (every? check-provider (filter identity providers)))))
+
+(defmethod ig/init-key ::providers
+  [_ providers]
+  (->> providers
+       (filter identity)
+       (d/index-by :id)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HANDLERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- parse-attr-path
+  [provider path]
+  (let [separator        (if (str/includes? path "__") "__" ".")
+        [fitem & items]  (str/split path separator)]
+    (into [(keyword (:type provider) (str/kebab fitem))] (map keyword) items)))
+
+(defn- build-redirect-uri
+  []
+  (let [public (u/uri (cf/get :public-uri))]
+    (str (assoc public :path "/api/auth/oidc/callback"))))
+
+(defn build-auth-redirect-uri
+  [provider token]
+  (let [params {:client_id (:client-id provider)
+                :redirect_uri (build-redirect-uri)
+                :response_type "code"
+                :state token
+                :scope (str/join " " (:scopes provider []))}
+        query  (u/map->query-string params)]
+    (-> (u/uri (:auth-uri provider))
+        (assoc :query query)
+        (str))))
+
+(defn- qualify-prop-key
+  [provider k]
+  (keyword (:type provider) (-> k name str/kebab)))
+
+(defn- qualify-props
+  [provider props]
+  (reduce-kv (fn [result k v]
+               (assoc result (qualify-prop-key provider k) v))
+             {}
+             props))
+
+(defn- fetch-access-token
+  [cfg provider code]
+  (let [params {:client_id (:client-id provider)
+                :client_secret (:client-secret provider)
+                :code code
+                :grant_type "authorization_code"
+                :redirect_uri (build-redirect-uri)}
+        req    {:method :post
+                :headers {"content-type" "application/x-www-form-urlencoded"
+                          "accept" "application/json"}
+                :uri (:token-uri provider)
+                :body (u/map->query-string params)}]
+
+    (l/trc :hint "fetch access token"
+           :provider (:id provider)
+           :client-id (:client-id provider)
+           :client-secret (d/obfuscate-string (:client-secret provider))
+           :grant-type (:grant_type params)
+           :redirect-uri (:redirect_uri params))
+
+    (let [{:keys [status body]} (http/req cfg req {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
+      (if (= status 200)
+        (let [data (json/decode body)
+              data {:token/access     (get data :access_token)
+                    :token/id         (get data :id_token)
+                    :token/type       (get data :token_type)
+                    :token/expires-in (get data :expires_in)}]
+          (l/trc :hint "access token fetched"
+                 :token-id (:token/id data)
+                 :token-type (:token/type data)
+                 :token (:token/access data))
+          data)
+        (ex/raise :type :internal
+                  :code :unable-to-fetch-access-token
+                  :hint "unable to fetch access token"
+                  :request-uri (:uri req)
+                  :response-status status
+                  :response-body body)))))
+
+(defn- process-user-info
+  [provider tdata info]
+  (letfn [(get-email [props]
+            ;; Allow providers hook into this for custom email
+            ;; retrieval method.
+            (if-let [get-email-fn (::get-email-fn provider)]
+              (get-email-fn tdata props)
+              (let [attr-kw (get provider :email-attr "email")
+                    attr-ph (parse-attr-path provider attr-kw)]
+                (get-in props attr-ph))))
+
+          (get-name [props]
+            (or (let [attr-kw (get provider :name-attr "name")
+                      attr-ph (parse-attr-path provider attr-kw)]
+                  (get-in props attr-ph))
+                (let [attr-ph (parse-attr-path provider "nickname")]
+                  (get-in props attr-ph))))]
+
+    (let [info    (assoc info :provider-id (str (:id provider)))
+          props   (qualify-props provider info)
+          email   (get-email props)]
+      {:backend  (:type provider)
+       :fullname (or (get-name props) email)
+       :email email
+       :email-verified (get info :email_verified false)
+       :props props})))
+
+(defn- fetch-user-info
+  [cfg provider tdata]
+  (l/trc :hint "fetch user info"
+         :uri (:user-uri provider)
+         :token (d/obfuscate-string (:token/access tdata)))
+
+  (let [params   {:uri (:user-uri provider)
+                  :headers {"Authorization" (str (:token/type tdata) " " (:token/access tdata))}
+                  :timeout 6000
+                  :method :get}
+        response (http/req cfg params {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
+
+    (l/trc :hint "user info response"
+           :status (:status response)
+           :body   (:body response))
+
+    (when-not (int-in-range? (:status response) 200 300)
+      (ex/raise :type :internal
+                :code :unable-to-retrieve-user-info
+                :hint "unable to retrieve user info"
+                :http-status (:status response)
+                :http-body (:body response)))
+
+    (-> response :body json/decode)))
+
+(defn- get-id-token-claims
+  [provider tdata]
+  (try
+    (when (:token/id tdata)
+      (let [{:keys [kid alg]} (jwt/decode-header (:token/id tdata))]
+        (when-let [key (if (str/starts-with? (name alg) "hs")
+                         (:client-secret provider)
+                         (get-in provider [:jwks kid]))]
+
+          (jwt/unsign (:token/id tdata) key {:alg alg}))))
+    (catch Throwable cause
+      (l/warn :hint "unable to get user info from JWT token (unexpected exception)"
+              :cause cause))))
+
+(def ^:private schema:info
+  [:map
+   [:backend ::sm/text]
+   [:email ::sm/email]
+   [:fullname ::sm/text]
+   [:email-verified :boolean]
+   [:props [:map-of :keyword ::sm/any]]])
+
+(def ^:private valid-info?
+  (sm/validator schema:info))
+
+(defn- select-user-info-source
+  "Normalise the provider's configured user-info source into a keyword the
+  dispatch below can match. The raw value comes from config as a string
+  per the malli schema in `app.config` (`\"token\"`, `\"userinfo\"`, or
+  `\"auto\"`) and from hard-coded per-provider maps as strings as well;
+  any unrecognised or missing value falls back to `:auto` (prefer claims,
+  use userinfo as fallback)."
+  [source]
+  (case source
+    "token"    :token
+    "userinfo" :userinfo
+    :auto))
+
+(defn- get-info
+  [cfg provider state code]
+  (let [tdata  (fetch-access-token cfg provider code)
+        claims (get-id-token-claims provider tdata)
+
+        info   (case (select-user-info-source (get provider :user-info-source))
+                 :token    (dissoc claims :exp :iss :iat :aud :sid)
+                 :userinfo (fetch-user-info cfg provider tdata)
+                 :auto     (or (some-> claims (dissoc :exp :iss :iat :aud :sid))
+                               (fetch-user-info cfg provider tdata)))
+
+        info   (process-user-info provider tdata info)]
+
+    (if (valid-info? info)
+      (l/trc :hint "received valid user info object" :info info)
+      (do
+        (l/warn :hint "received incomplete user info object (please set correct scopes)" :info info)
+        (ex/raise :type :internal
+                  :code :incomplete-user-info
+                  :hint "inconmplete user info"
+                  :info info)))
+
+    ;; If the provider is OIDC, we can proceed to check
+    ;; roles if they are defined.
+    (when (and (= "oidc" (:type provider))
+               (seq (:roles provider)))
+
+      (let [expected-roles (into #{} (:roles provider))
+            current-roles  (let [roles-kw (get provider :roles-attr "roles")
+                                 roles-ph (parse-attr-path provider roles-kw)
+                                 roles    (get-in (:props info) roles-ph)]
+                             (cond
+                               (string? roles) (into #{} (str/words roles))
+                               (vector? roles) (into #{} roles)
+                               :else #{}))]
+
+        ;; check if profile has a configured set of roles
+        (when-not (set/subset? expected-roles current-roles)
+          (ex/raise :type :internal
+                    :code :unable-to-auth
+                    :hint "not enough permissions"))))
+
+    (cond-> info
+      (some? (:sid claims))
+      (assoc :sso-session-id (:sid claims))
+
+      (uuid? (:id provider))
+      (assoc :sso-provider-id (:id provider))
+
+      (some? (:invitation-token state))
+      (assoc :invitation-token (:invitation-token state))
+
+      (some? (:external-session-id state))
+      (assoc :external-session-id (:external-session-id state))
+
+      ;; If state token comes with props, merge them. The state token
+      ;; props can contain pm_ and utm_ prefixed query params.
+      (map? (:props state))
+      (update :props merge (:props state)))))
+
+(defn- get-profile
+  [cfg email]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (some->> email
+                          (profile/clean-email)
+                          (profile/get-profile-by-email conn)))))
+
+(defn- redirect-response
+  [uri]
+  {::yres/status 302
+   ::yres/headers {"location" (str uri)}})
+
+(defn- redirect-with-error
+  ([error] (redirect-with-error error nil))
+  ([error hint]
+   (let [params {:error error :hint hint}
+         params (d/without-nils params)
+         uri    (-> (u/uri (cf/get :public-uri))
+                    (assoc :path "/#/auth/login")
+                    (assoc :query (u/map->query-string params)))]
+     (redirect-response uri))))
+
+(defn- redirect-with-organization-sso-error
+  [{:keys [dest-url organization-id organization-name]}]
+  (-> (str (or dest-url (cf/get :public-uri)))
+      (u/append-query-param :sso-error true)
+      (u/append-query-param :organization-id organization-id)
+      (cond-> organization-name
+        (u/append-query-param :organization-name organization-name))
+      (redirect-response)))
+
+(defn- redirect-to-register
+  [cfg info provider]
+  (let [info   (assoc info
+                      :iss :prepared-register
+                      :exp (ct/in-future {:hours 48}))
+
+        params {:token (tokens/generate cfg info)
+                :provider (:provider (:id provider))
+                :fullname (:fullname info)}
+        params (d/without-nils params)]
+
+    (redirect-response
+     (-> (u/uri (cf/get :public-uri))
+         (assoc :path "/#/auth/register/validate")
+         (assoc :query (u/map->query-string params))))))
+
+(defn- redirect-to-verify-token
+  [token]
+  (let [params {:token token}
+        uri    (-> (u/uri (cf/get :public-uri))
+                   (assoc :path "/#/auth/verify-token")
+                   (assoc :query (u/map->query-string params)))]
+
+    (redirect-response uri)))
+
+(defn- provider-has-email-verified?
+  [provider {:keys [props] :as info}]
+  (let [prop (qualify-prop-key provider :email_verified)]
+    (true? (get props prop))))
+
+(defn- profile-has-provider-props?
+  [provider {:keys [props] :as profile}]
+  (if (and (uuid? (:id provider))
+           (= "oidc" (:type provider)))
+    (= (str (:id provider))
+       (get props :oidc/provider-id))
+    (let [prop (qualify-prop-key provider :email)]
+      (contains? props prop))))
+
+(defn- decode-row
+  [{:keys [roles scopes] :as row}]
+  (cond-> row
+    (nil? scopes)
+    (assoc :scopes default-oidc-scopes)
+
+    (db/pgarray? scopes)
+    (assoc :scopes (db/decode-pgarray scopes #{}))
+
+    (db/pgarray? roles)
+    (assoc :roles (db/decode-pgarray roles #{}))))
+
+;; A short TTL avoids paying the OIDC discovery + JWKS fetch on every
+;; login; Caffeine will not store the entry when the load fn throws,
+;; so a transient failure at the provider's discovery endpoint does
+;; not poison the cache.
+(defonce ^:private provider-cache
+  (cache/create :expire "10m" :max-size 64))
+
+(defn- load-provider
+  [cfg id]
+  (when-let [params (some->> (db/get* cfg :sso-provider {:id id :is-enabled true})
+                             (decode-row))]
+    (case (:type params)
+      "oidc" (prepare-oidc-provider cfg params))))
+
+(defn get-provider
+  [cfg id]
+  (try
+    (cache/get provider-cache id (partial load-provider cfg))
+    (catch Throwable cause
+      (l/err :hint "unable to configure custom SSO provider"
+             :provider (str id)
+             :cause cause))))
+
+(defn- resolve-provider
+  [{:keys [::providers] :as cfg} params]
+  (let [provider (get params :provider)
+        provider (if (uuid? provider)
+                   provider
+                   (or (uuid/parse* provider) provider))]
+
+    (cond
+      (uuid? provider)
+      (or (get-provider cfg provider)
+          (ex/raise :type :restriction
+                    :code :sso-provider-not-configured
+                    :hint "provider not configured"
+                    :provider provider))
+
+      (string? provider)
+      (or (get providers provider)
+          (ex/raise :type :restriction
+                    :code :sso-provider-not-configured
+                    :hint "provider not configured"
+                    :provider provider))
+
+      :else
+      (throw (IllegalArgumentException. "invalid data for provider")))))
+
+(def ^:private zvena-locales
+  "zvena: zvena.app's interface languages (its `locale` claim) as Design
+  locales."
+  {"en" "en" "zh" "zh_cn" "hi" "hi" "es" "es" "ar" "ar"
+   "fr" "fr" "bn" "bn" "pt" "pt_br" "ru" "ru" "id" "id"})
+
+(defn- info-lang
+  "zvena: the Design locale of the `locale` claim of the user info, or nil."
+  [info]
+  (let [props (:props info)
+        value (some (fn [[k v]] (when (= "locale" (name k)) v)) props)]
+    (when (string? value)
+      (let [value (-> value str/lower (str/replace "-" "_"))]
+        (or (get zvena-locales value)
+            (get zvena-locales (first (str/split value #"_"))))))))
+
+(defn- update-profile-with-info
+  [cfg {:keys [id props] :as profile} info]
+  (let [props' (merge props (:props info))
+        ;; zvena: Design follows the language picked on zvena.app
+        lang   (info-lang info)
+        lang?  (and (some? lang) (not= lang (:lang profile)))]
+    (if (or (not= props props') lang?)
+      (do
+        (db/update! cfg :profile
+                    (cond-> {:props (db/tjson props')}
+                      lang? (assoc :lang lang))
+                    {:id id}
+                    {::db/return-keys false})
+        (cond-> (assoc profile :props props')
+          lang? (assoc :lang lang)))
+      profile)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ORG SSO HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- organization-sso-oauth-failure-reason
+  [error]
+  (case (d/name error)
+    "access_denied" "access-denied"
+    ("temporarily_unavailable" "server_error") "provider-unavailable"
+    ("invalid_request" "unauthorized_client" "invalid_scope") "invalid-configuration"
+    "provider-error"))
+
+(defn- organization-sso-exception-failure-reason
+  [cause]
+  (let [data   (ex-data cause)
+        status (or (:response-status data)
+                   (:response-status-code data)
+                   (:http-status data))
+        network-error?
+        (loop [current cause]
+          (cond
+            (nil? current)
+            false
+
+            (or (instance? java.net.ConnectException current)
+                (instance? java.net.UnknownHostException current)
+                (instance? java.net.http.HttpTimeoutException current)
+                (instance? javax.net.ssl.SSLException current))
+            true
+
+            (identical? current (ex-cause current))
+            false
+
+            :else
+            (recur (ex-cause current))))]
+    (if (or network-error?
+            (and (number? status) (<= 500 status 599)))
+      "provider-unavailable"
+      (case (:code data)
+        :unable-to-fetch-access-token "token-exchange-failed"
+        :unable-to-retrieve-user-info "user-info-failed"
+        :incomplete-user-info "incomplete-user-info"
+        :invalid-sso-config "invalid-configuration"
+        :unable-to-fetch-sso-jwks "provider-unavailable"
+        :unable-to-auth "access-denied"
+        "unexpected-error"))))
+
+(defn- submit-organization-sso-auth-event
+  [cfg request profile-id organization-id name & {:keys [failure-reason]}]
+  (audit/submit cfg {:type "action"
+                     :name name
+                     :profile-id profile-id
+                     :ip-addr (inet/parse-request request)
+                     :props (d/without-nils
+                             {:organization-id organization-id
+                              :failure-reason failure-reason})
+                     :context (audit/prepare-context-from-request request)}))
+
+(defn submit-organization-sso-auth-started-event
+  [cfg request profile-id organization-id]
+  (submit-organization-sso-auth-event
+   cfg request profile-id organization-id "organization-sso-auth-started"))
+
+(defn submit-organization-sso-auth-failed-event
+  [cfg request profile-id organization-id cause]
+  (submit-organization-sso-auth-event
+   cfg request profile-id organization-id "organization-sso-auth-failed"
+   :failure-reason (organization-sso-exception-failure-reason cause)))
+
+(defn- submit-organization-sso-oauth-failed-event
+  [cfg request state-token error]
+  (try
+    (let [state (tokens/verify cfg {:token state-token :iss "oidc"})]
+      (when (:dest-url state)
+        (submit-organization-sso-auth-event
+         cfg request (some-> (session/get-session request) :profile-id)
+         (:organization-id state) "organization-sso-auth-failed"
+         :failure-reason (organization-sso-oauth-failure-reason error))))
+    (catch Exception _ nil)))
+
+(defn- non-blank-uri
+  [value]
+  (when-not (str/blank? value) value))
+
+(defn organization-sso-discovery-uri
+  "Return the OIDC discovery URI from an organization SSO config."
+  [sso]
+  (non-blank-uri (:issuer sso)))
+
+(defn prepare-organization-sso-provider
+  "Build an OIDC provider map dynamically from the Nitrate organization SSO config.
+   Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
+  [cfg {:keys [client-id client-secret issuer]}]
+  (prepare-oidc-provider cfg
+                         {:type             "oidc"
+                          :client-id        client-id
+                          :client-secret    client-secret
+                          :base-uri         (some-> (non-blank-uri issuer)
+                                                    (str/rtrim "/")
+                                                    (str "/"))
+                          :scopes           default-oidc-scopes
+                          ;; Organization SSO is configured by customers; discovery
+                          ;; and JWKS failures must surface as controlled errors.
+                          :strict-jwks?     true}))
+
+(defn build-organization-sso-auth-redirect-uri
+  "Build the OIDC authorization redirect URI for an organization SSO config.
+  Raises if the config is incomplete or OIDC discovery fails."
+  [cfg sso & {:keys [dest-url organization-id provider]}]
+  (let [organization-id (or organization-id (:organization-id sso))
+        issuer          (organization-sso-discovery-uri sso)
+        dest-url        (or dest-url (str (cf/get :public-uri)))]
+    (when-not issuer
+      (raise-invalid-sso-config
+       :hint "missing issuer"
+       :organization-id organization-id))
+    (try
+      (let [oidc-provider (or provider (prepare-organization-sso-provider cfg sso))
+            state-token   (tokens/generate cfg {:iss             "oidc"
+                                                :dest-url        dest-url
+                                                :organization-id organization-id
+                                                :issuer          issuer
+                                                :exp             (ct/in-future "4h")})]
+        (build-auth-redirect-uri oidc-provider state-token))
+      (catch Throwable cause
+        (if (and (ex/error? cause)
+                 (= :invalid-sso-config (:code (ex-data cause))))
+          (throw (ex-info (ex-message cause)
+                          (assoc (ex-data cause) :organization-id organization-id)
+                          (ex-cause cause)))
+          (throw cause))))))
+
+(def ^:private probe-auth-code "penpot-sso-config-probe")
+
+(defn- decode-token-error-response
+  [body]
+  (when (and (string? body) (pos? (count body)))
+    (try
+      (json/decode body)
+      (catch Throwable _ nil))))
+
+(defn- token-endpoint-error
+  [response]
+  (some-> response :body decode-token-error-response :error d/name))
+
+(defn- token-endpoint-error-description
+  [response]
+  (some-> response :body decode-token-error-response :error-description))
+
+(defn- token-endpoint-valid-client-error?
+  "Token endpoint rejected the dummy auth code but accepted the client credentials."
+  [response]
+  (= "invalid_grant" (token-endpoint-error response)))
+
+(defn- token-endpoint-invalid-client-error?
+  "Token endpoint rejected the client credentials."
+  [{:keys [status] :as response}]
+  (let [error (token-endpoint-error response)
+        description (str/lower (or (token-endpoint-error-description response) ""))]
+    (or (= status 401)
+        (#{"invalid_client" "unauthorized_client"} error)
+        (and (= error "access_denied")
+             (str/includes? description "unauthorized")))))
+
+(defn- probe-organization-sso-client-credentials
+  "Probe the token endpoint with a dummy authorization code.
+  Valid client credentials are expected to answer with `invalid_grant`."
+  [cfg provider]
+  (let [params {:client_id     (:client-id provider)
+                :client_secret (:client-secret provider)
+                :code          probe-auth-code
+                :grant_type    "authorization_code"
+                :redirect_uri  (build-redirect-uri)}
+        req    {:method  :post
+                :headers {"content-type" "application/x-www-form-urlencoded"
+                          "accept"       "application/json"}
+                :uri     (:token-uri provider)
+                :body    (u/map->query-string params)}
+        response (http/req cfg req {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
+    (cond
+      (token-endpoint-valid-client-error? response) true
+      (token-endpoint-invalid-client-error? response) false
+      :else false)))
+
+(defn is-organization-sso-config-valid?
+  "Return true when the SSO config can be discovered, can build a login URL,
+  and the client credentials are accepted by the token endpoint."
+  [cfg sso]
+  (try
+    (if (organization-sso-discovery-uri sso)
+      (let [provider (prepare-organization-sso-provider cfg sso)]
+        (and (build-organization-sso-auth-redirect-uri cfg sso :provider provider)
+             (probe-organization-sso-client-credentials cfg provider)))
+      false)
+    (catch Throwable _ false)))
+
+(defn- auth-handler
+  [cfg {:keys [params] :as request}]
+  (let [provider (resolve-provider cfg params)
+        props    (audit/extract-utm-params params)
+        esid     (audit/get-external-session-id request)
+        params   {:iss "oidc"
+                  :provider (:id provider)
+                  :invitation-token (:invitation-token params)
+                  :external-session-id esid
+                  :props props
+                  :exp (ct/in-future "4h")}
+        state  (tokens/generate cfg (d/without-nils params))
+        uri    (build-auth-redirect-uri provider state)]
+
+    {::yres/status 200
+     ::yres/body {:redirect-uri uri}}))
+
+(defn- organization-sso-callback-handler
+  "Handle the organization-SSO branch of the OIDC callback: state carries
+  :dest-url — exchange the authorization code with the OIDC provider to
+  verify authentication actually occurred, then redirect back to dest-url."
+  [cfg request state code]
+  (let [dest-url (:dest-url state)]
+    (try
+      (let [organization-id (:organization-id state)
+            sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
+            provider        (prepare-organization-sso-provider cfg sso)
+            _info           (get-info cfg provider state code)
+            session         (session/get-session request)
+            exp             (ct/in-future {:hours 4})]
+        (when (and session organization-id)
+          (let [props (-> (or (:props session) {})
+                          (update :sso assoc organization-id exp))]
+            (session/update-session (::session/manager cfg) (assoc session :props props))))
+        (submit-organization-sso-auth-event
+         cfg request (:profile-id session) organization-id "organization-sso-auth-succeeded")
+        (redirect-response dest-url))
+      (catch Throwable cause
+        (let [{:keys [code]} (ex-data cause)]
+          (binding [l/*context* (errors/request->context request)]
+            (if (some? code)
+              (l/warn :hint "organization sso callback failed"
+                      :code code
+                      :message (ex-message cause)
+                      :organization-id (:organization-id state))
+              (l/err :hint "unexpected error on organization sso callback"
+                     :organization-id (:organization-id state)
+                     :cause cause))))
+        (submit-organization-sso-auth-failed-event
+         cfg request (some-> (session/get-session request) :profile-id)
+         (:organization-id state) cause)
+        (let [organization-id   (:organization-id state)
+              organization-name (:name (nitrate/call cfg :get-organization-summary {:organization-id organization-id}))]
+          (redirect-with-organization-sso-error
+           {:dest-url dest-url
+            :organization-id organization-id
+            :organization-name organization-name}))))))
+
+(defn- callback-handler
+  [cfg {:keys [params] :as request}]
+  (if-let [error (get params :error)]
+    (do
+      (submit-organization-sso-oauth-failed-event cfg request (:state params) error)
+      (redirect-with-error "unable-to-auth" error))
+    (try
+      (let [code     (get params :code)
+            state    (get params :state)
+            state    (tokens/verify cfg {:token state :iss "oidc"})]
+
+        ;; Organization SSO flow: state carries :dest-url — exchange the authorization
+        ;; code with the OIDC provider to verify authentication actually occurred.
+        (if (:dest-url state)
+          (organization-sso-callback-handler cfg request state code)
+
+          (let [provider (resolve-provider cfg state)
+                info     (get-info cfg provider state code)
+                profile  (get-profile cfg (:email info))]
+
+            (cond
+              (not profile)
+              (cond
+                (and (email.blacklist/enabled? cfg)
+                     (email.blacklist/contains? cfg (:email info)))
+                (redirect-with-error "email-domain-not-allowed")
+
+                (and (email.whitelist/enabled? cfg)
+                     (not (email.whitelist/contains? cfg (:email info))))
+                (redirect-with-error "email-domain-not-allowed")
+
+                :else
+                (if (or (contains? cf/flags :registration)
+                        (contains? cf/flags :oidc-registration))
+                  (redirect-to-register cfg info provider)
+                  (redirect-with-error "registration-disabled")))
+
+              (:is-blocked profile)
+              (redirect-with-error "profile-blocked")
+
+              (not (or (= (:auth-backend profile) (:type provider))
+                       (profile-has-provider-props? provider profile)
+                       (provider-has-email-verified? provider info)))
+              (redirect-with-error "auth-provider-not-allowed")
+
+              (not (:is-active profile))
+              (let [info (assoc info :profile-id (:id profile))]
+                (redirect-to-register cfg info provider))
+
+              :else
+              (let [sxf     (session/create-fn cfg profile info)
+                    token   (or (:invitation-token info)
+                                (tokens/generate cfg
+                                                 {:iss :auth
+                                                  :exp (ct/in-future "15m")
+                                                  :profile-id (:id profile)}))
+
+                    ;; If proceed, update profile on the database
+                    profile (update-profile-with-info cfg profile info)
+
+                    props   (audit/profile->props profile)
+                    context (d/without-nils {:external-session-id (:external-session-id info)})]
+
+                (audit/submit cfg {:type "action"
+                                   :name "login-with-oidc"
+                                   :profile-id (:id profile)
+                                   :ip-addr (inet/parse-request request)
+                                   :props props
+                                   :context context})
+
+                (->> (redirect-to-verify-token token)
+                     (sxf request)))))))
+
+      (catch Throwable cause
+        (binding [l/*context* (errors/request->context request)]
+          (if (= :unable-to-retrieve-user-info (:code (ex-data cause)))
+            (l/wrn :hint "error on process oidc callback" :cause cause)
+            (l/err :hint "error on process oidc callback" :cause cause))
+          (redirect-with-error "unable-to-auth" (ex-message cause)))))))
+
+(def ^:private schema:routes-params
+  [:map
+   ::session/manager
+   ::http/client
+   ::setup/props
+   ::db/pool
+   [:app.nitrate/client [:maybe :map]]
+   [::providers schema:providers]])
+
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (sm/check schema:routes-params params)))
+
+(defmethod ig/init-key ::routes
+  [_ cfg]
+  (let [cfg (update cfg ::providers d/without-nils)]
+    ["/api/auth/oidc" {:middleware [[session/authz cfg]]}
+     [""
+      {:handler (partial auth-handler cfg)
+       :allowed-methods #{:post}}]
+     ["/callback"
+      {:handler (partial callback-handler cfg)
+       :allowed-methods #{:get}}]]))

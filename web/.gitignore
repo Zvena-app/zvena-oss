@@ -1,0 +1,15 @@
+# Also a symlink to a shared install (no trailing slash: a link is not a directory).
+node_modules
+.next/
+.test-dist/
+next-env.d.ts
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+/data/
+/AGENTS.md
+
+# Built by design/bin/publish-source.sh (before the image build), not kept in git.
+/public/source/
+/.test-dist/

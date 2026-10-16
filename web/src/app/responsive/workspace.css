@@ -1,0 +1,440 @@
+/* zvena on phones and tablets: workspace (Home, Inbox, Team, Templates,
+ * Settings, Admin) and the pieces shared by every section: + Create picker,
+ * ⌘K palette, Share dialog, toasts, cookie notice, test-stand badge.
+ * Breakpoints and rules: responsive/shell.css.
+ * This sheet loads before the sections' own sheets, so selectors are doubled
+ * or rooted in :root. Colors and sizes are --ui-* tokens (app/ui-theme.css). */
+
+/* ================================================================== test-stand badge */
+
+/* Phones and the landscape phone: the corner is where the toasts, the
+   selection bar, the cookie notice's button and the page's own actions are.
+   The badge becomes a thin tab on the screen's end edge, half-way down,
+   where nothing is tapped (it never takes taps: pointer-events: none). */
+@media (max-width: 640px), (max-height: 500px) {
+  :root .zv-stand.zv-stand {
+    top: 50%;
+    bottom: auto;
+    right: 0;
+    left: auto;
+    z-index: 60;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    /* An orthogonal flow sizes to the screen's height unless told otherwise. */
+    block-size: auto;
+    inline-size: max-content;
+    max-inline-size: 60dvh;
+    overflow: hidden;
+    padding: 8px 1px;
+    border-radius: var(--ui-radius-sm) 0 0 var(--ui-radius-sm);
+    font-size: 9px;
+    line-height: 12px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0.78;
+    box-shadow: none;
+  }
+  :root[dir="rtl"] .zv-stand.zv-stand,
+  [dir="rtl"] .zv-stand.zv-stand { right: auto; left: 0; border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0; }
+}
+
+/* ================================================================== fields and buttons on touch */
+
+@media (pointer: coarse) {
+  /* iOS zooms into fields under 16 px; the theme sets 13 px with doubled
+     classes, so the shell's element rule loses to it. */
+  :root .zv-input.zv-input,
+  :root .zv-select.zv-select,
+  :root .zv-textarea.zv-textarea,
+  :root .zst-input.zst-input,
+  :root .zst-select.zst-select,
+  :root .zst-textarea.zst-textarea,
+  :root .zc-search input,
+  :root .eco-search-input input { font-size: 16px; }
+
+  /* Linear's touch sizes in the workspace pages: 40 px fields, 36 px buttons. */
+  :root :is(.zv-content, .zst) .zv-input.zv-input,
+  :root :is(.zv-content, .zst) .zv-select.zv-select,
+  :root .zst .zst-input.zst-input,
+  :root .zst .zst-select.zst-select { min-height: 40px; height: 40px; }
+  :root :is(.zv-content, .zst) .zv-btn.zv-btn,
+  :root .zst .zst-btn.zst-btn { height: 36px; }
+  :root :is(.zv-content, .zst) .zv-btn.zv-btn-sm,
+  :root .zst .zst-btn.zst-btn-sm { height: 32px; }
+  :root .zst .zst-filters :is(.zst-input, .zst-select) { height: 40px; min-height: 40px; }
+}
+
+/* ================================================================== Home */
+
+@media (max-width: 860px) {
+  /* "What will you create?": one row that scrolls sideways, fading out at
+     the end so it reads as "more this way", with the last chip clear of the
+     fade when scrolled to the end. */
+  .eco-home .zc-hero-row.zc-hero-row {
+    gap: 8px;
+    padding-inline-end: 32px;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 16px;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+  [dir="rtl"] .eco-home .zc-hero-row.zc-hero-row {
+    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to left, #000 calc(100% - 32px), transparent);
+  }
+  .eco-home .zc-hero-row .zc-tile-lg { scroll-snap-align: start; }
+  .eco-home .zc-hero-row::-webkit-scrollbar { display: none; }
+  .eco-home-hello.eco-home-hello { margin-bottom: 12px; }
+}
+@media (pointer: coarse) {
+  .eco-home .zc-hero-row .zc-tile-lg.zc-tile-lg { height: 36px; }
+  /* "Open all" is a 22 px link on a 36 px head: the head's height to tap. */
+  .eco-home-group .eco-home-all.eco-home-all,
+  .eco-home-panel-head .eco-home-all.eco-home-all {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 8px;
+    margin-inline-end: -4px;
+  }
+  .eco-home-row.eco-home-row,
+  .eco-home-list .eco-block.eco-block,
+  .eco-home-list .eco-row.eco-row { min-height: 44px; }
+  .eco-home-list .eco-block .eco-main { min-height: 44px; display: flex; align-items: center; }
+}
+@media (max-width: 640px) {
+  .eco-home-main.eco-home-main { padding-top: 14px; }
+  .eco-home-list.eco-home-list { margin-bottom: 16px; }
+}
+
+/* ================================================================== Inbox, Team, Templates (zv-content pages) */
+
+@media (max-width: 640px) {
+  .zv-content.zv-content { padding: 20px 16px calc(48px + var(--rs-safe-b, 0px)); }
+  :root .zv-content .zv-page-title { font-size: 24px; line-height: 30px; }
+  :root .zv-content .zv-page-lead { margin-bottom: 20px; }
+  .zv-content .zv-card.zv-card { padding: 16px 14px; }
+
+  /* Templates: two to a row (one column made a 6-screen scroll of tall cards). */
+  .zv-content .zv-grid.zv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .zv-content .zv-grid .zv-tile.zv-tile { min-height: 0; padding: 12px; }
+  .zv-content .zv-grid .zv-tile-title { white-space: normal; overflow-wrap: anywhere; line-height: 18px; }
+  .zv-content .zv-grid .zv-tile-meta {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .zv-content .zv-sec-head.zv-sec-head { margin-bottom: 10px; }
+
+  /* Forms: a field and a short button share the line (Rename → Save); a
+     field and a long primary action (Create workspace) stack, the button
+     full width. */
+  :is(.zv-content, .zst) form.zv-actions > .zv-input { min-width: 0 !important; }
+  :is(.zv-content, .zst) form.zv-actions > .zv-input:has(+ .zv-btn-primary) { flex-basis: 100% !important; }
+  :is(.zv-content, .zst) form.zv-actions > .zv-input + .zv-btn-primary { flex: 1 1 100%; }
+  .zv-content .zv-banner .zv-actions > .zv-input { flex-basis: 100% !important; min-width: 0 !important; }
+  .zv-content .zv-banner .zv-actions > .zv-btn { flex: 1 1 auto; }
+  .zv-content .zv-card > .zv-actions > .zv-select { flex: 1 1 100%; width: 100% !important; min-width: 0; }
+  .zv-content .zv-card > .zv-actions > .zv-select + .zv-btn { flex: 1 1 auto; }
+
+  /* Team members: name over the date; role, hand over and remove on the end. */
+  .zv-content .zv-row.zv-row { flex-wrap: wrap; row-gap: 8px; }
+  /* Owner's controls (role, hand over, remove) go on a line of their own
+     under the name, lined up with it. */
+  .zv-content .zv-row:has(> .zv-select) > .zv-row-main { flex: 1 1 calc(100% - 40px); }
+  .zv-content .zv-row > .zv-select.zv-select { flex: 1 1 auto; max-width: 200px; margin-inline-start: 36px; }
+}
+@media (max-width: 640px) {
+  /* Inbox: the title gets two lines (one line left it 70 px at 360); the
+     time and the archive button stay on the end. */
+  .eco-inbox-view .eco-inbox-item.eco-inbox-item { align-items: start; padding-inline: 6px; column-gap: 8px; }
+  .eco-inbox-view .eco-inbox-item > .eco-inbox-dot { margin-top: 6px; }
+  .eco-inbox-view .eco-inbox-line { align-items: flex-start; }
+  .eco-inbox-view .eco-inbox-line .eco-title.eco-title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow-wrap: anywhere;
+  }
+  .eco-inbox-view .eco-inbox-when { font-size: 11px; }
+  .eco-inbox-view .eco-related-head { flex-wrap: wrap; row-gap: 4px; }
+}
+@media (pointer: coarse) {
+  .zv-content .zv-row .zv-btn-ghost.zv-btn-sm { width: 36px; height: 36px; padding: 0; }
+  /* Inbox: rows people tap, and the archive button without a mouse. */
+  .eco-inbox-view .eco-inbox-item { min-height: 52px; }
+  .eco-inbox-view .eco-inbox-item .eco-icon-btn { width: 36px; height: 36px; }
+  .eco-inbox-view .eco-related-head .eco-btn { height: 36px; }
+}
+
+/* ================================================================== Settings */
+
+@media (max-width: 760px) {
+  .zst.zst { gap: 16px; padding-top: 0; }
+  /* The sections as a tab bar under the top bar (Linear's settings tabs):
+     full bleed, a hairline below, the open one underlined; it scrolls
+     sideways and fades at the end. The open tab is scrolled into view
+     (ScrollToCurrent in app/settings/parts.tsx). */
+  .zst .zst-nav.zst-nav {
+    gap: 0;
+    margin: 0 -16px;
+    padding: 0 28px 0 8px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg);
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  [dir="rtl"] .zst .zst-nav.zst-nav {
+    padding: 0 8px 0 28px;
+    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  }
+  .zst .zst-nav::-webkit-scrollbar { display: none; }
+  /* The group names (the account, the workspace, Apps) are hairlines
+     between the groups of tabs. */
+  .zst .zst-nav .zst-nav-label.zst-nav-label:not(:first-child) {
+    display: block;
+    flex: none;
+    align-self: center;
+    width: 1px;
+    height: 20px;
+    margin: 0 6px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+    background: var(--ui-border-2);
+  }
+  .zst .zst-nav .zst-nav-link.zst-nav-link {
+    flex: none;
+    height: 44px;
+    padding: 0 10px;
+    border-radius: 0;
+    background: transparent;
+    scroll-snap-align: start;
+    box-shadow: inset 0 -2px 0 transparent;
+  }
+  .zst .zst-nav .zst-nav-link.zst-nav-link[aria-current="page"] {
+    background: transparent;
+    color: var(--ui-text);
+    box-shadow: inset 0 -2px 0 var(--ui-text);
+  }
+  .zst .zst-title.zst-title { margin-top: 8px; }
+
+  /* A switch stays at the end of its row (iOS settings); other controls go
+     under the text. */
+  .zst .zst-row.zst-row:has(> .zst-row-ctl > .zst-switch:only-child) {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  .zst .zst-inline .zst-input.zst-input { flex: 1 1 100%; min-width: 0; }
+  .zst .zst-inline > .zst-btn { flex: 1 1 auto; justify-content: center; }
+  .zst .zst-filters.zst-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .zst .zst-filters .zst-field { min-width: 0; }
+  .zst .zst-filters .zst-select.zst-select { width: 100%; }
+  .zst .zst-filters > .zst-btn { align-self: end; justify-content: center; }
+
+  .zst .zv-card .zv-actions > .zv-field { flex: 1 1 140px; min-width: 0; }
+  .zst .zv-card .zv-actions > .zv-field .zv-select { width: 100%; }
+  .zst .zv-card.zv-card { padding: 16px 14px; }
+  .zst .zv-card > .zv-btn-danger { width: 100%; }
+  .zst #apps .zv-actions { flex-wrap: nowrap; }
+}
+@media (pointer: coarse) {
+  /* The switch: a 40 × 24 target (iOS: 51 × 31). */
+  .zst .zst-switch.zst-switch { width: 40px; height: 24px; border-radius: 12px; }
+  .zst .zst-switch.zst-switch::after { width: 20px; height: 20px; }
+  .zst .zst-switch.zst-switch[aria-checked="true"]::after { transform: translateX(16px); }
+}
+/* Right to left: the knob starts at the right and moves left. */
+[dir="rtl"] .zst .zst-switch::after { left: auto; right: 2px; }
+[dir="rtl"] .zst .zst-switch[aria-checked="true"]::after { transform: translateX(-14px); }
+@media (pointer: coarse) {
+  [dir="rtl"] .zst .zst-switch.zst-switch[aria-checked="true"]::after { transform: translateX(-16px); }
+}
+
+/* ================================================================== + Create picker */
+
+/* Phones (≤ 760, create.css): a bottom sheet. Make it the guide's sheet:
+   the screen's real height, a grab handle, 13 px corners, safe-area bottom,
+   the drawer's own scrim out of the way. */
+@media (max-width: 760px) {
+  :root .zc-pop.zc-pop {
+    max-height: 90dvh;
+    overscroll-behavior: contain;
+    border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
+    padding-top: 22px;
+    animation: rs-sheet-up 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  :root[dir="rtl"] .zc-pop.zc-pop,
+  [dir="rtl"] .zc-pop.zc-pop { right: 0; left: 0; }
+  .zc-pop.zc-pop::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    margin-left: -18px;
+    border-radius: 2px;
+    background: var(--ui-border-strong);
+  }
+  .zc-pop .zc-pop-close.zc-pop-close { top: 18px; right: 12px; width: 36px; height: 36px; }
+  [dir="rtl"] .zc-pop .zc-pop-close.zc-pop-close { right: auto; left: 12px; }
+  .zc-pop .zc-search.zc-search { height: 40px; margin-inline-end: 44px; }
+  :root .zc-scrim { background: var(--ui-scrim); }
+}
+/* The landscape phone and short tablets: the popover keeps beside the
+   button but uses the screen's height from the top. */
+@media (min-width: 761px) {
+  :root .zc-pop.zc-pop { max-height: calc(100dvh - var(--zc-top, 72px) - 16px); }
+}
+@media (min-width: 761px) and (max-height: 600px) {
+  :root .zc-pop.zc-pop { top: 8px; max-height: calc(100dvh - 16px); }
+}
+@media (pointer: coarse) {
+  .zc-pop .zc-tile,
+  .eco-home .zc-picker .zc-tile { min-height: 48px; }
+  .zc-tpl.zc-tpl { height: 36px; }
+}
+@keyframes rs-sheet-up { from { transform: translateY(24px); opacity: 0.4; } }
+
+/* ================================================================== ⌘K palette */
+
+@media (max-width: 640px) {
+  /* A sheet from the top, as wide as the screen, the list as tall as the
+     visible screen allows (the keyboard takes the bottom half). */
+  :root .eco-palette.eco-palette {
+    top: calc(8px + var(--rs-safe-t, 0px));
+    left: 8px;
+    right: 8px;
+    width: auto;
+    transform: none;
+    border-radius: var(--ui-radius-lg);
+  }
+  :root .eco-palette .eco-search { max-height: calc(100dvh - 24px - var(--rs-safe-t, 0px)); }
+  .eco-palette .eco-search-input { min-height: 48px; }
+}
+@media (max-height: 500px) {
+  :root .eco-palette.eco-palette { top: 8px; }
+  :root .eco-palette .eco-search { max-height: calc(100dvh - 60px); }
+}
+@media (pointer: coarse) {
+  /* Keyboard hints mean nothing without a keyboard. */
+  .eco-palette .eco-palette-foot { display: none; }
+  .eco-palette .eco-search-list .eco-row { min-height: 44px; display: flex; align-items: center; }
+  .eco-palette .eco-search-list .eco-snippet { margin-top: -6px; }
+}
+
+/* ================================================================== Share dialog */
+
+@media (max-width: 560px) {
+  :root .ds-share.ds-share {
+    max-height: 90dvh;
+    overscroll-behavior: contain;
+    padding-top: 22px;
+    position: relative;
+    animation: rs-sheet-up 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .ds-share.ds-share::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    margin-left: -18px;
+    border-radius: 2px;
+    background: var(--ui-border-strong);
+  }
+  .ds-share .ds-share-row:not(.ds-share-link) > .zv-btn { flex: 1 1 auto; }
+  .ds-share .ds-share-row:not(.ds-share-link) > .zv-select { flex: 1 1 auto; max-width: none; }
+}
+@media (max-height: 500px) {
+  :root .ds-share-scrim.ds-share-scrim { padding-top: 8px; padding-bottom: 8px; }
+  :root .ds-share.ds-share { max-height: calc(100dvh - 16px); }
+}
+@media (pointer: coarse) {
+  .ds-share .zv-btn.zv-btn { height: 36px; }
+  .ds-share .zv-input.zv-input,
+  .ds-share .zv-select.zv-select { height: 40px; }
+  .ds-share .ds-share-head button { min-width: 36px; min-height: 36px; }
+  .ds-share-people li { min-height: 40px; }
+}
+
+/* ================================================================== toasts */
+
+@media (max-width: 640px) {
+  /* Full width less the gutters, above the home indicator. */
+  :root .ds-toasts.ds-toasts { left: 12px; right: 12px; transform: none; bottom: calc(12px + var(--rs-safe-b, 0px)); }
+  :root .ds-toast.ds-toast { max-width: 100%; width: 100%; }
+  .ds-toast .ds-toast-text { flex: 1; min-width: 0; }
+  .ds-toast .ds-kbd-group { display: none; }
+  body:has(.ds-selbar:not([data-inline])) .ds-toasts.ds-toasts { bottom: calc(68px + var(--rs-safe-b, 0px)); }
+}
+@media (pointer: coarse) {
+  .ds-toast .ds-toast-btn.ds-toast-btn { height: 32px; }
+  .ds-toast .ds-kbd-group { display: none; }
+}
+
+/* ================================================================== cookie notice */
+
+@media (max-width: 520px) {
+  :root .zv-cookie.zv-cookie {
+    left: 8px;
+    right: 8px;
+    bottom: calc(8px + var(--rs-safe-b, 0px));
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 12px 12px 14px;
+  }
+  :root .zv-cookie .zv-actions .zv-btn { height: 36px; }
+}
+@media (max-height: 500px) {
+  /* Landscape phone: one line, not a quarter of the screen. */
+  :root .zv-cookie.zv-cookie {
+    bottom: calc(8px + var(--rs-safe-b, 0px));
+    max-width: min(560px, calc(100vw - 16px));
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 8px 8px 8px 14px;
+  }
+}
+
+/* ================================================================== ObjectCard and eco cards */
+
+@media (max-width: 640px) {
+  .eco-card .eco-title { min-width: 0; }
+}
+@media (pointer: coarse) {
+  .ds-card .ds-card-body { padding-block: 10px 12px; }
+  /* Issue blocks, Related and the issues list in a document: 36 px targets. */
+  .eco-block .eco-check.eco-check { width: 36px; height: 36px; margin-block: -6px; }
+  .eco-block.eco-block { min-height: 44px; }
+  .eco-related .eco-icon-btn.eco-icon-btn,
+  .eco-issues .eco-icon-btn.eco-icon-btn { width: 36px; height: 36px; }
+  .eco-related .eco-btn.eco-btn,
+  .eco-issues .eco-btn.eco-btn,
+  .eco-goal .eco-btn.eco-btn { height: 36px; }
+  .eco-related-toggle.eco-related-toggle { min-height: 36px; }
+  .eco-new-issue input { font-size: 16px; }
+  .eco-goal-fields :is(input, select),
+  .eco-goal-set input { height: 40px; font-size: 16px; }
+}
+/* Related's unlink button shows on hover only: always there without a mouse. */
+@media (hover: none) {
+  .eco-related-item .eco-icon-btn { opacity: 1; }
+}
+@media (max-width: 640px) {
+  /* A goal's row: the text over the bar and the numbers. */
+  .eco-goal .eco-goal-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .eco-goal .eco-goal-row > .eco-goal-text { grid-column: 1 / -1; }
+}

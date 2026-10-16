@@ -1,0 +1,158 @@
+{
+  "extName": {
+    "message": "zvena Web Clipper"
+  },
+  "extDescription": {
+    "message": "احفظ أي صفحة ويب في zvena Docs: المقال كاملًا، أو إشارة مرجعية، أو الجزء الذي حددته فقط."
+  },
+  "actionTitle": {
+    "message": "حفظ في zvena"
+  },
+  "menuSave": {
+    "message": "حفظ في zvena"
+  },
+  "cmdOpen": {
+    "message": "فتح zvena Web Clipper"
+  },
+  "cmdSavePage": {
+    "message": "حفظ هذه الصفحة في آخر وجهة"
+  },
+  "connectTitle": {
+    "message": "احفظ الصفحات في zvena"
+  },
+  "connectLead": {
+    "message": "اربط أداة القص بحسابك في zvena. يمكنها إضافة صفحات فقط، ولا تقرأ مستنداتك أبدًا."
+  },
+  "connectButton": {
+    "message": "الاتصال بـ zvena"
+  },
+  "connectWaiting": {
+    "message": "أكمل الاتصال في علامة تبويب zvena التي فُتحت للتو."
+  },
+  "titleLabel": {
+    "message": "العنوان"
+  },
+  "addTo": {
+    "message": "إضافة إلى"
+  },
+  "workspace": {
+    "message": "مساحة العمل"
+  },
+  "searchPlaceholder": {
+    "message": "البحث في الصفحات وقواعد البيانات"
+  },
+  "destPrivate": {
+    "message": "خاص"
+  },
+  "destPrivateHint": {
+    "message": "صفحة جديدة في قسمك الخاص"
+  },
+  "recent": {
+    "message": "الأخيرة"
+  },
+  "results": {
+    "message": "الصفحات وقواعد البيانات"
+  },
+  "noResults": {
+    "message": "لم يُعثر على شيء"
+  },
+  "database": {
+    "message": "قاعدة بيانات"
+  },
+  "saveAs": {
+    "message": "حفظ كـ"
+  },
+  "modeArticle": {
+    "message": "الصفحة كاملة"
+  },
+  "modeBookmark": {
+    "message": "إشارة مرجعية"
+  },
+  "modeSelection": {
+    "message": "التحديد"
+  },
+  "save": {
+    "message": "حفظ"
+  },
+  "saving": {
+    "message": "جارٍ الحفظ…"
+  },
+  "saved": {
+    "message": "تم الحفظ في zvena"
+  },
+  "openInZvena": {
+    "message": "فتح في zvena"
+  },
+  "done": {
+    "message": "تم"
+  },
+  "settings": {
+    "message": "الإعدادات"
+  },
+  "back": {
+    "message": "رجوع"
+  },
+  "serverLabel": {
+    "message": "خادم zvena"
+  },
+  "serverHint": {
+    "message": "غيّره فقط إذا كان فريقك يشغّل خادم zvena خاصًا به."
+  },
+  "serverSave": {
+    "message": "استخدام هذا الخادم"
+  },
+  "serverInvalid": {
+    "message": "أدخل عنوان خادم zvena، مثل https://zvena.app."
+  },
+  "signedInAs": {
+    "message": "متصل باسم"
+  },
+  "disconnect": {
+    "message": "قطع الاتصال"
+  },
+  "loading": {
+    "message": "جارٍ التحميل…"
+  },
+  "untitled": {
+    "message": "بلا عنوان"
+  },
+  "errBadRequest": {
+    "message": "تعذّر على zvena حفظ هذه الصفحة. جرّب خيارًا آخر من «حفظ كـ»."
+  },
+  "errUnauthorized": {
+    "message": "انتهى الاتصال بـ zvena. اتصل مرة أخرى."
+  },
+  "errForbidden": {
+    "message": "لا يمكنك إضافة صفحات هناك. اختر وجهة أخرى."
+  },
+  "errNotFound": {
+    "message": "لم تعد تلك الصفحة أو قاعدة البيانات موجودة. اختر وجهة أخرى."
+  },
+  "errTooLarge": {
+    "message": "هذه الصفحة أكبر من أن تُحفظ. جرّب الإشارة المرجعية أو التحديد."
+  },
+  "errRateLimited": {
+    "message": "عمليات حفظ كثيرة في وقت واحد. حاول مرة أخرى بعد دقيقة."
+  },
+  "errQuota": {
+    "message": "مساحة التخزين في zvena ممتلئة."
+  },
+  "errServer": {
+    "message": "zvena غير متاح الآن. حاول لاحقًا."
+  },
+  "errNetwork": {
+    "message": "تعذّر الوصول إلى zvena. تحقّق من اتصالك."
+  },
+  "errNoPage": {
+    "message": "لا يمكن قص هذه الصفحة (صفحات المتصفح ومتاجر الإضافات محمية). جرّب علامة تبويب أخرى."
+  },
+  "errNoSelection": {
+    "message": "حدّد بعض النص في الصفحة أولًا."
+  },
+  "errPermission": {
+    "message": "لم يُسمح بالوصول إلى خادم zvena."
+  },
+  "errConnect": {
+    "message": "لم يكتمل الاتصال. حاول مرة أخرى."
+  }
+}

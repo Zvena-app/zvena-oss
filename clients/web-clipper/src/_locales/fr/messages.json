@@ -1,0 +1,158 @@
+{
+  "extName": {
+    "message": "zvena Web Clipper"
+  },
+  "extDescription": {
+    "message": "Enregistrez n’importe quelle page web dans zvena Docs : l’article complet, un signet ou seulement la partie sélectionnée."
+  },
+  "actionTitle": {
+    "message": "Enregistrer dans zvena"
+  },
+  "menuSave": {
+    "message": "Enregistrer dans zvena"
+  },
+  "cmdOpen": {
+    "message": "Ouvrir zvena Web Clipper"
+  },
+  "cmdSavePage": {
+    "message": "Enregistrer cette page dans la dernière destination"
+  },
+  "connectTitle": {
+    "message": "Enregistrez des pages dans zvena"
+  },
+  "connectLead": {
+    "message": "Connectez le clipper à votre compte zvena. Il peut seulement ajouter des pages ; il ne lit jamais vos documents."
+  },
+  "connectButton": {
+    "message": "Se connecter à zvena"
+  },
+  "connectWaiting": {
+    "message": "Terminez la connexion dans l’onglet zvena qui vient de s’ouvrir."
+  },
+  "titleLabel": {
+    "message": "Titre"
+  },
+  "addTo": {
+    "message": "Ajouter à"
+  },
+  "workspace": {
+    "message": "Espace de travail"
+  },
+  "searchPlaceholder": {
+    "message": "Rechercher des pages et des bases de données"
+  },
+  "destPrivate": {
+    "message": "Privé"
+  },
+  "destPrivateHint": {
+    "message": "Une nouvelle page dans votre section Privé"
+  },
+  "recent": {
+    "message": "Récents"
+  },
+  "results": {
+    "message": "Pages et bases de données"
+  },
+  "noResults": {
+    "message": "Aucun résultat"
+  },
+  "database": {
+    "message": "Base de données"
+  },
+  "saveAs": {
+    "message": "Enregistrer comme"
+  },
+  "modeArticle": {
+    "message": "Page complète"
+  },
+  "modeBookmark": {
+    "message": "Signet"
+  },
+  "modeSelection": {
+    "message": "Sélection"
+  },
+  "save": {
+    "message": "Enregistrer"
+  },
+  "saving": {
+    "message": "Enregistrement…"
+  },
+  "saved": {
+    "message": "Enregistré dans zvena"
+  },
+  "openInZvena": {
+    "message": "Ouvrir dans zvena"
+  },
+  "done": {
+    "message": "Terminé"
+  },
+  "settings": {
+    "message": "Paramètres"
+  },
+  "back": {
+    "message": "Retour"
+  },
+  "serverLabel": {
+    "message": "Serveur zvena"
+  },
+  "serverHint": {
+    "message": "Ne le changez que si votre équipe a son propre serveur zvena."
+  },
+  "serverSave": {
+    "message": "Utiliser ce serveur"
+  },
+  "serverInvalid": {
+    "message": "Saisissez l’adresse d’un serveur zvena, par exemple https://zvena.app."
+  },
+  "signedInAs": {
+    "message": "Connecté en tant que"
+  },
+  "disconnect": {
+    "message": "Déconnecter"
+  },
+  "loading": {
+    "message": "Chargement…"
+  },
+  "untitled": {
+    "message": "Sans titre"
+  },
+  "errBadRequest": {
+    "message": "zvena n’a pas pu enregistrer cette page. Essayez une autre option « Enregistrer comme »."
+  },
+  "errUnauthorized": {
+    "message": "La connexion à zvena a pris fin. Reconnectez-vous."
+  },
+  "errForbidden": {
+    "message": "Vous ne pouvez pas ajouter de pages ici. Choisissez une autre destination."
+  },
+  "errNotFound": {
+    "message": "Cette page ou base de données n’existe plus. Choisissez une autre destination."
+  },
+  "errTooLarge": {
+    "message": "Cette page est trop volumineuse. Essayez Signet ou Sélection."
+  },
+  "errRateLimited": {
+    "message": "Trop d’enregistrements d’un coup. Réessayez dans une minute."
+  },
+  "errQuota": {
+    "message": "Votre stockage zvena est plein."
+  },
+  "errServer": {
+    "message": "zvena est indisponible pour le moment. Réessayez plus tard."
+  },
+  "errNetwork": {
+    "message": "Impossible de joindre zvena. Vérifiez votre connexion."
+  },
+  "errNoPage": {
+    "message": "Cette page ne peut pas être enregistrée (les pages du navigateur et les boutiques d’extensions sont protégées). Essayez un autre onglet."
+  },
+  "errNoSelection": {
+    "message": "Sélectionnez d’abord du texte sur la page."
+  },
+  "errPermission": {
+    "message": "L’accès au serveur zvena n’a pas été autorisé."
+  },
+  "errConnect": {
+    "message": "La connexion n’a pas abouti. Réessayez."
+  }
+}

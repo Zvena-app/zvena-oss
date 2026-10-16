@@ -1,0 +1,182 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_utils" as *;
+@use "ds/_sizes" as *;
+@use "ds/_borders" as *;
+@use "ds/spacing" as *;
+@use "ds/typography" as *;
+@use "ds/z-index" as *;
+
+.menu-wrapper {
+  position: absolute;
+  inset-block-start: $sz-40;
+  inset-inline-start: px2rem(736);
+  z-index: var(--z-index-dropdown);
+}
+
+// Figma UI3 context menu — dark, 12px, 24px rows, blue hover.
+.menu,
+.submenu {
+  box-shadow:
+    0 5px 17px rgb(0 0 0 / 20%),
+    0 2px 7px rgb(0 0 0 / 15%),
+    inset 0 0 0 0.5px #000,
+    0 0 0 0.5px rgb(0 0 0 / 10%);
+  display: grid;
+  min-inline-size: px2rem(216);
+  inline-size: max-content;
+  padding: var(--sp-s);
+  border-radius: $br-12;
+  border: none;
+  background-color: var(--menu-background-color);
+  max-block-size: 100vh;
+  overflow-y: auto;
+}
+
+.submenu {
+  position: absolute;
+}
+
+.menu-item {
+  --menu-item-bg-color: transparent;
+  --menu-item-title-color: var(--menu-foreground-color);
+  --menu-item-shortcut-color: var(--menu-shortcut-foreground-color);
+  --menu-item-shortcut-border-color: transparent;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-xl);
+  block-size: $sz-24;
+  inline-size: 100%;
+  padding: 0 var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--menu-item-bg-color);
+  border: $b-1 solid var(--menu-item-shortcut-border-color);
+  white-space: nowrap;
+  cursor: default;
+
+  &:hover {
+    --menu-item-title-color: var(--menu-foreground-color-hover);
+    --menu-item-bg-color: var(--menu-background-color-hover);
+    --menu-item-shortcut-color: var(--menu-foreground-color-hover);
+  }
+
+  &:focus {
+    --menu-item-bg-color: var(--menu-background-color-hover);
+    --menu-item-shortcut-border-color: transparent;
+  }
+}
+
+.menu-item-icon {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: px2rem(6);
+  block-size: $sz-24;
+  padding: 0 var(--sp-s);
+  border-radius: $br-8;
+  color: var(--menu-foreground-color);
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.menu-item-icon[disabled],
+.menu-item[disabled] {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.menu-item-icon-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.menu-item-title {
+  font-size: px2rem(12);
+  line-height: px2rem(16);
+  color: var(--menu-item-title-color);
+}
+
+.shortcut {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: px2rem(2);
+  color: var(--menu-item-shortcut-color);
+}
+
+// Figma shows shortcuts as dimmed text, not key caps.
+.shortcut-key {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: px2rem(12);
+  line-height: px2rem(16);
+  padding: 0;
+  background-color: transparent;
+
+  &.customized-key {
+    color: var(--color-accent-primary);
+  }
+}
+
+.icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-16;
+  color: currentcolor;
+  stroke-width: 1.33px;
+}
+
+.separator {
+  block-size: $b-1;
+  margin: var(--sp-s) 0;
+  background-color: var(--menu-separator-color, #383838);
+}
+
+// Sections that render nothing leave separators back to back.
+.separator + .separator {
+  display: none;
+}
+
+// Submenu arrow in the dimmed shortcut colour, white on hover.
+.menu-item > .icon {
+  color: var(--menu-item-shortcut-color);
+}
+
+.guide-color-label {
+  cursor: default;
+  pointer-events: none;
+}
+
+.guide-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px2rem(6);
+  padding: var(--sp-xs) px2rem(6) var(--sp-s);
+  list-style: none;
+}
+
+.guide-color-swatch {
+  inline-size: px2rem(20);
+  block-size: px2rem(20);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: $b-2 solid var(--color-background-quaternary);
+
+  &.selected {
+    border: $b-2 solid var(--color-foreground-primary);
+  }
+}

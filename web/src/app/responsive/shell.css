@@ -1,0 +1,110 @@
+/* zvena on phones and tablets — the one responsive layer over every section.
+ *
+ * Behaviour follows Linear's mobile web and iPad apps:
+ *   ≥ 861 px   laptop / iPad landscape: the rail is docked on the left.
+ *   ≤ 860 px   iPad portrait and phones: the rail is a drawer; the page's own
+ *              header carries the menu button (one bar, not two).
+ *   ≤ 640 px   phones: one column, dialogs become bottom sheets, side panels
+ *              stack under the content, lists drop secondary columns.
+ *   touch      (pointer: coarse): 40 px targets, no hover-only controls,
+ *              16 px fields (iOS zooms into anything smaller).
+ *
+ * Imported last from app/layout.tsx. Selectors are doubled (.x.x) or rooted in
+ * :root where they must beat a section's own sheet whatever the chunk order.
+ * Colors and sizes come from the --ui-* tokens of app/ui-theme.css.
+ */
+
+:root {
+  --rs-bar-h: 48px;
+  --rs-touch: 40px;
+  --rs-gutter: 16px;
+  --rs-safe-b: env(safe-area-inset-bottom, 0px);
+  --rs-safe-t: env(safe-area-inset-top, 0px);
+  --rs-safe-l: env(safe-area-inset-left, 0px);
+  --rs-safe-r: env(safe-area-inset-right, 0px);
+}
+
+/* ------------------------------------------------------------------ base */
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+}
+/* No 300 ms wait and no double-tap zoom on controls. */
+:where(button, a, [role="button"], [role="tab"], [role="menuitem"], [role="option"], label, summary, select) {
+  touch-action: manipulation;
+}
+/* The frame itself (rail, drawer, 100dvh, safe areas, 40 px rail rows on touch)
+   is the shell's own: components/zvena/ds/Shell.tsx + ds.css. This layer only
+   adds what sits between the shell and the sections. */
+.ds-main-fill.ds-main-fill { height: 100dvh; }
+
+/* ------------------------------------------------------------------ one bar (≤ 860) */
+
+@media (max-width: 860px) {
+  html:has(.zv-shell[data-open]) { overflow: hidden; }
+  .ds-shell .zv-top .ds-menu-btn,
+  .ds-shell .zv-top > .zv-btn:first-child {
+    width: var(--rs-touch);
+    height: var(--rs-touch);
+    padding: 0;
+    justify-content: center;
+  }
+
+  /* One bar, as in Linear: where the page has its own header (Home, Docs,
+     Projects, Calendar, Mail), the shell's bar shrinks to the menu button and
+     sits (fixed) at the start of that header, which stays on top; the header
+     leaves room for it. Pages
+     without a header (Settings) keep the bar with the logo. */
+  .zv-main { position: relative; }
+  .ds-shell:has(:is(.eco-home-head, .ds-page-head, .nt-topbar, .pj-head, .cal-head, .zm-list-head, .zm-reader-bar)) .zv-top.zv-top {
+    position: fixed;
+    inset-inline-start: 0;
+    top: 0;
+    z-index: 30;
+    width: calc(48px + var(--rs-safe-l));
+    height: calc(var(--rs-bar-h) + var(--rs-safe-t));
+    padding: var(--rs-safe-t) 0 0 calc(4px + var(--rs-safe-l));
+    border: 0;
+    background: transparent;
+  }
+  .ds-shell:has(:is(.eco-home-head, .ds-page-head, .nt-topbar, .pj-head, .cal-head, .zm-list-head, .zm-reader-bar)) .zv-top.zv-top > :not(:first-child, .ds-menu-btn) { display: none; }
+}
+
+/* ------------------------------------------------------------------ touch */
+
+@media (pointer: coarse) {
+  /* Fields at 16 px: iOS Safari zooms into smaller ones and stays zoomed. */
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"]),
+  textarea,
+  select { font-size: max(16px, 1em); }
+}
+
+/* Controls that appear on hover are always there without a mouse. */
+@media (hover: none) {
+  .ds-row-actions,
+  .pj-row-actions,
+  .pj-hover-show { opacity: 1 !important; visibility: visible !important; }
+}
+
+/* ------------------------------------------------------------------ headers next to the menu button */
+
+@media (max-width: 860px) {
+  .eco-home-head.eco-home-head,
+  .ds-page-head.ds-page-head,
+  .nt-topbar.nt-topbar,
+  .pj-app .pj-screen > .pj-head,
+  .cal-head.cal-head,
+  .zm-list-head.zm-list-head,
+  .zm-reader-bar.zm-reader-bar {
+    padding-inline-start: calc(52px + var(--rs-safe-l));
+    min-height: var(--rs-bar-h);
+  }
+  .nt-topbar.nt-topbar { height: calc(var(--rs-bar-h) + var(--rs-safe-t)); }
+  /* Pages that scroll the window keep their header (and so the menu button) on top. */
+  .eco-home-head.eco-home-head,
+  .ds-page-head.ds-page-head { position: sticky; top: 0; z-index: 20; background: var(--ui-bg); backdrop-filter: none; }
+  .eco-home-head.eco-home-head,
+  .ds-page-head.ds-page-head,
+  .pj-app .pj-screen > .pj-head { padding-top: calc(6px + var(--rs-safe-t)); }
+}

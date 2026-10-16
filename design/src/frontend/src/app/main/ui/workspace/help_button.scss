@@ -1,0 +1,93 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
+
+.help {
+  position: absolute;
+  inset-block-end: var(--sp-m);
+  inset-inline-end: var(--sp-m);
+  z-index: var(--z-index-panels, 10);
+}
+
+.help-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+  font-size: px2rem(13);
+  font-weight: 550;
+  box-shadow:
+    0 1px 3px rgb(0 0 0 / 10%),
+    0 0 0.5px rgb(0 0 0 / 30%);
+  cursor: pointer;
+
+  &:hover,
+  &.open {
+    background-color: var(--blueai-bg-hover, var(--color-background-secondary));
+  }
+}
+
+// Dark Figma menu opening upward from the button.
+.help-menu {
+  position: absolute;
+  inset-block-end: calc(100% + var(--sp-s));
+  inset-inline-end: 0;
+  min-inline-size: px2rem(220);
+  margin: 0;
+  padding: var(--sp-s);
+  border-radius: $br-12;
+  background-color: var(--menu-background-color);
+  box-shadow:
+    0 5px 17px rgb(0 0 0 / 20%),
+    0 2px 7px rgb(0 0 0 / 15%),
+    inset 0 0 0 0.5px #000,
+    0 0 0 0.5px rgb(0 0 0 / 10%);
+  z-index: var(--z-index-dropdown);
+}
+
+.help-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-l);
+  block-size: $sz-24;
+  padding: 0 var(--sp-s);
+  border-radius: $br-8;
+  color: var(--menu-foreground-color);
+  font-size: px2rem(12);
+  line-height: px2rem(16);
+  white-space: nowrap;
+  cursor: default;
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    color: var(--menu-foreground-color-hover);
+
+    .help-menu-shortcut {
+      color: var(--menu-foreground-color-hover);
+    }
+  }
+}
+
+.help-menu-shortcut {
+  color: var(--menu-shortcut-foreground-color);
+}
+
+.help-menu-separator {
+  block-size: 1px;
+  margin: var(--sp-s) calc(-1 * var(--sp-s));
+  background-color: var(--menu-separator-color);
+}

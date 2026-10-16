@@ -1,0 +1,121 @@
+<!-- zvena design template "UI kit": one 1440 board with the basics.
+     Each <template data-board> becomes one board; see ../README.md. -->
+
+<template data-board="UI kit">
+<div style="width:1440px;background:#FFFFFF;color:#141413;display:flex;flex-direction:column;gap:64px;padding:80px">
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <h1 style="font-size:48px;font-weight:700">UI kit</h1>
+    <p style="font-size:18px;color:#55534D">Colors, typography and the core interface elements. Adapt them to your brand.</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <h2 style="font-size:24px;font-weight:700">Colors</h2>
+    <div style="display:flex;gap:16px">
+      <div style="width:200px;display:flex;flex-direction:column;gap:8px"><div style="height:96px;border-radius:12px;background:#2C84DB"></div><span style="font-size:15px;font-weight:600">Primary</span><span style="font-size:13px;color:#8A877E">#2C84DB</span></div>
+      <div style="width:200px;display:flex;flex-direction:column;gap:8px"><div style="height:96px;border-radius:12px;background:#EAF3FC"></div><span style="font-size:15px;font-weight:600">Primary, soft</span><span style="font-size:13px;color:#8A877E">#EAF3FC</span></div>
+      <div style="width:200px;display:flex;flex-direction:column;gap:8px"><div style="height:96px;border-radius:12px;background:#141413"></div><span style="font-size:15px;font-weight:600">Text</span><span style="font-size:13px;color:#8A877E">#141413</span></div>
+      <div style="width:200px;display:flex;flex-direction:column;gap:8px"><div style="height:96px;border-radius:12px;background:#55534D"></div><span style="font-size:15px;font-weight:600">Text, secondary</span><span style="font-size:13px;color:#8A877E">#55534D</span></div>
+      <div style="width:200px;display:flex;flex-direction:column;gap:8px"><div style="height:96px;border-radius:12px;background:#FAF9F5;border:1px solid #ECEAE3"></div><span style="font-size:15px;font-weight:600">Background</span><span style="font-size:13px;color:#8A877E">#FAF9F5</span></div>
+      <div style="width:200px;display:flex;flex-direction:column;gap:8px"><div style="height:96px;border-radius:12px;background:#2F7A3E"></div><span style="font-size:15px;font-weight:600">Success</span><span style="font-size:13px;color:#8A877E">#2F7A3E</span></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <h2 style="font-size:24px;font-weight:700">Typography</h2>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:baseline;gap:32px"><span style="width:160px;font-size:14px;color:#8A877E">Heading 1 · 48</span><span style="font-size:48px;font-weight:700">The quick fox</span></div>
+      <div style="display:flex;align-items:baseline;gap:32px"><span style="width:160px;font-size:14px;color:#8A877E">Heading 2 · 32</span><span style="font-size:32px;font-weight:700">The quick fox</span></div>
+      <div style="display:flex;align-items:baseline;gap:32px"><span style="width:160px;font-size:14px;color:#8A877E">Heading 3 · 24</span><span style="font-size:24px;font-weight:600">The quick fox</span></div>
+      <div style="display:flex;align-items:baseline;gap:32px"><span style="width:160px;font-size:14px;color:#8A877E">Body · 16</span><span style="font-size:16px">The quick brown fox jumps over the lazy dog.</span></div>
+      <div style="display:flex;align-items:baseline;gap:32px"><span style="width:160px;font-size:14px;color:#8A877E">Caption · 13</span><span style="font-size:13px;color:#55534D">Updated 5 minutes ago</span></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <h2 style="font-size:24px;font-weight:700">Buttons</h2>
+    <div style="display:flex;gap:16px;align-items:center">
+      <button style="padding:12px 20px;border-radius:10px;background:#2C84DB;color:#FFFFFF;font-size:16px;font-weight:600">Primary</button>
+      <button style="padding:12px 20px;border-radius:10px;border:1px solid #DAD7CE;font-size:16px;font-weight:600">Secondary</button>
+      <button style="padding:12px 20px;border-radius:10px;color:#2470BD;font-size:16px;font-weight:600">Text</button>
+      <button style="padding:12px 20px;border-radius:10px;background:#B53333;color:#FFFFFF;font-size:16px;font-weight:600">Delete</button>
+      <button style="padding:12px 20px;border-radius:10px;background:#E5E3DC;color:#8A877E;font-size:16px;font-weight:600">Disabled</button>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center">
+      <button style="padding:16px 28px;border-radius:12px;background:#2C84DB;color:#FFFFFF;font-size:18px;font-weight:600">Large</button>
+      <button style="padding:12px 20px;border-radius:10px;background:#2C84DB;color:#FFFFFF;font-size:16px;font-weight:600">Medium</button>
+      <button style="padding:8px 14px;border-radius:8px;background:#2C84DB;color:#FFFFFF;font-size:14px;font-weight:600">Small</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:48px">
+    <div style="width:400px;display:flex;flex-direction:column;gap:20px">
+      <h2 style="font-size:24px;font-weight:700">Inputs</h2>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:14px;font-weight:600;color:#55534D">Name</span>
+        <div style="padding:12px 14px;border-radius:10px;border:1px solid #DAD7CE;font-size:16px;color:#8A877E">Enter your name</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:14px;font-weight:600;color:#55534D">Email</span>
+        <div style="padding:12px 14px;border-radius:10px;border:2px solid #2C84DB;font-size:16px">anna@example.com</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:14px;font-weight:600;color:#55534D">Password</span>
+        <div style="padding:12px 14px;border-radius:10px;border:1px solid #B53333;font-size:16px">••••</div>
+        <span style="font-size:13px;color:#B53333">At least 8 characters</span>
+      </div>
+    </div>
+    <div style="width:400px;display:flex;flex-direction:column;gap:20px">
+      <h2 style="font-size:24px;font-weight:700">Controls</h2>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:26px;border-radius:13px;background:#2C84DB;display:flex;justify-content:flex-end;padding:2px"><div style="width:22px;height:22px;border-radius:11px;background:#FFFFFF"></div></div>
+        <span style="font-size:16px">On</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:26px;border-radius:13px;background:#E5E3DC;display:flex;justify-content:flex-start;padding:2px"><div style="width:22px;height:22px;border-radius:11px;background:#FFFFFF"></div></div>
+        <span style="font-size:16px">Off</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:22px;height:22px;border-radius:6px;background:#2C84DB;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+        <span style="font-size:16px">Checkbox</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:22px;height:22px;border-radius:11px;border:2px solid #2C84DB;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:5px;background:#2C84DB"></div></div>
+        <span style="font-size:16px">Option</span>
+      </div>
+    </div>
+    <div style="width:400px;display:flex;flex-direction:column;gap:20px">
+      <h2 style="font-size:24px;font-weight:700">Badges and avatars</h2>
+      <div style="display:flex;gap:8px">
+        <span style="padding:4px 10px;border-radius:999px;background:#EAF3FC;color:#2470BD;font-size:13px;font-weight:600">New</span>
+        <span style="padding:4px 10px;border-radius:999px;background:#E3F1E5;color:#2F7A3E;font-size:13px;font-weight:600">Done</span>
+        <span style="padding:4px 10px;border-radius:999px;background:#FDF3DC;color:#6D4C0A;font-size:13px;font-weight:600">In progress</span>
+        <span style="padding:4px 10px;border-radius:999px;background:#F8E6E6;color:#B53333;font-size:13px;font-weight:600">Urgent</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="width:48px;height:48px;border-radius:24px;background:#DCEBFA;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#2470BD">AC</div>
+        <div style="width:40px;height:40px;border-radius:20px;background:#F4E3C8;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#6D4C0A">JP</div>
+        <div style="width:32px;height:32px;border-radius:16px;background:#DDEFE0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#2F7A3E">MS</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:48px">
+    <div style="width:400px;display:flex;flex-direction:column;gap:20px">
+      <h2 style="font-size:24px;font-weight:700">Card</h2>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;border:1px solid #ECEAE3">
+        <div style="height:160px;border-radius:12px;background:linear-gradient(135deg,#DCEBFA,#F4F1E8)"></div>
+        <span style="font-size:18px;font-weight:700">Card title</span>
+        <p style="font-size:15px;line-height:1.5;color:#55534D">A short two-line description so it’s clear what this is about.</p>
+        <button style="align-self:flex-start;padding:10px 16px;border-radius:10px;background:#2C84DB;color:#FFFFFF;font-size:15px;font-weight:600">Learn more</button>
+      </div>
+    </div>
+    <div style="width:848px;display:flex;flex-direction:column;gap:12px">
+      <h2 style="font-size:24px;font-weight:700;padding-bottom:8px">Notifications</h2>
+      <div style="display:flex;gap:12px;padding:16px;border-radius:12px;background:#EAF3FC;color:#1D5A99;font-size:15px"><strong>Info.</strong><span>A new version is available — refresh the page.</span></div>
+      <div style="display:flex;gap:12px;padding:16px;border-radius:12px;background:#E3F1E5;color:#25602F;font-size:15px"><strong>Done.</strong><span>Changes saved.</span></div>
+      <div style="display:flex;gap:12px;padding:16px;border-radius:12px;background:#FDF3DC;color:#6D4C0A;font-size:15px"><strong>Warning.</strong><span>Storage is almost full: 1.8 of 2 GB used.</span></div>
+      <div style="display:flex;gap:12px;padding:16px;border-radius:12px;background:#F8E6E6;color:#8E2626;font-size:15px"><strong>Error.</strong><span>Couldn’t upload the file. Please try again.</span></div>
+    </div>
+  </div>
+</div>
+</template>

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -ex
+
+rm -rf ./_dist
+pnpm install
+pnpm run build

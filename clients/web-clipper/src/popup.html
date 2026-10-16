@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>zvena</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="zc-head">
+      <img class="zc-logo" src="brand/logo-horizontal.svg" alt="zvena" width="88" height="15" />
+      <button type="button" class="zc-icon-btn" id="settings-btn" data-test="settings" data-i18n-title="settings" data-i18n-aria-label="settings" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>
+      </button>
+    </header>
+
+    <main>
+      <section id="screen-loading" class="zc-screen zc-center" data-test="loading">
+        <span class="zc-spinner" aria-hidden="true"></span>
+        <span class="zc-muted" data-i18n="loading"></span>
+      </section>
+
+      <section id="screen-connect" class="zc-screen" hidden data-test="connect-screen">
+        <h1 class="zc-h1" data-i18n="connectTitle"></h1>
+        <p class="zc-lead" data-i18n="connectLead"></p>
+        <button type="button" class="zc-btn zc-btn-primary zc-btn-block" id="connect-btn" data-test="connect" data-i18n="connectButton"></button>
+        <p class="zc-muted zc-small" id="connect-wait" hidden data-i18n="connectWaiting"></p>
+        <p class="zc-muted zc-small zc-server-line"><span id="connect-server"></span> · <button type="button" class="zc-link" id="connect-settings" data-i18n="settings"></button></p>
+      </section>
+
+      <section id="screen-clip" class="zc-screen" hidden data-test="clip-screen">
+        <label class="zc-label" for="title" data-i18n="titleLabel"></label>
+        <input id="title" class="zc-input" type="text" maxlength="300" autocomplete="off" spellcheck="true" data-test="title" />
+
+        <div class="zc-row-head">
+          <span class="zc-label" data-i18n="addTo"></span>
+          <select id="workspace" class="zc-select" data-test="workspace" data-i18n-aria-label="workspace" hidden></select>
+        </div>
+        <div class="zc-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input id="search" class="zc-input" type="search" autocomplete="off" data-test="search" data-i18n-placeholder="searchPlaceholder" />
+        </div>
+        <div id="dests" class="zc-dests" role="listbox" data-i18n-aria-label="addTo"></div>
+
+        <span class="zc-label" data-i18n="saveAs"></span>
+        <div class="zc-seg" role="radiogroup" data-i18n-aria-label="saveAs">
+          <label class="zc-seg-item"><input type="radio" name="mode" value="article" data-test="mode" data-mode="article" checked /><span data-i18n="modeArticle"></span></label>
+          <label class="zc-seg-item"><input type="radio" name="mode" value="bookmark" data-test="mode" data-mode="bookmark" /><span data-i18n="modeBookmark"></span></label>
+          <label class="zc-seg-item"><input type="radio" name="mode" value="selection" data-test="mode" data-mode="selection" /><span data-i18n="modeSelection"></span></label>
+        </div>
+
+        <p id="error" class="zc-error" role="alert" data-test="error" hidden></p>
+        <button type="button" class="zc-btn zc-btn-primary zc-btn-block" id="save-btn" data-test="save"><span class="zc-spinner zc-spinner-sm" aria-hidden="true" hidden></span><span id="save-label" data-i18n="save"></span></button>
+      </section>
+
+      <section id="screen-done" class="zc-screen zc-center" hidden data-test="done-screen">
+        <span class="zc-done-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></span>
+        <h1 class="zc-h1" data-i18n="saved"></h1>
+        <p class="zc-muted" id="done-dest"></p>
+        <a id="open-link" class="zc-btn zc-btn-primary zc-btn-block" target="_blank" rel="noopener" data-test="open" data-i18n="openInZvena"></a>
+        <button type="button" class="zc-btn zc-btn-block" id="done-btn" data-i18n="done"></button>
+      </section>
+
+      <section id="screen-settings" class="zc-screen" hidden data-test="settings-screen">
+        <div id="account" class="zc-account" hidden>
+          <span class="zc-label" data-i18n="signedInAs"></span>
+          <div class="zc-account-row"><strong id="account-name"></strong><button type="button" class="zc-btn zc-btn-sm" id="disconnect-btn" data-test="disconnect" data-i18n="disconnect"></button></div>
+        </div>
+        <label class="zc-label" for="server" data-i18n="serverLabel"></label>
+        <input id="server" class="zc-input" type="url" inputmode="url" autocomplete="off" spellcheck="false" data-test="server" />
+        <p class="zc-muted zc-small" data-i18n="serverHint"></p>
+        <p id="settings-error" class="zc-error" role="alert" hidden></p>
+        <div class="zc-actions">
+          <button type="button" class="zc-btn" id="settings-back" data-i18n="back"></button>
+          <button type="button" class="zc-btn zc-btn-primary" id="server-save" data-test="server-save" data-i18n="serverSave"></button>
+        </div>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>zvena</title>
+    <link rel="stylesheet" href="/ui.css" />
+    <link rel="stylesheet" href="/settings.css" />
+    <script src="/settings.js" defer></script>
+  </head>
+  <body>
+    <form id="form" class="settings" novalidate>
+      <header>
+        <img src="/brand/favicon.svg" alt="" width="28" height="28" />
+        <h1 id="title"></h1>
+      </header>
+      <label class="field">
+        <span data-w="serverUrl"></span>
+        <input id="serverUrl" type="url" autocomplete="off" spellcheck="false" />
+        <small data-w="serverHint"></small>
+        <small class="err" id="serverUrl-err"></small>
+      </label>
+      <label class="field">
+        <span data-w="designUrl"></span>
+        <input id="designUrl" type="url" autocomplete="off" spellcheck="false" />
+        <small class="err" id="designUrl-err"></small>
+      </label>
+      <label class="field">
+        <span data-w="shortcut"></span>
+        <input id="quickSearchShortcut" type="text" autocomplete="off" spellcheck="false" />
+        <small data-w="shortcutHint"></small>
+        <small class="err" id="quickSearchShortcut-err"></small>
+      </label>
+      <label class="check"><input id="launchAtLogin" type="checkbox" /> <span data-w="launchAtLogin"></span></label>
+      <label class="check"><input id="openLinksInApp" type="checkbox" /> <span data-w="openLinksInApp"></span></label>
+      <footer>
+        <button type="button" class="ui-btn" id="cancel" data-w="cancel"></button>
+        <button type="submit" class="ui-btn ui-btn-primary" data-w="save"></button>
+      </footer>
+    </form>
+  </body>
+</html>

@@ -1,0 +1,247 @@
+/* The /docs loading shell (NotesShell.tsx): Notion's sidebar and an empty
+   page with the same sizes as notes.css, so nothing jumps when the
+   workspace replaces it. Self-contained: it paints before the workspace's
+   own CSS arrives (the zvena font comes from zvena.css, loaded with the page). */
+
+.nt-shell {
+  /* The zvena design system's values (the workspace reads them from --ui-* through theme.css). */
+  --s-bg: #ffffff;
+  --s-side: #f5f5f5;
+  --s-text: #1e1e1e;
+  --s-text-2: #6b6b6b;
+  --s-text-3: #707070;
+  --s-side-text: #1e1e1e;
+  --s-icon: #6b6b6b;
+  --s-border: #e6e6e6;
+  --s-bar: rgba(0, 0, 0, 0.06);
+  --s-mark: #0b72cc;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background: var(--s-bg);
+  color: var(--s-text);
+  font-family: "Zvena Sans", "Zvena Sans Fallback", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+.dark .nt-shell {
+  --s-bg: #2c2c2c;
+  --s-side: #1e1e1e;
+  --s-text: #ffffff;
+  --s-text-2: #b3b3b3;
+  --s-text-3: #9e9e9e;
+  --s-side-text: #ffffff;
+  --s-icon: #b3b3b3;
+  --s-border: #444444;
+  --s-bar: rgba(255, 255, 255, 0.08);
+  --s-mark: #0b72cc;
+}
+.nt-shell *,
+.nt-shell *::before,
+.nt-shell *::after {
+  box-sizing: border-box;
+}
+
+.nt-shell-side {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: var(--nt-shell-w, 240px);
+  height: 100%;
+  background: var(--s-side);
+  box-shadow: inset -1px 0 0 0 var(--s-border);
+  color: var(--s-side-text);
+}
+.nt-shell-ws {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 44px;
+  padding: 0 8px;
+  flex: none;
+}
+.nt-shell-ws-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  height: 30px;
+  padding: 0 6px;
+  color: var(--s-text);
+  font-weight: 500;
+}
+.nt-shell-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--s-mark);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+}
+.nt-shell-mark {
+  width: 100%;
+  height: 100%;
+  color: var(--s-mark);
+}
+.nt-shell-ws-name {
+  min-width: 0;
+}
+.nt-shell-chev {
+  flex: none;
+  display: inline-grid;
+  color: var(--s-icon);
+}
+.nt-shell-icon {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--s-icon);
+}
+.nt-shell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 8px 6px;
+}
+.nt-shell-item {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  font-weight: 500;
+}
+.nt-shell-item .nt-shell-icon {
+  width: 22px;
+  height: 22px;
+  margin: 0 6px 0 4px;
+}
+.nt-shell-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-shell-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0 8px 12px;
+}
+.nt-shell-sec {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  margin-top: 14px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--s-text-3);
+}
+.nt-shell-row {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 8px 0 32px;
+}
+.nt-shell-tools {
+  margin-top: 18px;
+}
+.nt-shell-tools .nt-shell-item {
+  min-height: 28px;
+}
+/* A slow opacity pulse: compositor-only, so it costs the main thread nothing
+   while the workspace's code loads (a background-position shimmer repainted
+   every frame on slow phones). */
+.nt-shell-bar {
+  display: block;
+  height: 10px;
+  border-radius: 4px;
+  background: var(--s-bar);
+  animation: nt-shell-pulse 1.6s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.nt-shell-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.nt-shell-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+}
+.nt-shell-menu {
+  display: none;
+}
+.nt-shell-page {
+  width: 100%;
+  max-width: 724px;
+  margin: 0 auto;
+  padding: 116px 8px 0;
+}
+.nt-shell-title {
+  width: 46%;
+  height: 34px;
+  margin-bottom: 26px;
+  border-radius: 4px;
+}
+.nt-shell-line {
+  height: 12px;
+  margin-bottom: 16px;
+}
+
+/* A sidebar closed before (Notion hides it): the page alone, with the button that opens it. */
+@media (min-width: 768px) {
+  html[data-nt-side-closed] .nt-shell-side {
+    display: none;
+  }
+  html[data-nt-side-closed] .nt-shell-menu {
+    display: inline-grid;
+  }
+}
+
+/* Phones: the page full width with the menu button, as in the workspace. */
+@media (max-width: 767px) {
+  .nt-shell-side {
+    display: none;
+  }
+  .nt-shell-menu {
+    display: inline-grid;
+  }
+  .nt-shell-top {
+    padding: env(safe-area-inset-top) 4px 0;
+    height: calc(44px + env(safe-area-inset-top));
+  }
+  .nt-shell-page {
+    padding: 72px 24px 0;
+  }
+  .nt-shell-title {
+    width: 64%;
+  }
+}
+
+@keyframes nt-shell-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nt-shell-bar {
+    animation: none;
+  }
+}

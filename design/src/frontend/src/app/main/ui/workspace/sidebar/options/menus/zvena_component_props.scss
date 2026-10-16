@@ -1,0 +1,250 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Figma-like component properties (see zvena_component_props.cljs)
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.props {
+  grid-column: span 8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+// Standalone section (a layer inside a main has no component section)
+.binding {
+  max-width: var(--options-width);
+}
+
+.props-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: $sz-32;
+}
+
+.props-title {
+  @include t.use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.props-empty,
+.editor-hint {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.prop-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.add-wrapper {
+  position: relative;
+}
+
+.add-dropdown {
+  @extend %dropdown-wrapper;
+
+  inline-size: $sz-200;
+  inset-inline-end: 0;
+  inset-inline-start: unset;
+}
+
+.add-dropdown-item {
+  @extend %dropdown-element-base;
+}
+
+// Definition row (main component / variant set)
+
+.prop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.prop-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.prop-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 $sz-24;
+  block-size: $sz-24;
+  color: var(--color-foreground-secondary);
+}
+
+.prop-name {
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.prop-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+}
+
+.editor-label {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.editor-switch {
+  display: flex;
+  align-items: center;
+  block-size: $sz-24;
+}
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  max-block-size: $sz-200;
+  overflow-y: auto;
+}
+
+// Value row (copy) and binding row (layer inside a main)
+
+.value-row {
+  @include sidebar.option-grid-structure;
+
+  align-items: center;
+}
+
+.value-name {
+  @include t.use-typography("body-small");
+
+  grid-column: span 3;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}
+
+.value-name-icon {
+  flex: 0 0 auto;
+}
+
+.value-control {
+  grid-column: span 5;
+  min-inline-size: 0;
+}
+
+.value-switch {
+  grid-column: span 5;
+  display: flex;
+  align-items: center;
+  block-size: $sz-24;
+  padding-inline-start: var(--sp-s);
+}
+
+// Preferred values of an instance swap property (main)
+
+.preferred {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.preferred-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preferred-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+  block-size: $sz-24;
+}
+
+.preferred-icon {
+  flex: 0 0 auto;
+  color: var(--color-foreground-secondary);
+}
+
+.preferred-name {
+  @include t.use-typography("body-small");
+
+  flex: 1 1 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-primary);
+}
+
+// Nested instances: expose switches (main) and exposed properties (copy)
+
+.nested-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding-block-start: var(--sp-xs);
+}
+
+.nested {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding-block-start: var(--sp-xs);
+}
+
+.nested-title {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+  block-size: $sz-24;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-accent-primary);
+  }
+}
+
+.nested-name {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,99 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: floating style editor (see style_editor.cljs)
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
+
+.panel {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  max-block-size: calc(100vh - px2rem(16));
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
+  background-color: var(--color-background-primary);
+  box-shadow: 0 px2rem(4) px2rem(16) rgba(0, 0, 0, 0.2);
+  color: var(--color-foreground-primary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: var(--sp-xs) var(--sp-xs) var(--sp-xs) var(--sp-m);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+}
+
+.header-icon {
+  display: flex;
+  color: var(--color-foreground-secondary);
+}
+
+.header-title {
+  @include t.use-typography("headline-small");
+
+  flex: 1 1 auto;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-s) var(--sp-m);
+}
+
+.name-input,
+.description-input {
+  @include t.use-typography("body-small");
+
+  inline-size: 100%;
+  padding: var(--sp-xs) var(--sp-s);
+  border: $b-1 solid transparent;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  resize: none;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent-primary);
+  }
+}
+
+.name-input {
+  block-size: $sz-32;
+}
+
+.section-title {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-xs) 0 var(--sp-m);
+  color: var(--color-foreground-secondary);
+}
+
+.body {
+  overflow-y: auto;
+  padding: 0 var(--sp-s) var(--sp-s);
+}
+
+.values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.read-only {
+  pointer-events: none;
+  opacity: 0.6;
+}

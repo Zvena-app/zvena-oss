@@ -1,0 +1,33 @@
+/* The Web Clipper's Connect pages and the /clip page ("Save to zvena"):
+   zvena's panel with the shared tokens (app/ui-theme.css). */
+
+/* The owner's wordmark (public/brand/logo-horizontal.svg, 1270×218) in the text color, so it turns white in the dark theme. */
+.zv-clipper .zv-clipper-logo { display: block; width: 105px; height: 18px; margin: 0 auto 18px; background: var(--ui-text); -webkit-mask: url(/brand/logo-horizontal.svg) center / contain no-repeat; mask: url(/brand/logo-horizontal.svg) center / contain no-repeat; }
+.zv-clipper h1 { font-size: 22px; }
+.zv-clipper-scope { background: var(--ui-bg-2); border-radius: var(--ui-radius-md); padding: 12px 14px; margin: 0 0 14px; font-size: var(--ui-text-md); }
+.zv-clipper-scope p { margin: 0 0 6px; }
+.zv-clipper-scope ul { margin: 0 0 8px; padding-left: 18px; }
+.zv-clipper-scope li { margin: 2px 0; }
+.zv-clipper-who { text-align: center; margin: 0 0 12px; }
+.zv-panel-icon[data-state="missing"] { background: var(--ui-warning-bg); color: var(--ui-warning-text); }
+.zv-panel-icon[data-state="denied"] { background: var(--ui-bg-2); color: var(--ui-text-2); }
+
+/* /clip */
+.zv-clip { max-width: 520px; }
+.zv-clip h1 { text-align: left; font-size: 20px; margin: 0 0 14px; }
+.zv-clip .zv-field { margin: 0 0 12px; }
+.zv-clip textarea.zv-input { min-height: 72px; resize: vertical; padding-top: 8px; font: inherit; }
+.zv-clip-link { font-size: var(--ui-text-sm); color: var(--ui-text-2); word-break: break-all; margin: -4px 0 12px; }
+.zv-clip-dest { border: 1px solid var(--ui-border); border-radius: var(--ui-radius-md); max-height: 260px; overflow: auto; margin: 6px 0 12px; }
+.zv-clip-row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 6px 10px; border: 0; background: none; color: var(--ui-text); font: inherit; font-size: var(--ui-text-md); text-align: start; cursor: pointer; }
+.zv-clip-row:hover { background: var(--ui-hover); }
+.zv-clip-row[aria-selected="true"] { background: var(--ui-selected); }
+.zv-clip-row svg { width: 16px; height: 16px; flex: none; color: var(--ui-text-2); }
+.zv-clip-row-text { display: grid; min-width: 0; }
+.zv-clip-row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zv-clip-row-path { font-size: var(--ui-text-xs); color: var(--ui-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zv-clip-icon { width: 16px; text-align: center; flex: none; }
+.zv-clip-label { font-size: var(--ui-text-xs); color: var(--ui-text-3); padding: 8px 10px 2px; text-transform: none; }
+.zv-clip-modes { display: flex; gap: 6px; margin: 0 0 14px; flex-wrap: wrap; }
+.zv-clip-modes button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ui-brand); color: var(--ui-brand-text); }
+.zv-clip-done { text-align: center; }

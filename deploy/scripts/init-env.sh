@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Creates the settings file from .env.example with fresh secrets
+# (and the backup passphrase file). Never overwrites an existing file and
+# never prints a secret.
+#   sudo deploy/scripts/init-env.sh            → /etc/zvena/zvena.env
+. "$(dirname "$0")/common.sh"
+require_root
+command -v openssl >/dev/null || die "openssl is required"
+[ -e "$ENV_FILE" ] && die "$ENV_FILE already exists — edit it by hand"
+install -d -m 700 "$(dirname "$ENV_FILE")"
+umask 077
+cp "$DEPLOY/.env.example" "$ENV_FILE"
+chmod 600 "$ENV_FILE"
+for k in PG_PASSWORD AUTH_SECRET DESIGN_SECRET_KEY DESIGN_MGMT_KEY DESIGN_OIDC_CLIENT_SECRET ZVENA_INTERNAL_KEY; do
+  set_env "$k" "$(openssl rand -hex 32)"
+done
+rm -f "$ENV_FILE.prev"
+load_env
+log "created $ENV_FILE (secrets generated)"
+if [ ! -e "$BACKUP_PASSPHRASE_FILE" ]; then
+  openssl rand -base64 48 | tr -d '\n' > "$BACKUP_PASSPHRASE_FILE"
+  chmod 600 "$BACKUP_PASSPHRASE_FILE"
+  log "created $BACKUP_PASSPHRASE_FILE"
+else
+  log "kept the existing $BACKUP_PASSPHRASE_FILE"
+fi
+echo "Next: open $ENV_FILE and fill in the domains, ACME_EMAIL, the operator details (ZVENA_COMPANY_NAME, ZVENA_CONTACT_EMAIL),"
+echo "  your legal pages (ZVENA_TERMS_URL, ZVENA_PRIVACY_URL), Resend (RESEND_API_KEY, MAIL_FROM) and the sign-in keys (GOOGLE_*, GITHUB_*)."
+echo "Keep a copy of $BACKUP_PASSPHRASE_FILE away from the server (a password manager): backups cannot be restored without it."

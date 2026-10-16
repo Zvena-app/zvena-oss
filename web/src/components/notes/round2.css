@@ -1,0 +1,215 @@
+/* zvena Documents, Notion parity round 2: groups, column permissions,
+   request access, wiki verification. Built on the shared nt-* tokens. */
+
+.nt-settings-hint {
+  margin: 0 0 12px;
+  color: var(--nt-text-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.nt-groups-new {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.nt-groups-new .nt-input {
+  flex: 1;
+}
+.nt-groups-item {
+  border-top: 1px solid var(--nt-border);
+  padding: 8px 0;
+}
+.nt-groups-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nt-groups-item .nt-share-people {
+  padding-inline-start: 28px;
+}
+
+/* Column permissions: a lock in place of a value hidden from you, and on locked headers. */
+.nt-cell-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--nt-text-3);
+  font-size: 13px;
+}
+.nt-cell-locked svg,
+.nt-prop-lock {
+  width: 12px;
+  height: 12px;
+  color: var(--nt-text-3);
+  flex: none;
+}
+.nt-perm-dialog {
+  width: min(460px, calc(100vw - 32px));
+}
+.nt-perm-body {
+  padding: 16px 20px 20px;
+}
+.nt-perm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+.nt-perm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 4px;
+}
+.nt-perm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 8px;
+  border-radius: 3px;
+  background: var(--nt-hover);
+  font-size: 13px;
+}
+
+/* "No access" — Notion's request screen. */
+.nt-noaccess {
+  max-width: 420px;
+  margin: 18vh auto 0;
+  padding: 0 24px;
+  text-align: center;
+}
+.nt-noaccess-icon {
+  width: 40px;
+  height: 40px;
+  color: var(--nt-text-3);
+}
+.nt-noaccess h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 14px 0 6px;
+}
+.nt-noaccess p {
+  color: var(--nt-text-2);
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+.nt-share-requests {
+  margin-bottom: 10px;
+}
+
+/* "Add people, groups, or emails": suggestions under the input. */
+.nt-share-invite-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+.nt-share-invite-wrap .nt-share-invite {
+  margin-bottom: 0;
+}
+.nt-share-suggest {
+  margin-top: 4px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--nt-bg, #fff);
+  box-shadow: var(--nt-shadow-popover, rgba(15, 15, 15, 0.05) 0 0 0 1px, rgba(15, 15, 15, 0.1) 0 3px 6px, rgba(15, 15, 15, 0.2) 0 9px 24px);
+  max-height: 280px;
+  overflow-y: auto;
+}
+.nt-share-suggest .nt-share-person {
+  width: 100%;
+  text-align: start;
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.nt-share-suggest .nt-share-person:hover,
+.nt-share-suggest .nt-share-person:focus-visible {
+  background: var(--nt-hover);
+}
+
+/* Wiki verification in a page header and in cells. */
+.nt-verify {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--nt-text-2);
+  background: var(--nt-hover);
+}
+.nt-verify[data-state="verified"] {
+  color: var(--nt-c-blue, #337ea9);
+  background: var(--nt-bg-blue, #e7f3f8);
+}
+.nt-verify[data-state="expired"] {
+  color: var(--nt-c-orange, #d9730d);
+  background: var(--nt-bg-orange, #fbecdd);
+}
+.nt-verify svg {
+  width: 14px;
+  height: 14px;
+}
+.nt-verify[data-state="unverified"] {
+  color: var(--nt-text-2);
+}
+.nt-verify-detail {
+  color: var(--nt-text-2);
+  font-weight: 400;
+}
+.nt-verify[data-state="verified"] .nt-verify-detail,
+.nt-verify[data-state="expired"] .nt-verify-detail {
+  color: inherit;
+  opacity: 0.8;
+}
+.nt-page-verify {
+  margin: 4px 0 8px;
+}
+.nt-verify-btn {
+  border-radius: 4px;
+  cursor: pointer;
+}
+.nt-verify-btn:disabled {
+  cursor: default;
+}
+.nt-verify-btn:not(:disabled):hover .nt-verify {
+  filter: brightness(0.96);
+}
+.nt-verify-head {
+  padding: 8px 10px 6px;
+  box-shadow: 0 1px 0 var(--nt-border);
+}
+.nt-verify-head .nt-verify {
+  flex-wrap: wrap;
+}
+.nt-verify-head .nt-settings-hint {
+  margin: 8px 0 2px;
+}
+.nt-verify-custom {
+  padding: 6px 10px 8px;
+}
+.nt-verify-custom .nt-input {
+  width: 100%;
+}
+
+/* Can comment: a "Comment" button over selected text in a page that reads only. */
+.nt-cm-pick {
+  position: fixed;
+  z-index: 1200;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: var(--nt-bg, #fff);
+  color: var(--nt-text);
+  font-size: 14px;
+  box-shadow: var(--nt-shadow-popover, rgba(15, 15, 15, 0.05) 0 0 0 1px, rgba(15, 15, 15, 0.1) 0 3px 6px, rgba(15, 15, 15, 0.2) 0 9px 24px);
+  cursor: pointer;
+}
+.nt-cm-pick:hover {
+  background: var(--nt-hover);
+}

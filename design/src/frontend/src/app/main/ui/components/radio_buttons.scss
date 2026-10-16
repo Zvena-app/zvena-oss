@@ -1,0 +1,98 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+// Figma UI3 segmented control — 24px light pill, the selected
+// segment white with a hairline border.
+.radio-btn-wrapper {
+  @include deprecated.flex-center;
+
+  border-radius: deprecated.$br-5;
+  height: deprecated.$s-24;
+  min-width: 0;
+  background-color: var(--color-background-tertiary);
+  gap: 0;
+}
+
+.radio-icon {
+  --radio-icon-border-color: var(--radio-btn-border-color);
+
+  @include deprecated.button-style;
+  @include deprecated.flex-center;
+  @include deprecated.focus-radio;
+
+  height: deprecated.$s-24;
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: deprecated.$br-5;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+
+  input {
+    display: none;
+  }
+
+  svg {
+    @extend %button-icon;
+
+    stroke: var(--radio-btn-foreground-color);
+  }
+
+  .title-name {
+    @include deprecated.uppercase-title-typography;
+
+    color: var(--radio-btn-foreground-color);
+  }
+
+  &:hover {
+    svg {
+      stroke: var(--radio-btn-foreground-color-selected);
+    }
+  }
+}
+
+.checked {
+  --radio-icon-border-color: var(--blueai-border, var(--color-background-quaternary));
+
+  border-color: var(--blueai-border, var(--color-background-quaternary));
+  background-color: var(--color-background-primary);
+
+  svg {
+    stroke: var(--color-foreground-primary);
+  }
+
+  .title-name {
+    color: var(--radio-btn-foreground-color-selected);
+  }
+}
+
+.disabled {
+  cursor: default;
+  background-color: transparent;
+  border: deprecated.$s-2 solid transparent;
+
+  svg {
+    stroke: var(--button-foreground-color-disabled);
+  }
+
+  .title-name {
+    color: var(--button-foreground-color-disabled);
+  }
+
+  &:hover {
+    background-color: transparent;
+    border: deprecated.$s-2 solid transparent;
+
+    svg {
+      stroke: var(--button-foreground-color-disabled);
+    }
+
+    .title-name {
+      color: var(--button-foreground-color-disabled);
+    }
+  }
+}

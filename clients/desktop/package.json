@@ -1,0 +1,31 @@
+{
+  "name": "zvena-desktop",
+  "productName": "zvena",
+  "version": "1.0.0",
+  "description": "zvena for desktop: docs, projects and design in one window.",
+  "author": {
+    "name": "zvena",
+    "email": "hello@zvena.app"
+  },
+  "homepage": "https://zvena.app",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "main": "src/main.js",
+  "desktopName": "zvena.desktop",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "icons": "node scripts/icons.mjs",
+    "dist": "electron-builder --config electron-builder.config.js",
+    "dist:linux": "electron-builder --config electron-builder.config.js --linux AppImage deb",
+    "dist:mac": "electron-builder --config electron-builder.config.js --mac dmg",
+    "dist:win": "electron-builder --config electron-builder.config.js --win nsis"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9"
+  },
+  "devDependencies": {
+    "electron": "44.5.0",
+    "electron-builder": "26.15.3"
+  }
+}

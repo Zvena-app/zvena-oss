@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written by scripts/strings.mjs. -->
+<resources>
+    <string name="app_name">zvena</string>
+    <string name="title_activity_main">zvena</string>
+    <string name="package_name">app.zvena.mobile</string>
+    <string name="custom_url_scheme">zvena</string>
+    <string name="share_label">Save to zvena</string>
+</resources>

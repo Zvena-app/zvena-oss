@@ -1,0 +1,216 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Figma's "Type settings" popover (see zvena_type_settings.cljs)
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.type-settings {
+  @include t.use-typography("body-small");
+
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  inline-size: px2rem(256);
+  overflow: hidden;
+  border-radius: $br-12;
+  box-shadow: 0 0 12px 0 var(--color-shadow-dark);
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-primary);
+  z-index: var(--z-index-set);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-xs);
+  padding: var(--sp-xs) var(--sp-xs) var(--sp-xs) var(--sp-s);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--sp-xxs);
+  min-inline-size: 0;
+}
+
+.tab {
+  @include t.use-typography("body-small");
+
+  block-size: $sz-24;
+  padding-inline: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background: transparent;
+  color: var(--color-foreground-secondary);
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.tab-selected {
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-tertiary);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-s);
+  overflow-y: auto;
+  min-block-size: 0;
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: px2rem(88) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-xs);
+  min-block-size: $sz-24;
+}
+
+.setting-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}
+
+.setting-control {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.setting-control-full {
+  grid-column: 1 / -1;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding-block-start: var(--sp-s);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+}
+
+.section-title {
+  font-weight: 600;
+  color: var(--color-foreground-primary);
+}
+
+// Figma UI3 segmented control
+.segmented {
+  display: flex;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+.segment {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 0;
+  block-size: $sz-24;
+  padding-inline: var(--sp-xxs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: $b-1 solid transparent;
+  border-radius: $br-8;
+  background: transparent;
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    color: var(--color-foreground-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.segment-selected {
+  border-color: var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-primary);
+}
+
+.trim-icon {
+  display: block;
+}
+
+.toggle-row {
+  min-block-size: $sz-24;
+}
+
+.input-wrapper {
+  @extend %input-element;
+
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  padding-inline: var(--sp-xs);
+}
+
+.axis-row {
+  display: grid;
+  grid-template-columns: px2rem(72) minmax(0, 1fr) px2rem(56);
+  align-items: center;
+  gap: var(--sp-xs);
+  min-block-size: $sz-24;
+}
+
+.axis-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}
+
+.axis-slider {
+  inline-size: 100%;
+  min-inline-size: 0;
+  accent-color: var(--color-accent-primary);
+}
+
+.axis-input {
+  flex: 0 0 auto;
+}
+
+.reset-button {
+  @include t.use-typography("body-small");
+
+  align-self: flex-start;
+  block-size: $sz-24;
+  padding-inline: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}

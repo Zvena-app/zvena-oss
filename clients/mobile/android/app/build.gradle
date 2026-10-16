@@ -1,0 +1,72 @@
+apply plugin: 'com.android.application'
+
+// The server this build opens (the same APP_URL `npx cap sync` read): its host gets the App Links.
+def appUrl = System.getenv("APP_URL") ?: "https://zvena.app"
+def appLinkHost = new URI(appUrl).host
+
+android {
+    namespace = "app.zvena.mobile"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "app.zvena.mobile"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // Store builds pass a growing ZVENA_VERSION_CODE (each upload needs a higher one).
+        versionCode((System.getenv("ZVENA_VERSION_CODE") ?: "1").toInteger())
+        versionName "1.0.0"
+        manifestPlaceholders = [appLinkHost: appLinkHost]
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // Release signing from the environment (the keystore never lives in the repo); without it the release build is unsigned.
+    signingConfigs {
+        release {
+            if (System.getenv("ZVENA_KEYSTORE")) {
+                storeFile file(System.getenv("ZVENA_KEYSTORE"))
+                storePassword System.getenv("ZVENA_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ZVENA_KEY_ALIAS")
+                keyPassword System.getenv("ZVENA_KEY_PASSWORD")
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (System.getenv("ZVENA_KEYSTORE")) signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

@@ -1,0 +1,158 @@
+{
+  "extName": {
+    "message": "zvena Web Clipper"
+  },
+  "extDescription": {
+    "message": "Сохраняйте веб-страницы в zvena Docs: статью целиком, закладку или только выделенный фрагмент."
+  },
+  "actionTitle": {
+    "message": "Сохранить в zvena"
+  },
+  "menuSave": {
+    "message": "Сохранить в zvena"
+  },
+  "cmdOpen": {
+    "message": "Открыть zvena Web Clipper"
+  },
+  "cmdSavePage": {
+    "message": "Сохранить страницу туда, куда в прошлый раз"
+  },
+  "connectTitle": {
+    "message": "Сохраняйте страницы в zvena"
+  },
+  "connectLead": {
+    "message": "Подключите клиппер к аккаунту zvena. Он может только добавлять страницы и никогда не читает ваши документы."
+  },
+  "connectButton": {
+    "message": "Подключить zvena"
+  },
+  "connectWaiting": {
+    "message": "Завершите подключение во вкладке zvena, которая только что открылась."
+  },
+  "titleLabel": {
+    "message": "Название"
+  },
+  "addTo": {
+    "message": "Куда"
+  },
+  "workspace": {
+    "message": "Рабочее пространство"
+  },
+  "searchPlaceholder": {
+    "message": "Поиск страниц и баз данных"
+  },
+  "destPrivate": {
+    "message": "Личное"
+  },
+  "destPrivateHint": {
+    "message": "Новая страница в разделе «Личное»"
+  },
+  "recent": {
+    "message": "Недавние"
+  },
+  "results": {
+    "message": "Страницы и базы данных"
+  },
+  "noResults": {
+    "message": "Ничего не найдено"
+  },
+  "database": {
+    "message": "База данных"
+  },
+  "saveAs": {
+    "message": "Сохранить как"
+  },
+  "modeArticle": {
+    "message": "Страница целиком"
+  },
+  "modeBookmark": {
+    "message": "Закладка"
+  },
+  "modeSelection": {
+    "message": "Выделенное"
+  },
+  "save": {
+    "message": "Сохранить"
+  },
+  "saving": {
+    "message": "Сохранение…"
+  },
+  "saved": {
+    "message": "Сохранено в zvena"
+  },
+  "openInZvena": {
+    "message": "Открыть в zvena"
+  },
+  "done": {
+    "message": "Готово"
+  },
+  "settings": {
+    "message": "Настройки"
+  },
+  "back": {
+    "message": "Назад"
+  },
+  "serverLabel": {
+    "message": "Сервер zvena"
+  },
+  "serverHint": {
+    "message": "Меняйте, только если у вашей команды свой сервер zvena."
+  },
+  "serverSave": {
+    "message": "Использовать этот сервер"
+  },
+  "serverInvalid": {
+    "message": "Введите адрес сервера zvena, например https://zvena.app."
+  },
+  "signedInAs": {
+    "message": "Подключено как"
+  },
+  "disconnect": {
+    "message": "Отключить"
+  },
+  "loading": {
+    "message": "Загрузка…"
+  },
+  "untitled": {
+    "message": "Без названия"
+  },
+  "errBadRequest": {
+    "message": "zvena не удалось сохранить страницу. Попробуйте другой вариант в «Сохранить как»."
+  },
+  "errUnauthorized": {
+    "message": "Подключение к zvena завершилось. Подключитесь снова."
+  },
+  "errForbidden": {
+    "message": "Сюда нельзя добавлять страницы. Выберите другое место."
+  },
+  "errNotFound": {
+    "message": "Этой страницы или базы данных больше нет. Выберите другое место."
+  },
+  "errTooLarge": {
+    "message": "Страница слишком большая. Попробуйте «Закладка» или «Выделенное»."
+  },
+  "errRateLimited": {
+    "message": "Слишком много сохранений подряд. Попробуйте через минуту."
+  },
+  "errQuota": {
+    "message": "Хранилище zvena заполнено."
+  },
+  "errServer": {
+    "message": "zvena сейчас недоступна. Попробуйте позже."
+  },
+  "errNetwork": {
+    "message": "Нет связи с zvena. Проверьте подключение к интернету."
+  },
+  "errNoPage": {
+    "message": "Эту страницу нельзя сохранить (страницы браузера и магазинов расширений защищены). Откройте другую вкладку."
+  },
+  "errNoSelection": {
+    "message": "Сначала выделите текст на странице."
+  },
+  "errPermission": {
+    "message": "Доступ к серверу zvena не разрешён."
+  },
+  "errConnect": {
+    "message": "Подключение не завершилось. Попробуйте снова."
+  }
+}

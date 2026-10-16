@@ -1,0 +1,124 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Figma variables in prototypes (see zvena_proto_vars.cljs)
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+// Set variable / Conditional options, inside an interaction item
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.row {
+  @include sidebar.option-grid-structure;
+
+  align-items: center;
+}
+
+.row-label {
+  @include t.use-typography("body-small");
+
+  grid-column: span 3;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}
+
+// Figma's "if" / "else"
+.keyword {
+  font-family: var(--font-family-monospace, monospace);
+  color: var(--color-foreground-primary);
+}
+
+.row-control {
+  grid-column: span 5;
+  min-inline-size: 0;
+}
+
+.row-end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.row-extra {
+  grid-column: 4 / span 5;
+  min-inline-size: 0;
+}
+
+.row-full {
+  grid-column: 1 / span 8;
+}
+
+.hint {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.hint-error {
+  color: var(--color-foreground-error);
+}
+
+.expression-input {
+  inline-size: 100%;
+}
+
+// The actions of a branch (if / else), indented under it
+.branch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-inline-start: var(--sp-s);
+  padding-inline-start: var(--sp-xs);
+  border-inline-start: $b-1 solid var(--color-background-quaternary);
+}
+
+.add-button {
+  grid-column: 4 / span 5;
+  justify-content: flex-start;
+}
+
+// Layer visibility / text content bound to a variable (Design tab)
+
+.binding-row {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 5fr) auto;
+  align-items: center;
+  column-gap: var(--sp-xs);
+  min-block-size: $sz-32;
+  max-inline-size: var(--options-width);
+}
+
+.binding-label {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}
+
+.binding-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.binding-control {
+  min-inline-size: 0;
+}

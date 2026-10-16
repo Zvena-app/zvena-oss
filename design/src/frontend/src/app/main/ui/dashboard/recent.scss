@@ -1,0 +1,37 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "common/refactor/common-dashboard";
+
+.dashboard-container {
+  flex: 1 0 0;
+  overflow-y: auto;
+  width: 100%;
+  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
+  padding-block-end: deprecated.$s-32;
+  user-select: none;
+}
+
+// Figma's primary "New" action in the file browser header.
+.new-file-btn {
+  @include deprecated.body-small-typography;
+
+  display: flex;
+  align-items: center;
+  height: deprecated.$s-32;
+  padding: 0 deprecated.$s-12;
+  border: none;
+  border-radius: deprecated.$br-5;
+  background-color: var(--color-accent-primary);
+  color: var(--color-on-accent, #fff);
+  font-weight: 550;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-accent-primary-hover, #007be5);
+  }
+}

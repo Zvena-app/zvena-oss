@@ -1,0 +1,31 @@
+{
+    "name": "composable-test-suite",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "start": "vite build --watch",
+        "init": "pnpm run build && pnpm run start",
+        "build": "tsc && vite build",
+        "build:headless": "vite build --config vite.config.headless.ts",
+        "test:ci": "pnpm run build:headless && tsx ci/run-ci.ts",
+        "test:unit": "tsx --test ci/static-server.test.ts",
+        "preview": "vite preview",
+        "bootstrap": "pnpm install --ignore-workspace && pnpm run build && pnpm run start",
+        "types:check": "tsc --noEmit",
+        "fmt": "prettier --write src ci index.html",
+        "clean": "rm -rf dist/"
+    },
+    "dependencies": {
+        "@penpot/plugin-styles": "1.4.2",
+        "@penpot/plugin-types": "1.4.2"
+    },
+    "devDependencies": {
+        "playwright": "^1.62.1",
+        "prettier": "^3.9.6",
+        "typescript": "^5.9.3",
+        "vite": "^8.2.2",
+        "vite-live-preview": "^0.4.0"
+    },
+    "packageManager": "pnpm@12.5.1+sha512.e3f305bc784a2bc89f5ad3b6138889470fae8d2af5f36b61216ec91c2c3d64089775f9de38aac331044ea40f245cb0d5666392dfdf65824e1907ef6a2c62de5f"
+}

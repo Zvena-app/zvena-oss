@@ -1,0 +1,305 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Figma's library analytics dialog.
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  background-color: var(--color-overlay-default);
+}
+
+.modal-container {
+  position: relative;
+  padding: var(--sp-xxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  inline-size: px2rem(640);
+  max-inline-size: calc(100vw - px2rem(32));
+  max-block-size: calc(100vh - px2rem(64));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  color: var(--color-foreground-primary);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  padding-inline-end: var(--sp-xxxl);
+}
+
+.modal-close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-m);
+}
+
+.subtitle {
+  @include use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  margin-block-start: calc(-1 * var(--sp-s));
+  color: var(--color-foreground-secondary);
+}
+
+.file-name {
+  @include use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  min-block-size: 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-s);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  padding: var(--sp-s) var(--sp-m);
+  border-radius: $br-8;
+  background-color: var(--color-background-secondary);
+}
+
+.stat-value {
+  @include use-typography("headline-medium");
+
+  color: var(--color-foreground-primary);
+}
+
+.insert {
+  color: var(--color-accent-primary);
+}
+
+.detach {
+  color: var(--color-foreground-error, #f24822);
+}
+
+.stat-label {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.chart {
+  inline-size: 100%;
+  block-size: px2rem(96);
+  border-radius: $br-8;
+  background-color: var(--color-background-secondary);
+}
+
+.chart-axis {
+  stroke: var(--color-background-quaternary);
+  stroke-width: 1;
+}
+
+.bar-insert {
+  fill: var(--color-accent-primary);
+}
+
+.bar-detach {
+  fill: var(--color-foreground-error, #f24822);
+  opacity: 0.7;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-m);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--sp-xs);
+}
+
+.tab {
+  @include use-typography("body-medium");
+
+  padding: var(--sp-xs) var(--sp-s);
+  border: none;
+  border-radius: $br-6;
+  background: none;
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.tab-active {
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+}
+
+.search {
+  @include use-typography("body-small");
+
+  inline-size: px2rem(180);
+  block-size: px2rem(28);
+  padding: 0 var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-6;
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+}
+
+.table-wrap {
+  min-block-size: px2rem(120);
+  max-block-size: px2rem(320);
+  overflow-y: auto;
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    @include use-typography("body-small");
+
+    padding: var(--sp-xs) var(--sp-s);
+    border-block-end: $b-1 solid var(--color-background-tertiary);
+    text-align: start;
+  }
+
+  th {
+    position: sticky;
+    inset-block-start: 0;
+    background-color: var(--color-background-primary);
+    color: var(--color-foreground-secondary);
+  }
+
+  .numeric {
+    text-align: end;
+    inline-size: px2rem(96);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.sort-button {
+  @include use-typography("body-small");
+
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sorted {
+  color: var(--color-foreground-primary);
+  font-weight: 600;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.row-icon {
+  flex: none;
+  color: var(--color-foreground-secondary);
+}
+
+.row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swatch {
+  flex: none;
+  inline-size: px2rem(12);
+  block-size: px2rem(12);
+  border-radius: $br-circle;
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.section-title {
+  @include use-typography("headline-small");
+}
+
+.files-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-row {
+  @include use-typography("body-small");
+
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-m);
+  padding: var(--sp-xs) var(--sp-s);
+  border-block-end: $b-1 solid var(--color-background-tertiary);
+
+  .numeric {
+    flex: none;
+    color: var(--color-foreground-secondary);
+  }
+}
+
+.muted {
+  color: var(--color-foreground-secondary);
+}
+
+.file-badge {
+  margin-inline-start: var(--sp-xs);
+  padding: 0 var(--sp-xs);
+  border-radius: $br-4;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+}
+
+.empty {
+  @include use-typography("body-medium");
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-m);
+  min-block-size: px2rem(120);
+  color: var(--color-foreground-secondary);
+  text-align: center;
+}

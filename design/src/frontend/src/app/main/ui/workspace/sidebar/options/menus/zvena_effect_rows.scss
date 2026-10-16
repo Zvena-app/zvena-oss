@@ -1,0 +1,112 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Figma's effect rows (see zvena_effect_rows.cljs)
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.effect-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  inline-size: 100%;
+}
+
+.effect-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.effect-basic {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-xs);
+}
+
+.effect-basic-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-inline-size: 0;
+  gap: px2rem(1);
+}
+
+.effect-settings-button {
+  border-radius: $br-8 0 0 $br-8;
+  flex-shrink: 0;
+
+  &.selected {
+    --button-bg-color: var(--color-background-quaternary);
+    --button-fg-color: var(--color-accent-primary);
+  }
+
+  &:disabled {
+    border: $b-1 solid var(--color-background-quaternary);
+  }
+}
+
+.effect-type-select {
+  flex-grow: 1;
+  min-inline-size: 0;
+  border-radius: 0 $br-8 $br-8 0;
+}
+
+.effect-basic-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding-block-end: var(--sp-xs);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  inline-size: 100%;
+
+  > * {
+    flex: 1;
+    min-inline-size: 0;
+  }
+}
+
+.num-field {
+  // TODO move to the DS numeric input
+  @extend %input-element;
+  @include t.use-typography("body-small");
+
+  .num-label {
+    padding-inline-start: var(--sp-s);
+    white-space: nowrap;
+    color: var(--color-foreground-secondary);
+  }
+}
+
+.wide-field {
+  .num-label {
+    min-inline-size: px2rem(76);
+  }
+}
+
+.effect-color {
+  inline-size: 100%;
+}
+
+.noise-types {
+  inline-size: 100%;
+}

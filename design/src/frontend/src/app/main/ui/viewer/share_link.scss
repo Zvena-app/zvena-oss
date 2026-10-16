@@ -1,0 +1,456 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.share-modal {
+  display: block;
+  position: absolute;
+  top: deprecated.$s-52;
+  right: deprecated.$s-12;
+  left: calc(100vw - deprecated.$s-512);
+  z-index: deprecated.$z-index-modal;
+}
+
+.share-link-dialog {
+  @extend %modal-container-base;
+
+  min-height: unset;
+}
+
+.share-link-header {
+  margin-bottom: deprecated.$s-24;
+}
+
+.share-link-title {
+  @include deprecated.uppercase-title-typography;
+
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-button {
+  @extend %modal-close-btn-base;
+}
+
+.modal-content {
+  @include deprecated.body-small-typography;
+  @include deprecated.flex-column;
+
+  gap: deprecated.$s-24;
+}
+
+.share-link-section {
+  @include deprecated.flex-column;
+
+  gap: deprecated.$s-8;
+}
+
+.hint-wrapper {
+  @include deprecated.flex-row;
+}
+
+.hint {
+  flex-grow: 1;
+  color: var(--modal-text-foreground-color);
+}
+
+.custon-input-wrapper {
+  @include deprecated.flex-row;
+
+  border-radius: deprecated.$br-8;
+  height: deprecated.$s-32;
+  width: 100%;
+  background-color: var(--input-background-color);
+}
+
+.input-text {
+  @extend %input-element;
+  @include deprecated.body-small-typography;
+
+  color: var(--input-foreground-color-active);
+  padding-left: deprecated.$s-8;
+  margin: 0;
+  flex-grow: 1;
+
+  &:focus {
+    outline: none;
+    border: deprecated.$s-1 solid var(--input-border-color-active);
+  }
+}
+
+.copy-button {
+  @extend %button-secondary;
+  @include deprecated.flex-row;
+
+  gap: deprecated.$s-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
+
+  svg {
+    @extend %button-icon;
+
+    stroke: var(--icon-foreground-hover);
+  }
+}
+
+.description {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-text-foreground-color);
+  margin-bottom: deprecated.$s-24;
+}
+
+.actions {
+  @include deprecated.flex-row;
+
+  justify-content: flex-end;
+}
+
+.button-active {
+  @extend %modal-accept-btn;
+}
+
+.button-cancel {
+  @extend %modal-cancel-btn;
+}
+
+.button-danger {
+  @extend %modal-danger-btn;
+}
+
+.permissions-section {
+  @include deprecated.flex-column;
+
+  gap: deprecated.$s-8;
+}
+
+.manage-permissions {
+  @include deprecated.button-style;
+  @include deprecated.uppercase-title-typography;
+
+  color: var(--color-foreground-secondary);
+  height: deprecated.$s-32;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.icon {
+  @include deprecated.flex-center;
+
+  margin-right: deprecated.$s-6;
+
+  svg {
+    @extend %button-icon;
+
+    stroke: var(--icon-foreground);
+  }
+
+  &.rotated {
+    transform: rotate(90deg);
+  }
+}
+
+.view-mode,
+.access-mode,
+.inspect-mode {
+  display: flex;
+  width: 100%;
+}
+
+.view-mode {
+  max-height: deprecated.$s-216;
+  overflow: hidden auto;
+  scrollbar-gutter: stable;
+}
+
+.subtitle {
+  color: var(--modal-text-foreground-color);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: deprecated.$s-136;
+  height: deprecated.$s-32;
+}
+
+.items {
+  flex-grow: 1;
+  color: var(--input-foreground-color-active);
+}
+
+.select-all-row {
+  @include deprecated.flex-row;
+
+  justify-content: space-between;
+  height: deprecated.$s-32;
+  border-bottom: deprecated.$s-1 solid var(--input-border-color-disabled);
+}
+
+.select-all-label {
+  color: var(--input-foreground-color-active);
+}
+
+.pages-selection {
+  margin: 0;
+
+  li {
+    border-bottom: deprecated.$s-1 solid var(--input-border-color-disabled);
+  }
+
+  li:last-child {
+    border-bottom: none;
+  }
+}
+
+.count-pages,
+.current-tag {
+  @include deprecated.body-small-typography;
+
+  color: var(--input-foreground-color);
+}
+
+.checkbox-wrapper {
+  @extend %input-checkbox;
+
+  height: deprecated.$s-32;
+  padding: 0;
+
+  span.checked {
+    background-color: var(--input-checkbox-background-color-active);
+    border: deprecated.$s-1 solid var(--input-checkbox-background-color-active);
+
+    svg {
+      @extend %button-icon-small;
+
+      stroke: var(--input-checkbox-foreground-color-active);
+    }
+  }
+}
+
+// Figma UI3 share modal — centered over a dim overlay, 13px radius,
+// header row with title and close, 16px body.
+.share-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--overlay-color, rgba(0, 0, 0, 0.3));
+}
+
+.share-link-dialog {
+  width: deprecated.$s-480;
+  max-width: calc(100vw - #{deprecated.$s-32});
+  min-width: 0;
+  max-height: calc(100vh - #{deprecated.$s-64});
+  padding: 0;
+  overflow: hidden auto;
+}
+
+.share-link-header {
+  display: flex;
+  align-items: center;
+  height: deprecated.$s-48;
+  margin: 0;
+  padding: 0 deprecated.$s-48 0 deprecated.$s-16;
+  border-bottom: deprecated.$s-1 solid var(--blueai-border, var(--color-background-quaternary));
+}
+
+.share-link-title {
+  @include deprecated.body-medium-typography;
+
+  font-weight: 550;
+  color: var(--color-foreground-primary);
+}
+
+.modal-content {
+  gap: deprecated.$s-16;
+  padding: deprecated.$s-16;
+}
+
+.custon-input-wrapper {
+  gap: deprecated.$s-8;
+  background-color: transparent;
+}
+
+.input-text {
+  height: deprecated.$s-32;
+  border-radius: deprecated.$br-8;
+  background-color: var(--input-background-color);
+}
+
+.copy-button {
+  width: auto;
+  padding: 0 deprecated.$s-12;
+  border-radius: deprecated.$br-8;
+  background-color: var(--color-accent-primary);
+  border: none;
+
+  svg {
+    stroke: var(--color-static-white, #ffffff);
+  }
+
+  &:hover {
+    background-color: var(--color-accent-primary);
+    opacity: 0.9;
+  }
+}
+
+.hint-wrapper {
+  gap: deprecated.$s-12;
+}
+
+.hint {
+  color: var(--color-foreground-secondary);
+}
+
+.manage-permissions {
+  height: deprecated.$s-24;
+  color: var(--color-foreground-primary);
+}
+
+.subtitle {
+  color: var(--color-foreground-secondary);
+}
+
+.copy-button {
+  @include deprecated.body-small-typography;
+
+  flex-shrink: 0;
+  font-weight: 550;
+  color: var(--color-static-white, #ffffff);
+  white-space: nowrap;
+}
+
+// The everyday "delete link" is a quiet secondary action; the confirm step keeps the red button.
+.hint-wrapper > .button-danger {
+  background-color: transparent;
+  border: deprecated.$s-1 solid var(--blueai-border, var(--color-background-quaternary));
+  color: var(--color-foreground-primary);
+  text-transform: none;
+
+  &:hover {
+    background-color: var(--blueai-bg-hover, var(--color-background-secondary));
+    color: var(--color-accent-error);
+  }
+}
+
+.copy-button:hover,
+.copy-button:focus,
+.copy-button:active {
+  color: var(--color-static-white, #ffffff);
+  background-color: var(--color-accent-primary);
+  border: none;
+}
+
+// zvena: Figma's link settings (who can view, password, expiry) and the
+// lock / expiry state of the current link.
+.zv-link-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: deprecated.$s-6 deprecated.$s-12;
+}
+
+.zv-status-item {
+  @include deprecated.body-small-typography;
+
+  display: inline-flex;
+  align-items: center;
+  gap: deprecated.$s-4;
+  color: var(--color-foreground-secondary);
+
+  svg {
+    stroke: var(--color-foreground-secondary);
+  }
+}
+
+.zv-status-expired {
+  color: var(--color-accent-error);
+
+  svg {
+    stroke: var(--color-accent-error);
+  }
+}
+
+.zv-settings {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-8;
+  margin-top: deprecated.$s-8;
+  padding-top: deprecated.$s-12;
+  border-top: deprecated.$s-1 solid var(--blueai-border, var(--color-background-quaternary));
+}
+
+.zv-settings-title {
+  @include deprecated.body-small-typography;
+
+  font-weight: 550;
+  color: var(--color-foreground-primary);
+}
+
+.zv-row {
+  display: flex;
+  align-items: center;
+  gap: deprecated.$s-8;
+  width: 100%;
+  min-height: deprecated.$s-32;
+}
+
+.zv-indented {
+  padding-left: deprecated.$s-136;
+  align-items: flex-start;
+}
+
+.zv-switch-cell {
+  display: flex;
+  align-items: center;
+}
+
+.zv-select {
+  width: 100%;
+}
+
+.zv-input {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.zv-hint {
+  @include deprecated.body-small-typography;
+
+  color: var(--color-foreground-secondary);
+}
+
+.zv-date-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-4;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.zv-date-input {
+  @include deprecated.body-small-typography;
+
+  height: deprecated.$s-32;
+  padding: 0 deprecated.$s-8;
+  border: deprecated.$s-1 solid transparent;
+  border-radius: deprecated.$br-8;
+  background-color: var(--input-background-color);
+  color: var(--input-foreground-color-active);
+  color-scheme: light dark;
+
+  &:focus {
+    outline: none;
+    border-color: var(--input-border-color-active);
+  }
+}
+
+.zv-error {
+  @include deprecated.body-small-typography;
+
+  color: var(--color-accent-error);
+}

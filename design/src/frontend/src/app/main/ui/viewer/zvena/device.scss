@@ -1,0 +1,150 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: prototype device frames. Sizes follow the presentation zoom.
+.device {
+  --s: var(--zv-device-scale, 1);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  inline-size: fit-content;
+  margin: auto;
+  background-color: var(--zv-device-color);
+  box-shadow:
+    0 0 0 calc(2px * var(--s)) rgb(0 0 0 / 35%),
+    0 calc(24px * var(--s)) calc(60px * var(--s)) rgb(0 0 0 / 35%);
+}
+
+.device-screen {
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+.phone {
+  padding: calc(12px * var(--s));
+  border-radius: calc(58px * var(--s));
+
+  .device-screen {
+    border-radius: calc(46px * var(--s));
+  }
+}
+
+.island {
+  position: absolute;
+  inset-block-start: calc(23px * var(--s));
+  inset-inline-start: 50%;
+  inline-size: calc(122px * var(--s));
+  block-size: calc(35px * var(--s));
+  border-radius: calc(20px * var(--s));
+  background: #000;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.android {
+  padding: calc(10px * var(--s));
+  border-radius: calc(44px * var(--s));
+
+  .device-screen {
+    border-radius: calc(34px * var(--s));
+  }
+}
+
+.camera {
+  position: absolute;
+  inset-block-start: calc(22px * var(--s));
+  inset-inline-start: 50%;
+  inline-size: calc(16px * var(--s));
+  block-size: calc(16px * var(--s));
+  border-radius: 50%;
+  background: #000;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.phone-classic {
+  padding: calc(84px * var(--s)) calc(16px * var(--s));
+  border-radius: calc(52px * var(--s));
+
+  .device-screen {
+    border-radius: calc(2px * var(--s));
+  }
+}
+
+.home-button {
+  position: absolute;
+  inset-block-end: calc(18px * var(--s));
+  inset-inline-start: 50%;
+  inline-size: calc(52px * var(--s));
+  block-size: calc(52px * var(--s));
+  border: calc(2px * var(--s)) solid rgb(0 0 0 / 25%);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.tablet {
+  padding: calc(22px * var(--s));
+  border-radius: calc(36px * var(--s));
+
+  .device-screen {
+    border-radius: calc(16px * var(--s));
+  }
+}
+
+.laptop {
+  padding: calc(18px * var(--s)) calc(18px * var(--s)) calc(28px * var(--s));
+  border-radius: calc(18px * var(--s)) calc(18px * var(--s)) calc(4px * var(--s)) calc(4px * var(--s));
+  margin-block-end: calc(16px * var(--s));
+}
+
+.laptop-base {
+  position: absolute;
+  inset-block-end: calc(-16px * var(--s));
+  inset-inline: calc(-60px * var(--s));
+  block-size: calc(16px * var(--s));
+  border-radius: 0 0 calc(14px * var(--s)) calc(14px * var(--s));
+  background: var(--zv-device-color);
+  box-shadow: 0 calc(8px * var(--s)) calc(24px * var(--s)) rgb(0 0 0 / 30%);
+}
+
+.browser {
+  border-radius: calc(10px * var(--s));
+  overflow: hidden;
+  background: #e8e8ea;
+}
+
+.browser-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--s));
+  block-size: calc(36px * var(--s));
+  padding-inline: calc(12px * var(--s));
+
+  > span {
+    inline-size: calc(11px * var(--s));
+    block-size: calc(11px * var(--s));
+    border-radius: 50%;
+    background: #ff5f57;
+  }
+
+  > span:nth-child(2) {
+    background: #febc2e;
+  }
+
+  > span:nth-child(3) {
+    background: #28c840;
+  }
+}
+
+.browser-url {
+  flex: 1;
+  block-size: calc(22px * var(--s));
+  margin-inline-start: calc(12px * var(--s));
+  border-radius: calc(6px * var(--s));
+  background: #fff;
+}

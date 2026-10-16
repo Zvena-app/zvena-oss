@@ -1,0 +1,453 @@
+/* zvena UI — one look for every product (Home and the shell, Documents,
+   Projects, the ecosystem's panels; Design follows the same tokens in its
+   own code). In the manner of Figma's UI3: Inter everywhere, neutral greys,
+   white panels on a light-grey chrome, hairline borders, Figma blue for
+   selection and primary actions, compact controls (13 px text, 32 px
+   controls, 6 px corners), quiet elevation.
+
+   The products keep their own variables (--zv-*, --nt-*, --pj-*); this layer
+   sets them all from one set of tokens (--ui-*). Its selectors are a step
+   more specific than the products' own (":root:root", ".nt-root.nt-root"),
+   so it wins whatever order the stylesheets load in.
+
+   The values are Design's own (design/src/frontend/src/app/main/ui/ds/
+   colors.scss), so the editor and the web app match exactly.
+
+   Change the look here, nowhere else. New components use --ui-* tokens or
+   their product's variables, never colors or fonts of their own. */
+
+/* ------------------------------------------------------------------ tokens */
+
+:root:root {
+  /* Surfaces */
+  --ui-bg: #ffffff; /* the page / a panel */
+  --ui-chrome: #f5f5f5; /* sidebars, the app around panels */
+  --ui-bg-2: #f5f5f5; /* inputs, wells, secondary surfaces */
+  --ui-bg-3: #ebebeb; /* pressed, tertiary */
+  --ui-hover: rgba(0, 0, 0, 0.05);
+  --ui-active: rgba(0, 0, 0, 0.08);
+  --ui-selected: #e5f4ff; /* Figma's selection tint */
+  --ui-selected-strong: #bde3ff;
+  /* Text */
+  --ui-text: #1e1e1e;
+  --ui-text-2: #5c5c5c;
+  --ui-text-3: #707070; /* the lightest text that still reads (4.5:1 on the chrome grey) */
+  --ui-text-on-brand: #ffffff;
+  /* Lines */
+  --ui-border: #e6e6e6;
+  --ui-border-2: #d9d9d9;
+  --ui-border-strong: #b3b3b3;
+  /* Brand and states (Figma's palette) */
+  --ui-brand: #0d99ff; /* selection, focus, marks: never under text */
+  --ui-brand-fill: #0b72cc; /* filled buttons and badges with white text (4.9:1) */
+  --ui-brand-hover: #0a63b3;
+  --ui-brand-text: #006bcc;
+  --ui-brand-soft: rgba(13, 153, 255, 0.12);
+  --ui-component: #9747ff;
+  --ui-success: #14ae5c;
+  --ui-success-text: #009951;
+  --ui-warning: #ffcd29;
+  --ui-warning-bg: #fff4c7;
+  --ui-warning-text: #7a5b00;
+  --ui-danger: #f24822;
+  --ui-danger-fill: #d93b17; /* white text on red (4.6:1) */
+  --ui-danger-text: #dc3412;
+  --ui-danger-soft: #ffe2e0;
+  /* Type */
+  /* Latin from Inter; Arabic, Devanagari (Hindi), Bengali and Chinese from the system's Noto or native faces. */
+  --ui-font: "Zvena Sans", "Zvena Sans Fallback", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", "Geeza Pro", "Noto Sans Devanagari", "Kohinoor Devanagari", "Nirmala UI", "Noto Sans Bengali", "Kohinoor Bangla", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --ui-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --ui-text-xs: 11px;
+  --ui-text-sm: 12px;
+  --ui-text-md: 13px;
+  --ui-text-lg: 15px;
+  /* Headings: one scale for every product (a page, a section, a panel or a dialog). */
+  --ui-title-page: 24px; /* line 32px, weight 600, -0.02em: Home, Docs settings, Projects screens, Calendar and Mail pages */
+  --ui-title-section: 15px; /* line 22px, weight 600 */
+  --ui-title-panel: 13px; /* line 20px, weight 600: side panels, dialogs, popovers */
+  /* Shapes */
+  --ui-radius-sm: 4px;
+  --ui-radius: 6px;
+  --ui-radius-md: 8px;
+  --ui-radius-lg: 13px; /* UI3 panels */
+  --ui-control-h: 32px;
+  --ui-control-h-sm: 28px;
+  /* Elevation (Figma's 100 / 200 / 400) */
+  --ui-shadow-1: 0 0 0.5px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --ui-shadow-2: 0 0 0.5px rgba(0, 0, 0, 0.15), 0 2px 7px rgba(0, 0, 0, 0.12);
+  --ui-shadow-3: 0 0 0.5px rgba(0, 0, 0, 0.12), 0 5px 17px rgba(0, 0, 0, 0.15), 0 2px 7px rgba(0, 0, 0, 0.1);
+  --ui-scrim: rgba(0, 0, 0, 0.3);
+  --ui-focus: 0 0 0 2px var(--ui-brand);
+}
+
+:root:root.dark {
+  --ui-bg: #2c2c2c;
+  --ui-chrome: #1e1e1e;
+  --ui-bg-2: #383838;
+  --ui-bg-3: #444444;
+  --ui-hover: rgba(255, 255, 255, 0.06);
+  --ui-active: rgba(255, 255, 255, 0.1);
+  --ui-selected: #36475f;
+  --ui-selected-strong: #2e5c8a;
+  --ui-text: #ffffff;
+  --ui-text-2: #b3b3b3;
+  --ui-text-3: #9e9e9e;
+  --ui-border: #444444;
+  --ui-border-2: #4f4f4f;
+  --ui-border-strong: #757575;
+  --ui-brand: #0d99ff;
+  --ui-brand-fill: #0b72cc;
+  --ui-brand-hover: #0a63b3;
+  --ui-brand-text: #7cc4f8;
+  --ui-brand-soft: rgba(12, 140, 233, 0.22);
+  --ui-success-text: #79d297;
+  --ui-warning-bg: #4a3c08;
+  --ui-warning-text: #f7d15f;
+  --ui-danger-text: #fc9286;
+  --ui-danger-soft: rgba(242, 72, 34, 0.18);
+  --ui-shadow-1: 0 0 0.5px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --ui-shadow-2: 0 0 0.5px rgba(0, 0, 0, 0.5), 0 2px 7px rgba(0, 0, 0, 0.35);
+  --ui-shadow-3: 0 0 0.5px rgba(0, 0, 0, 0.5), 0 5px 17px rgba(0, 0, 0, 0.45), 0 2px 7px rgba(0, 0, 0, 0.3);
+  --ui-scrim: rgba(0, 0, 0, 0.5);
+}
+
+/* ------------------------------------------------------------------ the shell, Home, Projects (--zv-*) */
+
+:root:root,
+:root:root.dark {
+  --zv-bg: var(--ui-bg);
+  --zv-side: var(--ui-chrome);
+  --zv-card: var(--ui-bg);
+  --zv-card-2: var(--ui-bg-2);
+  --zv-text: var(--ui-text);
+  --zv-text-2: var(--ui-text-2);
+  --zv-text-3: var(--ui-text-3);
+  --zv-border: var(--ui-border);
+  --zv-border-2: var(--ui-border-2);
+  --zv-hover: var(--ui-hover);
+  --zv-active: var(--ui-active);
+  --zv-accent: var(--ui-brand-text);
+  --zv-accent-bg: var(--ui-brand-fill);
+  --zv-accent-bg-hover: var(--ui-brand-hover);
+  --zv-accent-soft: var(--ui-brand-soft);
+  --zv-on-accent: var(--ui-text-on-brand);
+  --zv-danger: var(--ui-danger-text);
+  --zv-danger-soft: var(--ui-danger-soft);
+  --zv-ok: var(--ui-success-text);
+  --zv-warn-bg: var(--ui-warning-bg);
+  --zv-warn-text: var(--ui-warning-text);
+  --zv-mark: var(--ui-brand-fill); /* under white initials */
+  --zv-shadow: var(--ui-shadow-1);
+  --zv-shadow-lg: var(--ui-shadow-3);
+  --zv-font: var(--ui-font);
+  /* No serif anywhere in the interface. */
+  --zv-serif: var(--ui-font);
+  --zv-radius: var(--ui-radius-md);
+  --zv-side-w: 240px;
+}
+
+html body {
+  font-size: var(--ui-text-md);
+  line-height: 1.5;
+  font-feature-settings: "calt", "kern";
+  letter-spacing: -0.003em;
+}
+:root:root h1,
+:root:root h2,
+:root:root h3 {
+  font-family: var(--ui-font);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+/* Page titles and sections */
+.zv-content .zv-page-title {
+  font-size: var(--ui-title-page);
+  line-height: 32px;
+  letter-spacing: -0.02em;
+}
+.zv-content .zv-page-lead {
+  font-size: var(--ui-text-md);
+  margin-bottom: 24px;
+}
+.zv-content .zv-sec-head h2,
+.zv-content .zv-card h2 {
+  font-size: var(--ui-title-section);
+  line-height: 22px;
+}
+.zv-content .zv-sec {
+  margin-top: 28px;
+}
+/* A link inside a sentence is underlined: color alone does not set it apart (WCAG 1.4.1). */
+.zv-content p a:not(.zv-btn),
+.zv-main p.zv-small a:not(.zv-btn),
+.zv-content .zv-empty a:not(.zv-btn) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.zv-logo .zv-logo-word {
+  font-family: var(--ui-font);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* Buttons: Figma's — 32 px, 6 px corners, 13 px medium */
+.zv-btn.zv-btn {
+  height: var(--ui-control-h);
+  padding: 0 12px;
+  gap: 6px;
+  border-radius: var(--ui-radius);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+  font-size: var(--ui-text-md);
+  font-weight: 500;
+  box-shadow: none;
+}
+.zv-btn.zv-btn:hover {
+  background: var(--ui-bg-2);
+}
+.zv-btn.zv-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.zv-btn.zv-btn-primary {
+  border-color: transparent;
+  background: var(--ui-brand-fill);
+  color: var(--ui-text-on-brand);
+}
+.zv-btn.zv-btn-primary:hover {
+  background: var(--ui-brand-hover);
+}
+.zv-btn.zv-btn-ghost {
+  border-color: transparent;
+  background: transparent;
+}
+.zv-btn.zv-btn-ghost:hover {
+  background: var(--ui-hover);
+}
+.zv-btn.zv-btn-sm {
+  height: var(--ui-control-h-sm);
+  padding: 0 10px;
+  font-size: var(--ui-text-sm);
+}
+.zv-btn.zv-btn-lg {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--ui-radius-md);
+  font-size: var(--ui-text-lg);
+}
+
+/* Fields: filled grey, a blue ring on focus */
+.zv-input.zv-input,
+.zv-select.zv-select,
+.zv-textarea.zv-textarea {
+  height: var(--ui-control-h);
+  padding: 0 10px;
+  border-radius: var(--ui-radius);
+  border: 1px solid transparent;
+  background: var(--ui-bg-2);
+  font-size: var(--ui-text-md);
+}
+.zv-textarea.zv-textarea {
+  height: auto;
+  padding: 8px 10px;
+}
+.zv-input.zv-input:hover,
+.zv-select.zv-select:hover,
+.zv-textarea.zv-textarea:hover {
+  border-color: var(--ui-border);
+}
+.zv-input.zv-input:focus,
+.zv-select.zv-select:focus,
+.zv-textarea.zv-textarea:focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 1px var(--ui-brand);
+  background: var(--ui-bg);
+}
+.zv-field .zv-label,
+.zv-field > span {
+  font-size: var(--ui-text-xs);
+  font-weight: 500;
+  color: var(--ui-text-2);
+}
+
+/* Cards, tiles, banners */
+.zv-card.zv-card {
+  border-radius: var(--ui-radius-md);
+  box-shadow: none;
+  border: 1px solid var(--ui-border);
+  padding: 16px;
+}
+.zv-tile.zv-tile {
+  border-radius: var(--ui-radius-md);
+  border: 1px solid var(--ui-border);
+  box-shadow: none;
+  background: var(--ui-bg);
+}
+.zv-tile.zv-tile:hover {
+  border-color: var(--ui-border-2);
+  box-shadow: var(--ui-shadow-1);
+}
+.zv-tile .zv-tile-title {
+  font-size: var(--ui-text-md);
+  font-weight: 500;
+}
+.zv-tile .zv-tile-meta {
+  font-size: var(--ui-text-xs);
+}
+.zv-empty.zv-empty {
+  border-radius: var(--ui-radius-md);
+  font-size: var(--ui-text-md);
+}
+.zv-banner.zv-banner {
+  border-radius: var(--ui-radius-md);
+  font-size: var(--ui-text-md);
+}
+.zv-badge.zv-badge {
+  height: 20px;
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-text-xs);
+  font-weight: 500;
+}
+.zv-meter.zv-meter {
+  height: 6px;
+}
+
+/* The sidebar (Linear's arrangement): it sits on the app's grey with no line
+   of its own; the work is an inset white panel next to it (ds.css). 13 px
+   items, a neutral grey for the current page. */
+.zv-side.zv-side {
+  background: var(--ui-chrome);
+  border-inline-end: 0;
+  padding: 8px 6px 8px 8px;
+}
+.zv-side .zv-side-head {
+  font-size: 16px;
+  padding: 4px 8px 10px;
+}
+.zv-ws-switch.zv-ws-switch {
+  padding: 6px 8px;
+  border-radius: var(--ui-radius);
+}
+.zv-ws-switch .zv-ws-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ui-radius);
+  background: var(--ui-brand-fill);
+  font-size: var(--ui-text-sm);
+}
+.zv-ws-switch .zv-ws-name {
+  font-size: var(--ui-text-md);
+}
+.zv-ws-switch .zv-ws-role {
+  font-size: var(--ui-text-xs);
+}
+.zv-nav.zv-nav a,
+.zv-nav.zv-nav button {
+  height: 28px;
+  gap: 8px;
+  padding: 0 8px;
+  border-radius: var(--ui-radius);
+  font-size: var(--ui-text-md);
+  font-weight: 500;
+}
+.zv-nav.zv-nav a[aria-current="page"] {
+  background: var(--ui-active);
+  font-weight: 500;
+}
+.zv-nav.zv-nav a[aria-current="page"] svg {
+  color: var(--ui-text);
+}
+.zv-nav.zv-nav svg {
+  width: 16px;
+  height: 16px;
+}
+.zv-side .zv-avatar {
+  width: 24px;
+  height: 24px;
+  background: var(--ui-component);
+  color: #fff;
+  font-size: var(--ui-text-xs);
+}
+.zv-content.zv-content {
+  padding-top: 32px;
+}
+
+/* ------------------------------------------------------------------ Documents (--nt-*) */
+
+.nt-root.nt-root,
+.nt-pub.nt-pub,
+.nt-layer.nt-layer,
+.dark .nt-root.nt-root,
+.dark .nt-pub.nt-pub,
+.dark .nt-layer.nt-layer {
+  --nt-bg: var(--ui-bg);
+  --nt-side-bg: var(--ui-chrome);
+  --nt-surface: var(--ui-bg);
+  --nt-text: var(--ui-text);
+  --nt-text-2: var(--ui-text-2);
+  --nt-text-3: var(--ui-text-3);
+  --nt-side-text: var(--ui-text);
+  --nt-icon: var(--ui-text-2);
+  --nt-hover: var(--ui-hover);
+  --nt-hover-2: var(--ui-active);
+  --nt-active: var(--ui-active);
+  --nt-border: var(--ui-border);
+  --nt-border-2: var(--ui-border-2);
+  --nt-divider: var(--ui-border);
+  --nt-hairline: var(--ui-border);
+  --nt-blue: var(--ui-brand-fill);
+  --nt-blue-hover: var(--ui-brand-hover);
+  --nt-blue-soft: var(--ui-brand-soft);
+  --nt-blue-text: var(--ui-brand-text);
+  --nt-red: var(--ui-danger-text);
+  --nt-select: var(--ui-selected);
+  --nt-sel-text: var(--ui-selected-strong);
+  --nt-menu-bg: var(--ui-bg);
+  --nt-menu-shadow: var(--ui-shadow-3);
+  --nt-card-shadow: var(--ui-shadow-1);
+  --nt-input-bg: var(--ui-bg-2);
+  --nt-input-border: transparent;
+  --nt-code-bg: var(--ui-bg-2);
+  --nt-inline-code: var(--ui-danger-text);
+  --nt-inline-code-bg: var(--ui-bg-2);
+  --nt-scrim: var(--ui-scrim);
+  --nt-tip-bg: #1e1e1e;
+  --nt-avatar-bg: var(--ui-component);
+  --nt-avatar-text: #ffffff;
+  --nt-b-default: var(--ui-bg-2);
+  --nt-font: var(--ui-font);
+  /* Titles and headings in Inter; "Serif" and "Mono" stay as page font choices. */
+  --nt-display: var(--ui-font);
+  --nt-mono: var(--ui-mono);
+  --nt-code-font: var(--ui-mono);
+}
+
+/* What people write reads in Inter by default (the page's "Default" font). */
+.nt-page[data-font="default"] .nt-editor,
+.nt-page[data-font="default"] .nt-title {
+  font-family: var(--ui-font);
+}
+.nt-page[data-font="default"] .nt-title {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.nt-root .nt-editor .bn-block-content[data-content-type="heading"] .bn-inline-content {
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+/* ------------------------------------------------------------------ Projects (--pj-*) */
+
+.pj-app.pj-app {
+  --pj-r-s: var(--ui-radius-sm);
+  --pj-r: var(--ui-radius);
+  --pj-r-l: var(--ui-radius-md);
+  --pj-row-h: 36px;
+  --pj-side-w: 240px;
+  --pj-tint: var(--ui-hover);
+  --pj-sel: var(--ui-selected);
+  --pj-sel-strong: var(--ui-selected-strong);
+  font-family: var(--ui-font);
+  font-size: var(--ui-text-md);
+}

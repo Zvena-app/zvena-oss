@@ -1,0 +1,23 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "./spacing.scss" as *;
+
+// Figma UI3 menu elevation.
+@mixin menu-shadow {
+  box-shadow:
+    0 5px 17px rgba(0, 0, 0, 0.2),
+    0 2px 7px rgba(0, 0, 0, 0.15),
+    inset 0 0 0 0.5px #000000,
+    0 0 0 0.5px rgba(0, 0, 0, 0.1);
+}
+
+@mixin figma-menu-typography {
+  font-family: "inter", "vazirmatn", sans-serif;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+}

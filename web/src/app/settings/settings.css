@@ -1,0 +1,107 @@
+/* Settings, laid out as Notion's: a list of sections on the left (the
+   account's, then the workspace's), the open section on the right, each a
+   column of rows — a title and a hint on the left, the control on the right.
+   zvena's tokens only (app/ui-theme.css). */
+
+.zst { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; max-width: 1080px; margin: 0 auto; padding: 36px 32px 96px; font-family: var(--ui-font); color: var(--ui-text); }
+.zst-nav { position: sticky; top: 24px; align-self: start; display: grid; gap: 1px; }
+.zst-nav-label { padding: 14px 8px 4px; font-size: var(--ui-text-xs); font-weight: 600; color: var(--ui-text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zst-nav-label:first-child { padding-top: 0; }
+.zst-nav-link { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: var(--ui-radius); color: var(--ui-text-2); font-size: var(--ui-text-md); text-decoration: none; white-space: nowrap; }
+.zst-nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+.zst-nav-link:hover { background: var(--ui-hover); color: var(--ui-text); }
+.zst-nav-link[aria-current="page"] { background: var(--ui-active); color: var(--ui-text); font-weight: 500; }
+
+.zst-main { min-width: 0; }
+.zst-title { margin: 0 0 4px; font: 600 22px/28px var(--ui-font); letter-spacing: -0.014em; }
+.zst-lead { margin: 0 0 8px; color: var(--ui-text-2); font-size: var(--ui-text-md); }
+.zst-section { margin-top: 32px; }
+.zst-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--ui-border); }
+.zst-section-title { margin: 0; font: 600 var(--ui-text-lg)/22px var(--ui-font); }
+.zst-section-hint { margin: 6px 0 0; color: var(--ui-text-2); font-size: var(--ui-text-sm); line-height: 1.45; }
+
+.zst-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--ui-border); }
+.zst-row-text { min-width: 0; }
+.zst-row-title { font-size: var(--ui-text-md); font-weight: 500; }
+.zst-row-hint { margin-top: 3px; color: var(--ui-text-2); font-size: var(--ui-text-sm); line-height: 1.45; }
+.zst-row-ctl { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+.zst-stack { display: grid; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--ui-border); }
+.zst-stack:last-child { border-bottom: 0; }
+
+.zst-switch { position: relative; width: 32px; height: 18px; flex-shrink: 0; padding: 0; border: 0; border-radius: 9px; background: var(--ui-border-strong); cursor: pointer; transition: background 0.15s; }
+.zst-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); transition: transform 0.15s; }
+.zst-switch[aria-checked="true"] { background: var(--ui-brand); }
+.zst-switch[aria-checked="true"]::after { transform: translateX(14px); }
+.zst-switch:disabled { opacity: 0.5; cursor: default; }
+.zst-switch:focus-visible { outline: 2px solid var(--ui-brand); outline-offset: 2px; }
+
+.zst-field { display: grid; gap: 5px; }
+.zst-label { font-size: var(--ui-text-sm); font-weight: 600; color: var(--ui-text-2); }
+.zst-input, .zst-select, .zst-textarea { width: 100%; min-height: 32px; padding: 6px 10px; border: 1px solid var(--ui-border-2); border-radius: var(--ui-radius); background: var(--ui-bg); color: var(--ui-text); font: inherit; font-size: var(--ui-text-md); }
+.zst-textarea { min-height: 96px; font-family: var(--ui-mono); font-size: 12px; resize: vertical; }
+.zst-input:focus, .zst-select:focus, .zst-textarea:focus { outline: none; border-color: var(--ui-brand); box-shadow: 0 0 0 2px var(--ui-brand-soft); }
+.zst-select { width: auto; }
+.zst-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.zst-inline .zst-input { flex: 1; min-width: 180px; width: auto; }
+
+.zst-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--ui-border-2); border-radius: var(--ui-radius); background: var(--ui-bg); color: var(--ui-text); font: inherit; font-size: var(--ui-text-md); font-weight: 500; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.zst-btn:hover { background: var(--ui-hover); }
+.zst-btn:disabled { opacity: 0.5; cursor: default; }
+.zst-btn svg { width: 15px; height: 15px; }
+.zst-btn-primary { background: var(--ui-brand-fill); border-color: transparent; color: var(--ui-text-on-brand); }
+.zst-btn-primary:hover { background: var(--ui-brand-hover); }
+.zst-btn-danger { color: var(--ui-danger-text); }
+.zst-btn-sm { height: 26px; padding: 0 8px; font-size: var(--ui-text-sm); }
+
+.zst-code { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 6px 6px 10px; border-radius: var(--ui-radius); background: var(--ui-bg-2); font-family: var(--ui-mono); font-size: 12px; }
+.zst-code-text { flex: 1; min-width: 0; overflow-wrap: anywhere; user-select: all; }
+.zst-kv { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+.zst-kv > span { color: var(--ui-text-2); font-size: var(--ui-text-sm); }
+
+.zst-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: var(--ui-radius-sm); background: var(--ui-bg-2); color: var(--ui-text-2); font-size: var(--ui-text-xs); font-weight: 600; white-space: nowrap; }
+.zst-badge-ok { background: color-mix(in srgb, var(--ui-success) 14%, transparent); color: var(--ui-success-text); }
+.zst-badge-warn { background: var(--ui-warning-bg); color: var(--ui-warning-text); }
+.zst-note { padding: 10px 12px; border-radius: var(--ui-radius); background: var(--ui-bg-2); color: var(--ui-text-2); font-size: var(--ui-text-sm); line-height: 1.45; }
+.zst-note-warn { background: var(--ui-warning-bg); color: var(--ui-warning-text); }
+.zst-error { margin: 0; color: var(--ui-danger-text); font-size: var(--ui-text-sm); }
+.zst-ok { margin: 0; color: var(--ui-success-text); font-size: var(--ui-text-sm); }
+.zst-muted { color: var(--ui-text-2); font-size: var(--ui-text-sm); }
+
+.zst-item { padding: 14px 0; border-bottom: 1px solid var(--ui-border); display: grid; gap: 10px; }
+.zst-item-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.zst-item .zst-row { padding-bottom: 0; border-bottom: 0; }
+.zst-item-name { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 500; font-size: var(--ui-text-md); overflow-wrap: anywhere; }
+
+.zst-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 16px 0 8px; }
+.zst-filters .zst-field { min-width: 140px; }
+.zst-filters .zst-input, .zst-filters .zst-select { height: 32px; min-height: 32px; padding-top: 0; padding-bottom: 0; }
+.zst-table-wrap { overflow-x: auto; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-md); }
+.zst-table { width: 100%; border-collapse: collapse; font-size: var(--ui-text-sm); }
+.zst-table th, .zst-table td { padding: 8px 12px; border-bottom: 1px solid var(--ui-border); text-align: start; vertical-align: top; }
+.zst-table th { color: var(--ui-text-2); font-weight: 500; white-space: nowrap; background: var(--ui-bg-2); }
+.zst-table tr:last-child td { border-bottom: 0; }
+.zst-table td code { font-family: var(--ui-mono); font-size: 12px; }
+.zst-nowrap { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) {
+  .zst { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 20px 16px 72px; }
+  .zst-nav { position: static; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 4px; }
+  .zst-nav-label { display: none; }
+  .zst-row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .zst-row-ctl { justify-content: flex-start; }
+  .zst-kv { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+
+/* Analytics: the period's numbers (each a chart), a bar per day. */
+.zst-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 4px 0 20px; }
+.zst-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-bg); color: var(--ui-text); font: inherit; text-align: start; cursor: pointer; }
+.zst-stat:disabled { cursor: default; }
+.zst-stat:not(:disabled):hover { background: var(--ui-hover); }
+.zst-stat[aria-pressed="true"] { border-color: var(--ui-brand); box-shadow: 0 0 0 1px var(--ui-brand); }
+.zst-stat:focus-visible { outline: none; box-shadow: var(--ui-focus); }
+.zst-stat-value { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.zst-stat-label { color: var(--ui-text-2); font-size: var(--ui-text-sm); }
+.zst-chart { display: block; }
+.zst-chart-bar { fill: var(--ui-brand); }
+.zst-chart-grid { stroke: var(--ui-border); stroke-width: 1; }
+.zst-chart-axis { fill: var(--ui-text-3); font-size: 11px; }

@@ -1,0 +1,172 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "./grid.scss" as g;
+@use "ds/typography.scss" as t;
+
+.grid-empty-placeholder {
+  border-radius: deprecated.$br-12;
+  display: grid;
+  padding: deprecated.$s-12 0;
+
+  &.libs {
+    background-image: url("/images/ph-left.svg"), url("/images/ph-right.svg");
+    background-position:
+      15% bottom,
+      85% top;
+    background-repeat: no-repeat;
+    align-items: center;
+    border: deprecated.$s-1 solid var(--color-background-quaternary);
+    border-radius: deprecated.$br-4;
+    display: flex;
+    flex-direction: column;
+    height: deprecated.$s-200;
+    margin: deprecated.$s-16;
+    padding: deprecated.$s-48;
+    justify-content: center;
+
+    .text {
+      a {
+        color: var(--color-foreground-primary);
+      }
+
+      p {
+        max-width: deprecated.$s-360;
+        text-align: center;
+        font-size: deprecated.$fs-16;
+      }
+    }
+  }
+
+  .create-new {
+    background-color: var(--color-background-tertiary);
+    border-radius: deprecated.$br-8;
+    color: var(--color-foreground-primary);
+    cursor: pointer;
+    margin: deprecated.$s-8;
+    border: deprecated.$s-2 solid transparent;
+    width: var(--thumbnail-width, #{g.$thumbnail-default-width});
+    height: var(--thumbnail-height, #{g.$thumbnail-default-height});
+
+    svg {
+      width: deprecated.$s-32;
+      height: deprecated.$s-32;
+      stroke: var(--color-foreground-secondary);
+    }
+
+    &:hover {
+      border: deprecated.$s-2 solid var(--color-accent-tertiary);
+      background-color: var(--color-background-quaternary);
+      color: var(--color-accent-primary);
+
+      svg {
+        stroke: var(--color-accent-tertiary);
+      }
+    }
+  }
+
+  .text {
+    margin-top: deprecated.$s-12;
+    color: var(--color-foreground-secondary);
+    font-size: deprecated.$fs-16;
+  }
+}
+
+.placeholder-loader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  row-gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) 0 var(--sp-m) 0;
+}
+
+.placeholder-text {
+  color: var(--color-foreground-secondary);
+  font-size: deprecated.$fs-16;
+  text-align: center;
+}
+
+.placeholder-markdown {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+
+  a {
+    color: var(--color-accent-primary);
+  }
+}
+
+.empty-placeholder-libraries {
+  margin: auto;
+  margin-top: 5%;
+}
+
+.empty-project-container {
+  width: 100%;
+  display: grid;
+  gap: var(--sp-m);
+  grid-template-columns: repeat(auto-fill, minmax(#{deprecated.$s-240}, 1fr));
+  margin-top: deprecated.$s-4;
+}
+
+// Figma file-browser create tiles.
+.empty-project-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+  min-height: deprecated.$s-64;
+  padding: var(--sp-m) var(--sp-l);
+  border: deprecated.$s-1 solid var(--blueai-border, var(--color-background-quaternary));
+  border-radius: deprecated.$br-8;
+  background-color: var(--color-background-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--blueai-bg-hover, var(--color-background-secondary));
+  }
+}
+
+.empty-project-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
+  border-radius: deprecated.$br-6;
+  color: var(--color-static-white, #ffffff);
+}
+
+.card-icon-design {
+  background-color: var(--color-accent-primary);
+}
+
+.card-icon-import {
+  background-color: var(--color-foreground-primary);
+  color: var(--color-background-primary);
+}
+
+.empty-project-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-2;
+  min-width: 0;
+}
+
+.empty-project-card-title {
+  @include t.use-typography("body-medium");
+
+  font-weight: 550;
+  color: var(--color-foreground-primary);
+}
+
+.empty-project-card-subtitle {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}

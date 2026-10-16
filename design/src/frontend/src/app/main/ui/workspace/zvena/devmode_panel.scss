@@ -1,0 +1,200 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+
+// zvena: Figma Dev Mode — status and annotation above the inspect tabs.
+.devmode-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  padding-inline: var(--sp-m);
+  padding-block-end: var(--sp-s);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+  max-block-size: 45vh;
+  overflow-y: auto;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-block-size: $sz-24;
+}
+
+.status-meta {
+  @include t.use-typography("body-small");
+
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}
+
+.copy-button {
+  max-inline-size: $sz-28;
+}
+
+.annotation-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.annotation-clickable {
+  border-radius: $br-8;
+  padding: var(--sp-xs);
+  margin: calc(-1 * var(--sp-xs));
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+}
+
+.annotation-text {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.annotation-props {
+  display: flex;
+  flex-direction: column;
+  gap: px2rem(2);
+  margin: 0;
+}
+
+.prop-row {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-s);
+}
+
+.prop-name {
+  color: var(--color-foreground-secondary);
+}
+
+.prop-value {
+  margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-primary);
+  font-family: "Roboto Mono", monospace;
+}
+
+.add-annotation {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  padding-inline: var(--sp-s);
+  border: $b-1 dashed var(--color-background-quaternary);
+  border-radius: $br-8;
+  background: none;
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-foreground-primary);
+    background-color: var(--color-background-tertiary);
+  }
+}
+
+.annotation-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.annotation-textarea {
+  @include t.use-typography("body-small");
+
+  inline-size: 100%;
+  min-block-size: px2rem(72);
+  padding: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  resize: vertical;
+  outline: none;
+
+  &:focus {
+    border-color: var(--color-accent-primary);
+  }
+}
+
+.props-title {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  color: var(--color-foreground-secondary);
+}
+
+.props-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xxs);
+}
+
+.prop-chip {
+  @include t.use-typography("body-small");
+
+  block-size: $sz-24;
+  padding-inline: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-6;
+  background: none;
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+
+  &.active {
+    border-color: var(--color-accent-primary);
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+  }
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-xs);
+}
+
+.delete-button {
+  margin-inline-end: auto;
+}
+
+// zvena: Dev Mode "Compare changes"
+.compare-btn {
+  align-self: flex-start;
+  margin-block-start: var(--sp-xs);
+}

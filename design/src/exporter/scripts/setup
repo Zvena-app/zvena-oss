@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -e;
+
+pnpm install;
+pnpm exec playwright install chromium

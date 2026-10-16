@@ -1,0 +1,158 @@
+{
+  "extName": {
+    "message": "zvena Web Clipper"
+  },
+  "extDescription": {
+    "message": "Guarda cualquier página web en zvena Docs: el artículo completo, un marcador o solo la parte que seleccionaste."
+  },
+  "actionTitle": {
+    "message": "Guardar en zvena"
+  },
+  "menuSave": {
+    "message": "Guardar en zvena"
+  },
+  "cmdOpen": {
+    "message": "Abrir zvena Web Clipper"
+  },
+  "cmdSavePage": {
+    "message": "Guardar esta página en el último destino"
+  },
+  "connectTitle": {
+    "message": "Guarda páginas en zvena"
+  },
+  "connectLead": {
+    "message": "Conecta el clipper a tu cuenta de zvena. Solo puede añadir páginas; nunca lee tus documentos."
+  },
+  "connectButton": {
+    "message": "Conectar con zvena"
+  },
+  "connectWaiting": {
+    "message": "Termina de conectar en la pestaña de zvena que se acaba de abrir."
+  },
+  "titleLabel": {
+    "message": "Título"
+  },
+  "addTo": {
+    "message": "Añadir a"
+  },
+  "workspace": {
+    "message": "Espacio de trabajo"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar páginas y bases de datos"
+  },
+  "destPrivate": {
+    "message": "Privado"
+  },
+  "destPrivateHint": {
+    "message": "Una página nueva en tu sección Privado"
+  },
+  "recent": {
+    "message": "Recientes"
+  },
+  "results": {
+    "message": "Páginas y bases de datos"
+  },
+  "noResults": {
+    "message": "No se encontró nada"
+  },
+  "database": {
+    "message": "Base de datos"
+  },
+  "saveAs": {
+    "message": "Guardar como"
+  },
+  "modeArticle": {
+    "message": "Página completa"
+  },
+  "modeBookmark": {
+    "message": "Marcador"
+  },
+  "modeSelection": {
+    "message": "Selección"
+  },
+  "save": {
+    "message": "Guardar"
+  },
+  "saving": {
+    "message": "Guardando…"
+  },
+  "saved": {
+    "message": "Guardado en zvena"
+  },
+  "openInZvena": {
+    "message": "Abrir en zvena"
+  },
+  "done": {
+    "message": "Listo"
+  },
+  "settings": {
+    "message": "Configuración"
+  },
+  "back": {
+    "message": "Atrás"
+  },
+  "serverLabel": {
+    "message": "Servidor de zvena"
+  },
+  "serverHint": {
+    "message": "Cámbialo solo si tu equipo tiene su propio servidor de zvena."
+  },
+  "serverSave": {
+    "message": "Usar este servidor"
+  },
+  "serverInvalid": {
+    "message": "Escribe la dirección de un servidor de zvena, por ejemplo https://zvena.app."
+  },
+  "signedInAs": {
+    "message": "Conectado como"
+  },
+  "disconnect": {
+    "message": "Desconectar"
+  },
+  "loading": {
+    "message": "Cargando…"
+  },
+  "untitled": {
+    "message": "Sin título"
+  },
+  "errBadRequest": {
+    "message": "zvena no pudo guardar esta página. Prueba otra opción de «Guardar como»."
+  },
+  "errUnauthorized": {
+    "message": "La conexión con zvena terminó. Vuelve a conectar."
+  },
+  "errForbidden": {
+    "message": "No puedes añadir páginas ahí. Elige otro destino."
+  },
+  "errNotFound": {
+    "message": "Esa página o base de datos ya no existe. Elige otro destino."
+  },
+  "errTooLarge": {
+    "message": "Esta página es demasiado grande. Prueba Marcador o Selección."
+  },
+  "errRateLimited": {
+    "message": "Demasiados guardados seguidos. Inténtalo de nuevo en un minuto."
+  },
+  "errQuota": {
+    "message": "Tu almacenamiento de zvena está lleno."
+  },
+  "errServer": {
+    "message": "zvena no está disponible ahora. Inténtalo más tarde."
+  },
+  "errNetwork": {
+    "message": "No se puede conectar con zvena. Revisa tu conexión."
+  },
+  "errNoPage": {
+    "message": "Esta página no se puede guardar (las páginas del navegador y las tiendas de extensiones están protegidas). Prueba con otra pestaña."
+  },
+  "errNoSelection": {
+    "message": "Primero selecciona texto en la página."
+  },
+  "errPermission": {
+    "message": "No se permitió el acceso al servidor de zvena."
+  },
+  "errConnect": {
+    "message": "La conexión no se completó. Inténtalo de nuevo."
+  }
+}

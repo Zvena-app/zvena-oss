@@ -1,0 +1,104 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Local variables / Local styles sections (see zvena_local_styles.cljs)
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+
+.element-set {
+  max-inline-size: var(--options-width);
+  margin-block-end: var(--sp-s);
+}
+
+.element-title {
+  inline-size: 100%;
+}
+
+.open-row,
+.style-row {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  min-block-size: $sz-32;
+  padding-inline: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background: transparent;
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+
+  &:hover .row-action {
+    opacity: 1;
+  }
+}
+
+.row-icon,
+.row-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  inline-size: $sz-16;
+  color: var(--color-foreground-secondary);
+}
+
+.text-preview {
+  inline-size: $sz-24;
+  font-size: px2rem(13);
+  color: var(--color-foreground-primary);
+}
+
+.row-name {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-meta {
+  flex: 0 0 auto;
+  color: var(--color-foreground-secondary);
+}
+
+.row-action {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--color-foreground-secondary);
+  opacity: 0;
+}
+
+.style-kind {
+  display: flex;
+  flex-direction: column;
+}
+
+.kind-title,
+.folder-title {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  min-block-size: $sz-24;
+  padding-inline: var(--sp-s);
+  color: var(--color-foreground-secondary);
+}
+
+.style-group {
+  display: flex;
+  flex-direction: column;
+}

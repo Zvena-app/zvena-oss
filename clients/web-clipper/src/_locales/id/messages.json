@@ -1,0 +1,158 @@
+{
+  "extName": {
+    "message": "zvena Web Clipper"
+  },
+  "extDescription": {
+    "message": "Simpan halaman web apa pun ke zvena Docs: artikel lengkap, markah, atau hanya bagian yang Anda pilih."
+  },
+  "actionTitle": {
+    "message": "Simpan ke zvena"
+  },
+  "menuSave": {
+    "message": "Simpan ke zvena"
+  },
+  "cmdOpen": {
+    "message": "Buka zvena Web Clipper"
+  },
+  "cmdSavePage": {
+    "message": "Simpan halaman ini ke tujuan terakhir"
+  },
+  "connectTitle": {
+    "message": "Simpan halaman ke zvena"
+  },
+  "connectLead": {
+    "message": "Hubungkan clipper ke akun zvena Anda. Clipper hanya bisa menambahkan halaman; tidak pernah membaca dokumen Anda."
+  },
+  "connectButton": {
+    "message": "Hubungkan ke zvena"
+  },
+  "connectWaiting": {
+    "message": "Selesaikan penyambungan di tab zvena yang baru saja terbuka."
+  },
+  "titleLabel": {
+    "message": "Judul"
+  },
+  "addTo": {
+    "message": "Tambahkan ke"
+  },
+  "workspace": {
+    "message": "Ruang kerja"
+  },
+  "searchPlaceholder": {
+    "message": "Cari halaman dan database"
+  },
+  "destPrivate": {
+    "message": "Pribadi"
+  },
+  "destPrivateHint": {
+    "message": "Halaman baru di bagian Pribadi Anda"
+  },
+  "recent": {
+    "message": "Terbaru"
+  },
+  "results": {
+    "message": "Halaman dan database"
+  },
+  "noResults": {
+    "message": "Tidak ditemukan apa pun"
+  },
+  "database": {
+    "message": "Database"
+  },
+  "saveAs": {
+    "message": "Simpan sebagai"
+  },
+  "modeArticle": {
+    "message": "Halaman penuh"
+  },
+  "modeBookmark": {
+    "message": "Markah"
+  },
+  "modeSelection": {
+    "message": "Pilihan"
+  },
+  "save": {
+    "message": "Simpan"
+  },
+  "saving": {
+    "message": "Menyimpan…"
+  },
+  "saved": {
+    "message": "Tersimpan di zvena"
+  },
+  "openInZvena": {
+    "message": "Buka di zvena"
+  },
+  "done": {
+    "message": "Selesai"
+  },
+  "settings": {
+    "message": "Pengaturan"
+  },
+  "back": {
+    "message": "Kembali"
+  },
+  "serverLabel": {
+    "message": "Server zvena"
+  },
+  "serverHint": {
+    "message": "Ubah hanya jika tim Anda menjalankan server zvena sendiri."
+  },
+  "serverSave": {
+    "message": "Gunakan server ini"
+  },
+  "serverInvalid": {
+    "message": "Masukkan alamat server zvena, misalnya https://zvena.app."
+  },
+  "signedInAs": {
+    "message": "Terhubung sebagai"
+  },
+  "disconnect": {
+    "message": "Putuskan"
+  },
+  "loading": {
+    "message": "Memuat…"
+  },
+  "untitled": {
+    "message": "Tanpa judul"
+  },
+  "errBadRequest": {
+    "message": "zvena tidak dapat menyimpan halaman ini. Coba opsi “Simpan sebagai” yang lain."
+  },
+  "errUnauthorized": {
+    "message": "Koneksi ke zvena telah berakhir. Hubungkan lagi."
+  },
+  "errForbidden": {
+    "message": "Anda tidak dapat menambahkan halaman di sana. Pilih tujuan lain."
+  },
+  "errNotFound": {
+    "message": "Halaman atau database itu sudah tidak ada. Pilih tujuan lain."
+  },
+  "errTooLarge": {
+    "message": "Halaman ini terlalu besar. Coba Markah atau Pilihan."
+  },
+  "errRateLimited": {
+    "message": "Terlalu banyak penyimpanan sekaligus. Coba lagi dalam satu menit."
+  },
+  "errQuota": {
+    "message": "Penyimpanan zvena Anda penuh."
+  },
+  "errServer": {
+    "message": "zvena sedang tidak tersedia. Coba lagi nanti."
+  },
+  "errNetwork": {
+    "message": "Tidak dapat menjangkau zvena. Periksa koneksi Anda."
+  },
+  "errNoPage": {
+    "message": "Halaman ini tidak dapat disimpan (halaman browser dan toko ekstensi dilindungi). Coba tab lain."
+  },
+  "errNoSelection": {
+    "message": "Pilih teks di halaman terlebih dahulu."
+  },
+  "errPermission": {
+    "message": "Akses ke server zvena tidak diizinkan."
+  },
+  "errConnect": {
+    "message": "Penyambungan tidak selesai. Coba lagi."
+  }
+}

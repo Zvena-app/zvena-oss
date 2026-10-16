@@ -1,0 +1,38 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.profile-name {
+  width: fit-content;
+  font-family: "inter", "vazirmatn", sans-serif;
+  padding: 2px 12px;
+  border-radius: deprecated.$br-4;
+  display: flex;
+  align-items: center;
+  height: 20px;
+  font-size: deprecated.$fs-12;
+  line-height: deprecated.$lh-150;
+}
+
+.multiuser-cursor {
+  z-index: 10000;
+  pointer-events: none;
+}
+
+// zvena: cursor chat message next to a collaborator's cursor
+.cursor-chat {
+  width: fit-content;
+  max-width: 260px;
+  margin-top: 4px;
+  padding: 6px 12px;
+  border-radius: 4px 16px 16px;
+  font-family: "inter", "vazirmatn", sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #000;
+  overflow-wrap: anywhere;
+}

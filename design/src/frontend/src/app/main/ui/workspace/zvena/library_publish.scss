@@ -1,0 +1,352 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Figma's "Publish library" dialog and library release notes.
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+// --- Publish dialog
+
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  background-color: var(--color-overlay-default);
+}
+
+.modal-container {
+  position: relative;
+  padding: var(--sp-xxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  inline-size: px2rem(520);
+  max-inline-size: calc(100vw - px2rem(32));
+  max-block-size: calc(100vh - px2rem(64));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  color: var(--color-foreground-primary);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  padding-inline-end: var(--sp-xxxl);
+}
+
+.modal-close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-m);
+}
+
+.subtitle {
+  @include use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  margin-block-start: calc(-1 * var(--sp-s));
+  color: var(--color-foreground-secondary);
+}
+
+.file-name {
+  @include use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.last-publish {
+  min-block-size: px2rem(16);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  min-block-size: px2rem(96);
+  max-block-size: px2rem(360);
+  overflow-y: auto;
+}
+
+.hint {
+  @include use-typography("body-small");
+
+  margin: 0;
+  padding: var(--sp-s) var(--sp-m);
+  border-radius: $br-8;
+  background-color: var(--color-background-secondary);
+  color: var(--color-foreground-secondary);
+}
+
+.empty {
+  @include use-typography("body-medium");
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-m);
+  flex: 1 1 auto;
+  min-block-size: px2rem(96);
+  color: var(--color-foreground-secondary);
+  text-align: center;
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.kind {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.kind-title {
+  @include use-typography("headline-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  color: var(--color-foreground-primary);
+}
+
+.kind-count {
+  @include use-typography("body-small");
+
+  padding: 0 var(--sp-xs);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: px2rem(32) 1fr auto;
+  align-items: center;
+  gap: var(--sp-s);
+  min-block-size: px2rem(36);
+  padding: var(--sp-xxs) var(--sp-xs);
+  border-radius: $br-8;
+
+  &:hover {
+    background-color: var(--color-background-secondary);
+  }
+}
+
+.thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: px2rem(32);
+  block-size: px2rem(32);
+  border-radius: $br-4;
+  background-color: var(--color-background-tertiary);
+  overflow: hidden;
+  color: var(--color-foreground-secondary);
+}
+
+.thumb-color {
+  --bullet-size: #{px2rem(20)};
+
+  background-color: transparent;
+}
+
+.thumb-text {
+  font-size: px2rem(14);
+  line-height: 1;
+  color: var(--color-foreground-primary);
+}
+
+.thumb-svg {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+.thumb-icon {
+  color: var(--color-foreground-secondary);
+}
+
+.swatch-empty {
+  inline-size: px2rem(20);
+  block-size: px2rem(20);
+  border-radius: $br-4;
+  border: $b-1 dashed var(--color-foreground-secondary);
+}
+
+.row-name {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.row-title {
+  @include use-typography("body-medium");
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-sub {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  @include use-typography("body-small");
+
+  padding: 0 var(--sp-s);
+  border-radius: $br-8;
+  white-space: nowrap;
+}
+
+.badge-added {
+  background-color: var(--color-background-success);
+  color: var(--color-accent-success);
+}
+
+.badge-changed {
+  background-color: var(--color-background-info);
+  color: var(--color-accent-info);
+}
+
+.badge-removed {
+  background-color: var(--color-background-error);
+  color: var(--color-accent-error);
+}
+
+.row-more {
+  @include use-typography("body-small");
+
+  padding: var(--sp-xs) var(--sp-xs) 0;
+  color: var(--color-foreground-secondary);
+}
+
+.field {
+  @include use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  color: var(--color-foreground-secondary);
+}
+
+.description {
+  @include use-typography("body-medium");
+
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: px2rem(72);
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  border: $b-1 solid transparent;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent-primary);
+  }
+
+  &::placeholder {
+    color: var(--color-foreground-secondary);
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+// --- Release notes (Libraries → Updates)
+
+.notes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  margin: var(--sp-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  padding: var(--sp-s) var(--sp-m);
+  border-radius: $br-8;
+  background-color: var(--color-background-secondary);
+  border-inline-start: $b-2 solid var(--color-accent-primary);
+}
+
+.note-header {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-s);
+  color: var(--color-foreground-secondary);
+}
+
+.note-author {
+  @include use-typography("headline-small");
+
+  color: var(--color-foreground-primary);
+}
+
+.note-date {
+  white-space: nowrap;
+}
+
+.note-description {
+  @include use-typography("body-medium");
+
+  margin: 0;
+  color: var(--color-foreground-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-empty {
+  color: var(--color-foreground-secondary);
+  font-style: italic;
+}
+
+.note-summary {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}

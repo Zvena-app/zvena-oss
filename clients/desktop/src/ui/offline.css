@@ -1,0 +1,3 @@
+.offline { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; height: 100%; padding: 24px; text-align: center; }
+.offline img { border-radius: var(--ui-radius-md); }
+.offline p { margin: 0; max-width: 360px; color: var(--ui-text-2); font-size: var(--ui-text-lg); }

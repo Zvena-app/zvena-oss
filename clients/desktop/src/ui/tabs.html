@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>zvena</title>
+    <link rel="stylesheet" href="/ui.css" />
+    <link rel="stylesheet" href="/tabs.css" />
+    <script src="/tabs.js" defer></script>
+  </head>
+  <body class="strip">
+    <div class="nav">
+      <button type="button" class="icon" id="menu" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" /></svg>
+      </button>
+      <button type="button" class="icon" id="back" disabled>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path class="flip" d="M10 3.5 5.5 8l4.5 4.5" /></svg>
+      </button>
+      <button type="button" class="icon" id="forward" disabled>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path class="flip" d="M6 3.5 10.5 8 6 12.5" /></svg>
+      </button>
+    </div>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <button type="button" class="icon" id="new">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+    </button>
+    <div class="drag"></div>
+  </body>
+</html>

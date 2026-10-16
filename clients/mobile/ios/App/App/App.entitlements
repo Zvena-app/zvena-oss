@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Push: Xcode signs store builds with "production" from the provisioning profile. -->
+	<key>aps-environment</key>
+	<string>development</string>
+	<!-- Universal links, verified against https://zvena.app/.well-known/apple-app-site-association. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:zvena.app</string>
+	</array>
+	<!-- Shared with the share extension (items it hands over). -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.app.zvena.mobile</string>
+	</array>
+</dict>
+</plist>

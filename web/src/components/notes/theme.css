@@ -1,0 +1,311 @@
+/* zvena Documents — Notion's page and databases in zvena's colors.
+   notes.css draws Notion's structure (sizes, spacing, menus, blocks — measured
+   on Notion's own pages: 40/48 bold titles, 16/24 body, a 708px column). This
+   layer, imported after it, sets the colors and type from the zvena design
+   system: every --nt-* token here reads its --ui-* token (app/ui-theme.css)
+   and falls back to the same value while that sheet is not loaded — cold
+   neutrals, hairline greys, one brand blue for the primary action,
+   selection and focus; Inter everywhere (Serif and Mono stay page font
+   choices). Option and tag colors stay Notion's ten (notes.css), as the
+   design system's labels. Rules for markup that is zvena's own (the Design
+   block, notices) follow the same shapes. */
+
+/* ------------------------------------------------------------------ */
+/* Tokens — the one place Documents' colors and fonts are set. */
+
+.nt-root,
+.nt-pub,
+.nt-layer {
+  --nt-bg: var(--ui-bg, #ffffff);
+  --nt-side-bg: var(--ui-chrome, #f5f5f5);
+  --nt-surface: var(--ui-bg, #ffffff);
+  --nt-text: var(--ui-text, #1e1e1e);
+  --nt-text-2: var(--ui-text-2, #6b6b6b);
+  --nt-text-3: var(--ui-text-3, #707070);
+  --nt-side-text: var(--ui-text, #1e1e1e);
+  --nt-icon: var(--ui-text-2, #6b6b6b);
+  --nt-hover: var(--ui-hover, rgba(0, 0, 0, 0.05));
+  --nt-hover-2: var(--ui-active, rgba(0, 0, 0, 0.08));
+  --nt-active: var(--ui-active, rgba(0, 0, 0, 0.08));
+  --nt-border: var(--ui-border, #e6e6e6);
+  --nt-border-2: var(--ui-border-2, #d9d9d9);
+  --nt-divider: var(--ui-border, #e6e6e6);
+  --nt-divider-strong: var(--ui-border-strong, #b3b3b3);
+  --nt-hairline: var(--ui-border, #e6e6e6);
+  --nt-blue: var(--ui-brand, #0d99ff);
+  --nt-blue-hover: var(--ui-brand-hover, #0a8ae6);
+  --nt-blue-soft: var(--ui-brand-soft, rgba(13, 153, 255, 0.12));
+  --nt-blue-text: var(--ui-brand-text, #007be5);
+  --nt-red: var(--ui-danger-text, #dc3412);
+  --nt-select: var(--ui-selected, #e5f4ff);
+  --nt-sel-text: var(--ui-selected-strong, #bde3ff);
+  --nt-menu-bg: var(--ui-bg, #ffffff);
+  --nt-menu-shadow: var(--ui-shadow-3, 0 0 0.5px rgba(0, 0, 0, 0.12), 0 5px 17px rgba(0, 0, 0, 0.15), 0 2px 7px rgba(0, 0, 0, 0.1));
+  --nt-card-shadow: var(--ui-shadow-1, 0 0 0.5px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.08));
+  --nt-input-bg: var(--ui-bg-2, #f5f5f5);
+  --nt-input-border: transparent;
+  --nt-code-bg: var(--ui-bg-2, #f5f5f5);
+  --nt-inline-code: var(--ui-danger-text, #dc3412);
+  --nt-inline-code-bg: var(--ui-bg-2, #f5f5f5);
+  --nt-scrim: var(--ui-scrim, rgba(0, 0, 0, 0.3));
+  --nt-tip-bg: #1e1e1e;
+  --nt-avatar-bg: var(--ui-component, #9747ff);
+  --nt-avatar-text: #ffffff;
+  --nt-b-default: var(--ui-bg-2, #f5f5f5);
+  --nt-brand-mark: var(--ui-brand-fill, #0b72cc);
+  --nt-card-bg: var(--ui-bg, #ffffff);
+  --nt-card-hover: var(--ui-bg-2, #f5f5f5);
+
+  --nt-font: var(--ui-font, "Zvena Sans", "Zvena Sans Fallback", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji");
+  --nt-display: var(--nt-font);
+  --nt-serif: "Zvena Serif", "Zvena Serif Fallback", Georgia, "PT Serif", ui-serif, serif;
+  --nt-mono: var(--ui-mono, "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  --nt-code-font: var(--ui-mono, "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+}
+
+.dark .nt-root,
+.dark .nt-pub,
+.dark .nt-layer {
+  --nt-bg: var(--ui-bg, #2c2c2c);
+  --nt-side-bg: var(--ui-chrome, #1e1e1e);
+  --nt-surface: var(--ui-bg, #2c2c2c);
+  --nt-text: var(--ui-text, #ffffff);
+  --nt-text-2: var(--ui-text-2, #b3b3b3);
+  --nt-text-3: var(--ui-text-3, #8c8c8c);
+  --nt-side-text: var(--ui-text, #ffffff);
+  --nt-icon: var(--ui-text-2, #b3b3b3);
+  --nt-hover: var(--ui-hover, rgba(255, 255, 255, 0.06));
+  --nt-hover-2: var(--ui-active, rgba(255, 255, 255, 0.1));
+  --nt-active: var(--ui-active, rgba(255, 255, 255, 0.1));
+  --nt-border: var(--ui-border, #444444);
+  --nt-border-2: var(--ui-border-2, #4f4f4f);
+  --nt-divider: var(--ui-border, #444444);
+  --nt-divider-strong: var(--ui-border-strong, #757575);
+  --nt-hairline: var(--ui-border, #444444);
+  --nt-blue: var(--ui-brand, #0c8ce9);
+  --nt-blue-hover: var(--ui-brand-hover, #0a7dd0);
+  --nt-blue-soft: var(--ui-brand-soft, rgba(12, 140, 233, 0.22));
+  --nt-blue-text: var(--ui-brand-text, #7cc4f8);
+  --nt-red: var(--ui-danger-text, #fc9286);
+  --nt-select: var(--ui-selected, #36475f);
+  --nt-sel-text: var(--ui-selected-strong, #2e5c8a);
+  --nt-menu-bg: var(--ui-bg, #2c2c2c);
+  --nt-menu-shadow: var(--ui-shadow-3, 0 0 0.5px rgba(0, 0, 0, 0.5), 0 5px 17px rgba(0, 0, 0, 0.45), 0 2px 7px rgba(0, 0, 0, 0.3));
+  --nt-card-shadow: var(--ui-shadow-1, 0 0 0.5px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3));
+  --nt-input-bg: var(--ui-bg-2, #383838);
+  --nt-code-bg: var(--ui-bg-2, #383838);
+  --nt-inline-code: var(--ui-danger-text, #fc9286);
+  --nt-inline-code-bg: var(--ui-bg-2, #383838);
+  --nt-scrim: var(--ui-scrim, rgba(0, 0, 0, 0.5));
+  --nt-avatar-bg: var(--ui-component, #9747ff);
+  --nt-b-default: var(--ui-bg-2, #383838);
+  --nt-brand-mark: var(--ui-brand-fill, #0b72cc);
+  --nt-card-bg: var(--ui-bg-2, #383838);
+  --nt-card-hover: var(--ui-bg-3, #444444);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base: Inter, the design system's only interface font (Notion's system UI font replaced). */
+
+.nt-root,
+.nt-pub,
+.nt-layer {
+  font-family: var(--nt-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "calt", "kern";
+}
+
+/* ------------------------------------------------------------------ */
+/* The brand in the sidebar's workspace switcher: zvena's mark as the
+   workspace icon when the workspace has none. */
+
+.nt-ws-avatar {
+  background: var(--nt-brand-mark);
+  color: #fff;
+}
+.nt-ws-avatar .zv-logo-mark,
+.nt-ws-avatar .zv-logo-mark {
+  width: 100%;
+  height: 100%;
+  color: var(--nt-brand-mark);
+}
+
+/* Public pages: the zvena link in the top bar. */
+.nt-pub-brand .zv-logo,
+.nt-pub-brand .zv-logo {
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------------ */
+/* zvena's own blocks and notices, in Notion's shapes. */
+
+/* An "icon:" page icon while its set loads (an empty box of the same size). */
+.nt-licon-wait {
+  display: inline-block;
+}
+
+/* Static page (StaticBlocks) while the editor loads: boxes hold the place of rich blocks. */
+.nt-static-box {
+  width: 100%;
+  min-height: 120px;
+  margin: 4px 0;
+  border-radius: 4px;
+  background: var(--nt-hover);
+}
+.nt-static-box-table {
+  min-height: 72px;
+}
+.nt-static .bn-editor {
+  outline: none;
+  cursor: default;
+}
+
+/* Role and guest notices above the page, and who else is editing. */
+.nt-banner.nt-banner-info {
+  background: var(--nt-blue-soft);
+  color: var(--nt-text);
+}
+.nt-banner.nt-banner-info button {
+  color: var(--nt-blue-text);
+  box-shadow: inset 0 0 0 1px var(--nt-border-2);
+}
+.nt-banner.nt-banner-info button:hover {
+  background: var(--nt-hover);
+}
+.nt-presence {
+  margin: 4px 0 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: var(--nt-b-default);
+  color: var(--nt-text-2);
+  font-size: 14px;
+}
+
+/* A live frame from Design (components/notes/design.tsx): a card like Notion's embeds. */
+.nt-design {
+  margin: 4px 0;
+  border-radius: 4px;
+  box-shadow: var(--nt-card-shadow);
+  background: var(--nt-bg);
+  overflow: hidden;
+  width: 100%;
+}
+.nt-design-view {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-height: 560px;
+  background: var(--nt-code-bg);
+  text-decoration: none;
+}
+.nt-design-view img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 560px;
+  object-fit: contain;
+}
+.nt-design-wait {
+  padding: 24px;
+  color: var(--nt-text-2);
+  font-size: 14px;
+  text-align: center;
+}
+.nt-design-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--nt-border);
+  font-size: 14px;
+  color: var(--nt-text-2);
+}
+.nt-design-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--nt-text);
+}
+.nt-design-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--nt-text-2);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nt-design-open:hover {
+  color: var(--nt-text);
+}
+.nt-design-public {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  color: var(--nt-text-2);
+  font-size: 14px;
+}
+.nt-design-picker {
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(640px, calc(100vh - 64px));
+  display: flex;
+  flex-direction: column;
+}
+.nt-design-picker-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px 8px;
+}
+.nt-design-picker-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.nt-design-picker-list {
+  overflow: auto;
+  padding: 0 4px 8px;
+}
+.nt-design-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-align: start;
+  color: var(--nt-text);
+}
+.nt-design-picker-row:hover {
+  background: var(--nt-hover);
+}
+.nt-design-picker-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.nt-design-picker-sub {
+  color: var(--nt-text-3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.nt-design-picker-frame {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--nt-icon);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.nt-design-picker-empty {
+  padding: 16px 10px;
+  color: var(--nt-text-2);
+  font-size: 14px;
+}

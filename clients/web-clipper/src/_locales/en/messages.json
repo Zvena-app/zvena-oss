@@ -1,0 +1,167 @@
+{
+  "extName": {
+    "message": "zvena Web Clipper",
+    "description": "Store listing name. Keep the brand lowercase: zvena."
+  },
+  "extDescription": {
+    "message": "Save any web page to zvena Docs: the full article, a bookmark, or just the part you selected.",
+    "description": "Store listing summary, at most 132 characters."
+  },
+  "actionTitle": {
+    "message": "Save to zvena",
+    "description": "Toolbar button tooltip."
+  },
+  "menuSave": {
+    "message": "Save to zvena",
+    "description": "Right-click menu item."
+  },
+  "cmdOpen": {
+    "message": "Open the zvena Web Clipper",
+    "description": "Keyboard shortcut description: opens the popup."
+  },
+  "cmdSavePage": {
+    "message": "Save this page to the last destination",
+    "description": "Keyboard shortcut description: saves without the popup."
+  },
+  "connectTitle": {
+    "message": "Save pages to zvena"
+  },
+  "connectLead": {
+    "message": "Connect the clipper to your zvena account. It can only add pages; it never reads your documents."
+  },
+  "connectButton": {
+    "message": "Connect to zvena"
+  },
+  "connectWaiting": {
+    "message": "Finish connecting in the zvena tab that just opened."
+  },
+  "titleLabel": {
+    "message": "Title"
+  },
+  "addTo": {
+    "message": "Add to"
+  },
+  "workspace": {
+    "message": "Workspace"
+  },
+  "searchPlaceholder": {
+    "message": "Search pages and databases"
+  },
+  "destPrivate": {
+    "message": "Private",
+    "description": "The person's Private section in zvena Docs (as in Notion)."
+  },
+  "destPrivateHint": {
+    "message": "A new page in your Private section"
+  },
+  "recent": {
+    "message": "Recent"
+  },
+  "results": {
+    "message": "Pages and databases"
+  },
+  "noResults": {
+    "message": "Nothing found"
+  },
+  "database": {
+    "message": "Database"
+  },
+  "saveAs": {
+    "message": "Save as"
+  },
+  "modeArticle": {
+    "message": "Full page",
+    "description": "Save the readable content of the whole page."
+  },
+  "modeBookmark": {
+    "message": "Bookmark"
+  },
+  "modeSelection": {
+    "message": "Selection",
+    "description": "Save only the selected part of the page."
+  },
+  "save": {
+    "message": "Save"
+  },
+  "saving": {
+    "message": "Saving…"
+  },
+  "saved": {
+    "message": "Saved to zvena"
+  },
+  "openInZvena": {
+    "message": "Open in zvena"
+  },
+  "done": {
+    "message": "Done"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "back": {
+    "message": "Back"
+  },
+  "serverLabel": {
+    "message": "zvena server"
+  },
+  "serverHint": {
+    "message": "Change this only if your team runs its own zvena server."
+  },
+  "serverSave": {
+    "message": "Use this server"
+  },
+  "serverInvalid": {
+    "message": "Enter the address of a zvena server, such as https://zvena.app."
+  },
+  "signedInAs": {
+    "message": "Connected as"
+  },
+  "disconnect": {
+    "message": "Disconnect"
+  },
+  "loading": {
+    "message": "Loading…"
+  },
+  "untitled": {
+    "message": "Untitled"
+  },
+  "errBadRequest": {
+    "message": "zvena couldn't save this page. Try another “Save as” option."
+  },
+  "errUnauthorized": {
+    "message": "The connection to zvena has ended. Connect again."
+  },
+  "errForbidden": {
+    "message": "You can't add pages there. Pick another destination."
+  },
+  "errNotFound": {
+    "message": "That page or database no longer exists. Pick another destination."
+  },
+  "errTooLarge": {
+    "message": "This page is too large to save. Try Bookmark or Selection."
+  },
+  "errRateLimited": {
+    "message": "Too many clips at once. Try again in a minute."
+  },
+  "errQuota": {
+    "message": "Your zvena storage is full."
+  },
+  "errServer": {
+    "message": "zvena is unavailable right now. Try again later."
+  },
+  "errNetwork": {
+    "message": "Can't reach zvena. Check your connection."
+  },
+  "errNoPage": {
+    "message": "This page can't be clipped (browser pages and extension stores are protected). Try another tab."
+  },
+  "errNoSelection": {
+    "message": "Select some text on the page first."
+  },
+  "errPermission": {
+    "message": "Access to the zvena server wasn't allowed."
+  },
+  "errConnect": {
+    "message": "Connecting didn't finish. Try again."
+  }
+}

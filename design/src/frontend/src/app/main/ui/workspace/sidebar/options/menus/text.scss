@@ -1,0 +1,115 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.element-set {
+  @include sidebar.option-grid-structure;
+}
+
+.element-title {
+  grid-column: span 8;
+  position: relative;
+}
+
+.element-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  grid-column: span 8;
+  margin-block-start: var(--sp-xs);
+}
+
+.multiple-typography {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  block-size: $sz-24;
+  padding-block: var(--sp-s);
+  padding-inline: var(--sp-s) 0;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+}
+
+.multiple-text {
+  @include t.use-typography("body-small");
+
+  flex-grow: 1;
+  color: var(--color-foreground-secondary);
+}
+
+.text-align-options {
+  display: flex;
+  gap: var(--sp-xs);
+}
+
+.align-options,
+.text-direction-options,
+.vertical-align-options,
+.grow-options,
+.text-decoration-options {
+  block-size: $sz-24;
+}
+
+.text-decoration-options {
+  display: flex;
+  gap: var(--sp-xs);
+}
+
+// zvena: Figma "Type details" — lists, paragraph spacing / indent, truncation
+.list-options {
+  block-size: $sz-24;
+  flex: 0 0 auto;
+}
+
+.paragraph-options {
+  display: flex;
+  flex: 1 1 auto;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.paragraph-input {
+  @extend %input-element;
+  @include t.use-typography("body-small");
+
+  flex: 1 1 0;
+  min-inline-size: 0;
+
+  .icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    inline-size: $sz-24;
+  }
+}
+
+.truncate-options {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-24;
+}
+
+.truncate-checkbox {
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.max-lines {
+  flex: 0 0 auto;
+  inline-size: 50%;
+}

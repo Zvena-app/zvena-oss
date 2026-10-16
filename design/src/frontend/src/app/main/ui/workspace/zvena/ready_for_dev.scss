@@ -1,0 +1,138 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+
+// zvena: Figma Dev Mode "Ready for dev" list (left panel, Dev Mode only).
+.ready-for-dev {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  max-block-size: 40%;
+  min-block-size: 0;
+  padding: 0 var(--sp-s) var(--sp-s);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+  overflow: hidden;
+}
+
+.header {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-foreground-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.header-title {
+  flex: 1 1 auto;
+  text-align: start;
+}
+
+.header-count {
+  min-inline-size: $sz-16;
+  padding-inline: var(--sp-xs);
+  border-radius: $br-8;
+  background-color: var(--color-accent-success, #14ae5c);
+  color: #fff;
+  font-weight: 500;
+  text-align: center;
+}
+
+.filters {
+  display: flex;
+  gap: var(--sp-xxs);
+}
+
+.filter {
+  @include t.use-typography("body-small");
+
+  flex: 1 1 0;
+  block-size: $sz-24;
+  border: none;
+  border-radius: $br-6;
+  background: none;
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+
+  &.active {
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+  }
+}
+
+.empty {
+  @include t.use-typography("body-small");
+
+  padding: var(--sp-s) var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  min-block-size: 0;
+}
+
+.item {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  inline-size: 100%;
+  block-size: $sz-32;
+  padding-inline: var(--sp-xs);
+  border: none;
+  border-radius: $br-6;
+  background: none;
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+
+  &.selected {
+    background-color: var(--color-background-quaternary);
+  }
+}
+
+.item-name {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-page {
+  flex: 0 1 auto;
+  max-inline-size: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}

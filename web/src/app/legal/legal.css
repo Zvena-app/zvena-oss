@@ -1,0 +1,23 @@
+/* Legal pages (Privacy, Terms, Cookies): the summary box, the table of
+   contents, and anchored sections that clear the sticky public header. */
+
+.zv-legal h2[id], .zv-legal h3[id] { scroll-margin-top: 84px; }
+.zv-legal-summary {
+  margin: 20px 0 28px; padding: 18px 20px; border-radius: 12px;
+  background: var(--zv-accent-soft); color: var(--zv-text); font-size: 15px;
+}
+.zv-legal-summary h2 { font-size: 19px; margin: 0 0 8px; }
+.zv-legal-summary ul { margin: 0; padding-left: 20px; }
+.zv-legal-summary li { margin: 4px 0; }
+.zv-legal-summary p { margin: 0 0 8px; }
+.zv-legal-toc {
+  margin: 0 0 28px; padding: 16px 20px; border-radius: 12px;
+  background: var(--zv-card); box-shadow: var(--zv-shadow); font-size: 14px;
+}
+.zv-legal-toc strong { display: block; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--zv-text-3); }
+.zv-legal-toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+.zv-legal-toc li { margin: 2px 0; break-inside: avoid; }
+@media (max-width: 600px) { .zv-legal-toc ol { columns: 1; } }
+.zv-legal code { font-size: 0.9em; padding: 1px 5px; border-radius: 5px; background: var(--zv-card-2); white-space: nowrap; }
+.zv-legal address { font-style: normal; margin: 0 0 14px; }
+.zv-legal .zv-caps { text-transform: uppercase; font-size: 14px; letter-spacing: 0.01em; }

@@ -1,0 +1,41 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as t;
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: px2rem(2);
+  margin: 0;
+  padding: 0 0 var(--sp-s);
+  list-style: none;
+}
+
+.link {
+  @include t.use-typography("body-medium");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  height: $sz-32;
+  padding: 0 var(--sp-s);
+  border-radius: $br-8;
+  color: var(--color-foreground-primary);
+  text-decoration: none;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}

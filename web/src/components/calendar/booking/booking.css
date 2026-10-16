@@ -1,0 +1,70 @@
+/* zvena Calendar's public pages (a scheduling link, a booking, an e-mail
+   invitation): one card on the shell's chrome, the link's color as accent,
+   zvena's tokens in light and dark, right to left through logical properties. */
+
+.bk { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px 16px; background: var(--ui-chrome); color: var(--ui-text); font-family: var(--ui-font); font-size: var(--ui-text-md); box-sizing: border-box; }
+.bk *, .bk *::before, .bk *::after { box-sizing: border-box; }
+.bk-card { width: min(920px, 100%); display: grid; grid-template-columns: 300px minmax(0, 1fr); background: var(--ui-bg); border-radius: var(--ui-radius-lg); box-shadow: var(--ui-shadow-2); overflow: hidden; }
+.bk-card-narrow { width: min(480px, 100%); grid-template-columns: minmax(0, 1fr); }
+.bk-info { padding: 28px 24px; border-inline-end: 0.5px solid var(--ui-border); display: flex; flex-direction: column; gap: 10px; }
+.bk-host { color: var(--ui-text-2); font-weight: 500; }
+.bk h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; }
+.bk-meta { display: flex; align-items: center; gap: 8px; color: var(--ui-text-2); }
+.bk-desc { margin: 4px 0 0; color: var(--ui-text-2); white-space: pre-wrap; line-height: 1.5; }
+.bk-current { margin-top: 8px; padding: 8px 10px; border-radius: var(--ui-radius); background: color-mix(in srgb, var(--bk) 10%, var(--ui-bg)); display: flex; gap: 8px; align-items: center; }
+.bk-main { padding: 24px; min-width: 0; }
+.bk-pick { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 24px; }
+.bk-cal-head { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+.bk-cal-head h2 { flex: 1; margin: 0; font-size: 15px; font-weight: 600; text-transform: capitalize; }
+.bk-nav { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 99px; background: transparent; color: var(--ui-text); cursor: pointer; }
+.bk-nav:hover:not(:disabled) { background: var(--ui-hover); }
+.bk-nav:disabled { opacity: 0.35; cursor: default; }
+[dir="rtl"] .bk-flip { transform: scaleX(-1); }
+.bk-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.bk-wd { text-align: center; font-size: 11px; color: var(--ui-text-3); padding: 4px 0; text-transform: uppercase; }
+.bk-day { aspect-ratio: 1; border: 0; border-radius: 99px; background: transparent; color: var(--ui-text-3); font: inherit; font-size: 13px; cursor: default; }
+.bk-day:not(:disabled) { background: color-mix(in srgb, var(--bk) 12%, var(--ui-bg)); color: color-mix(in srgb, var(--bk) 75%, var(--ui-text)); font-weight: 600; cursor: pointer; }
+.bk-day:not(:disabled):hover { background: color-mix(in srgb, var(--bk) 22%, var(--ui-bg)); }
+.bk-day[data-sel]:not(:disabled) { background: var(--bk); color: #fff; }
+.bk-day[data-out] { visibility: hidden; }
+.bk-day[data-today] { text-decoration: underline; text-underline-offset: 3px; }
+.bk-tz { display: flex; align-items: center; gap: 6px; margin-top: 14px; color: var(--ui-text-2); font-size: 12px; flex-wrap: wrap; }
+.bk-slots h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; text-transform: capitalize; }
+.bk-slot-list { display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; }
+.bk-slot-row { display: flex; gap: 6px; }
+.bk-slot { flex: 1; height: 40px; border: 1px solid color-mix(in srgb, var(--bk) 60%, transparent); border-radius: var(--ui-radius); background: var(--ui-bg); color: color-mix(in srgb, var(--bk) 80%, var(--ui-text)); font: inherit; font-weight: 600; cursor: pointer; }
+.bk-slot:hover { border-color: var(--bk); }
+.bk-slot[data-sel] { background: var(--ui-text-2); border-color: var(--ui-text-2); color: var(--ui-bg); }
+.bk-next { flex: 1; height: 40px; border: 0; border-radius: var(--ui-radius); background: var(--bk); color: #fff; font: inherit; font-weight: 600; cursor: pointer; padding: 0 16px; }
+.bk-next:disabled { opacity: 0.6; }
+.bk-form { display: flex; flex-direction: column; gap: 12px; max-width: 420px; }
+.bk-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; font-size: 12.5px; color: var(--ui-text-2); }
+.bk-form input, .bk-form textarea { height: 36px; padding: 0 10px; border: 0.5px solid var(--ui-border-2); border-radius: var(--ui-radius); background: var(--ui-bg); color: var(--ui-text); font: inherit; font-size: 14px; }
+.bk-form textarea { height: auto; padding: 8px 10px; resize: vertical; }
+.bk-form input:focus, .bk-form textarea:focus { outline: none; border-color: var(--bk); box-shadow: 0 0 0 1px var(--bk); }
+.bk-hp { position: absolute !important; inset-inline-start: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.bk-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--ui-text-2); cursor: pointer; padding: 4px 0; font: inherit; }
+.bk-when { margin: 0; font-weight: 600; }
+.bk-done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 40px 16px; color: var(--ui-text); }
+.bk-done svg { color: var(--ui-success); }
+.bk-done h2 { margin: 0; font-size: 20px; }
+.bk-done p { margin: 0; }
+.bk-big { font-size: 15px; padding: 40px 16px; text-align: center; color: var(--ui-text-2); }
+.bk-muted { color: var(--ui-text-2); }
+.bk-err { color: var(--ui-danger-text); }
+.bk-cancel { margin-top: 18px; border: 0; background: transparent; color: var(--ui-danger-text); cursor: pointer; font: inherit; padding: 4px 0; }
+.bk-answers { display: flex; gap: 8px; }
+.bk-brand { margin: 0; font-size: 11.5px; color: var(--ui-text-3); }
+.bk .cal-field-btn { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border: 0; border-radius: var(--ui-radius); background: transparent; color: var(--ui-text); cursor: pointer; font: inherit; font-size: 12px; }
+.bk .cal-field-btn:hover { background: var(--ui-hover); }
+.bk .cal-muted { color: var(--ui-text-3); }
+.cal-pop.bk-pop, .cal-pop { font-family: var(--ui-font); }
+
+@media (max-width: 760px) {
+  .bk { justify-content: flex-start; padding: 12px; }
+  .bk-card { grid-template-columns: minmax(0, 1fr); }
+  .bk-info { border-inline-end: 0; border-bottom: 0.5px solid var(--ui-border); padding: 20px 16px; }
+  .bk-main { padding: 16px; }
+  .bk-pick { grid-template-columns: minmax(0, 1fr); }
+  .bk-slot-list { max-height: none; }
+}
