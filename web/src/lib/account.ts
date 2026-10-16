@@ -6,7 +6,9 @@
 // Then the person's files that nobody else stores (files the remaining
 // workspaces still show pass to their owners first), their Design profile and
 // finally the account itself (identities, sessions, settings cascade; Mail's
-// mailboxes, their credentials and all their mail through mail_user_gone).
+// mailboxes, their credentials and all their mail through mail_user_gone;
+// calendars through cal_user_gone). Every table with a person's own rows is
+// checked by tests/unit/account-erasure.test.ts.
 // Design down: the zvena side is still erased at once and the Design
 // profile deletion waits in a retry queue (cleanup job).
 
@@ -17,6 +19,13 @@ import { dropUserFiles, handOverFiles } from "./storage";
 import { audit, sql, tx } from "./store";
 import { dropUserDocsPrefs } from "./notes/follows";
 import { deleteWorkspace, workspacesOf } from "./workspaces";
+
+const hasTable = (name: string) => Boolean(sql("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(name));
+
+/** Rows kept per person in tables other modules create on first use (they may not exist yet). */
+function dropIfTable(table: string, where: string, ...args: string[]): void {
+  if (hasTable(table)) sql(`DELETE FROM ${table} WHERE ${where}`).run(...args);
+}
 
 const ROLE_ORDER = "CASE role WHEN 'editor' THEN 0 WHEN 'commenter' THEN 1 ELSE 2 END";
 
@@ -88,6 +97,8 @@ export async function deleteAccount(userId: string): Promise<void> {
   const { forgetMailOf } = await import("./mail-client/accounts");
   await forgetMailOf(userId);
   tx(() => {
+    // Attachment rows go with their message (mail_messages_gone); any left without one go too.
+    dropIfTable("mail_attachments", "user_id = ?", userId);
     sql("DELETE FROM presence WHERE user_id = ?").run(userId);
     sql("DELETE FROM note_favorites WHERE user_id = ?").run(userId);
     // Which pages the person opened (Analytics) is theirs; versions they wrote stay with the team.
@@ -101,8 +112,21 @@ export async function deleteAccount(userId: string): Promise<void> {
     sql("DELETE FROM ws_group_members WHERE user_id = ?").run(userId);
     sql("DELETE FROM note_access_requests WHERE user_id = ?").run(userId);
     sql("DELETE FROM oidc_codes WHERE user_id = ?").run(userId);
-    // Connected Web Clippers stop with the account.
+    // Their time zone, page reminders and when the last e-mail digest went out.
+    sql("DELETE FROM user_tz WHERE user_id = ?").run(userId);
+    sql("DELETE FROM note_reminders WHERE user_id = ?").run(userId);
+    dropIfTable("note_mail_digest", "user_id = ?", userId);
+    // Which workspaces' old page stars were taken over for them (a marker naming their id).
+    sql("DELETE FROM kv WHERE k LIKE 'fav-migrated:%' AND substr(k, -length(?) - 1) = ':' || ?").run(userId, userId);
+    // Live numbers counted from their mail (mail is theirs alone), and meetings they had turn into issues.
+    if (hasTable("dz_sources")) {
+      sql("DELETE FROM dz_metrics WHERE (ws, key) IN (SELECT ws, key FROM dz_sources WHERE created_by = ? AND json_extract(json, '$.kind') = 'mail')").run(userId);
+      sql("DELETE FROM dz_sources WHERE created_by = ? AND json_extract(json, '$.kind') = 'mail'").run(userId);
+    }
+    dropIfTable("dz_flows", "by = ?", userId);
+    // Connected Web Clippers stop with the account (and sign-in codes not yet exchanged).
     revokeAllClippers(userId);
+    dropIfTable("clipper_codes", "user_id = ?", userId);
     sql("UPDATE reports SET reporter_id = NULL WHERE reporter_id = ?").run(userId);
     sql("DELETE FROM audit WHERE actor = ?").run(userId);
     sql("DELETE FROM users WHERE id = ?").run(userId);
