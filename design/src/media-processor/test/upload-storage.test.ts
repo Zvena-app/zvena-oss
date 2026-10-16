@@ -13,7 +13,8 @@ function mockReq(contentLength?: string): Request {
 }
 
 function mockFile(content: string = "test content") {
-  const stream = Readable.from([content]);
+  // busboy file streams emit Buffers; multer >=2.4 memory storage Buffer.concat()s them.
+  const stream = Readable.from([Buffer.from(content)]);
   return {
     fieldname: "file",
     originalname: "test.txt",
