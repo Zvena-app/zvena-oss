@@ -2,19 +2,16 @@
 // (server.url), so features ship without a store review; www/ holds only
 // the local pages shown before the site loads or when it cannot.
 //
-// APP_URL is read when `npx cap sync` runs (default https://zvena.app) and
-// is baked into the native projects; a self-hosted or test server needs its
+// APP_URL (required: there is no built-in server) is read when `npx cap
+// sync` runs and is baked into the native projects; each server needs its
 // own build. Plain http is for a local dev server only.
 
 "use strict";
 
 const { version } = require("./package.json");
+const { buildAppUrl } = require("./src/app-url.js");
 
-const APP_URL = process.env.APP_URL || "https://zvena.app";
-const app = new URL(APP_URL);
-if (app.protocol !== "https:" && !/^(localhost|127\.0\.0\.1|10\.0\.2\.2)$/.test(app.hostname)) {
-  throw new Error(`APP_URL must be https (got ${APP_URL})`);
-}
+const app = buildAppUrl(process.env.APP_URL);
 
 /** @type {import('@capacitor/cli').CapacitorConfig} */
 module.exports = {

@@ -1,1 +1,1 @@
-location.replace(window.ZVENA_APP_URL || "https://zvena.app/");
+if (window.ZVENA_APP_URL) location.replace(window.ZVENA_APP_URL);

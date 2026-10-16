@@ -22,6 +22,7 @@
   var retry = document.getElementById("retry");
   retry.textContent = t[2];
   retry.addEventListener("click", function () {
-    location.replace(window.ZVENA_APP_URL || "https://zvena.app/");
+    if (window.ZVENA_APP_URL) location.replace(window.ZVENA_APP_URL);
+    else location.reload();
   });
 })();

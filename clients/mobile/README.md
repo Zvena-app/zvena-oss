@@ -13,7 +13,7 @@ native code adds only what a website cannot do:
   query + hash), e.g. `zvena://docs?ws=…#Page-<id>`; `zvena://open?url=<URL>`
   opens a URL of the app's own origin. Anything that would leave the origin
   is ignored.
-- **Universal links / App Links** for `https://zvena.app` under `/docs`,
+- **Universal links / App Links** for your server (`APP_URL`) under `/docs`,
   `/n/`, `/share/`, `/join/`, `/projects`, `/home`, `/inbox`, `/clip`. Other
   paths (the website, pricing…) stay in the browser.
 - Status bar / safe areas, the splash screen, app icons, push plumbing.
@@ -27,7 +27,8 @@ three together.
 capacitor.config.js      app id app.zvena.mobile, server.url = APP_URL, allowNavigation, iOS app-bound domains
 www/                     local pages: error.html (no connection, in 10 languages), index.html (bridge to server.url)
 src/links.js             deep link, universal link and share mapping (the reference rules)
-scripts/prepare.cjs      writes www/app-url.js from APP_URL (run by npm run sync*)
+scripts/prepare.cjs      writes www/app-url.js and the iOS host (Info.plist, App.entitlements) from APP_URL (run by npm run sync*)
+src/app-url.js           APP_URL checks shared by prepare.cjs and capacitor.config.js
 scripts/icons.mjs        icons and splash screens from clients/brand/ (zvena's logo)
 scripts/strings.mjs      native strings in the 10 interface languages
 scripts/ios-project.mjs  adds Links.swift, entitlements and the share extension target to the Xcode project
@@ -39,7 +40,7 @@ ios/App/                 Xcode project (Swift Package Manager, no CocoaPods); Sh
 
 | Variable | Where | Default | Meaning |
 | --- | --- | --- | --- |
-| `APP_URL` | `npm run sync*`, Gradle | `https://zvena.app` | The server the app opens. Baked into the build (a self-hosted server needs its own build). Must be https (plain http only for `localhost`, `127.0.0.1`, `10.0.2.2`). Gradle uses its host for the App Links intent filter. |
+| `APP_URL` | `npm run sync*`, Gradle | **required** | The address of your zvena server, e.g. `https://zvena.example.com`. There is no built-in server: `npm run sync*`, any `npx cap` command and Gradle stop with an error when it is missing. Baked into the build (each server needs its own build). Must be https (plain http only for `localhost`, `127.0.0.1`, `10.0.2.2`). Gradle uses its host for the App Links intent filter; without `APP_URL` in its environment (Android Studio) it reads the `server.url` that `npx cap sync` wrote. |
 | `ZVENA_VERSION_CODE` | Gradle | `1` | Android versionCode; every Play upload needs a higher one. |
 | `ZVENA_KEYSTORE`, `ZVENA_KEYSTORE_PASSWORD`, `ZVENA_KEY_ALIAS`, `ZVENA_KEY_PASSWORD` | Gradle | — | Release signing (upload key). Without them the release build is unsigned. |
 
@@ -53,16 +54,25 @@ The web app serves the files the stores verify (set on the **web** server):
 
 Without them those routes answer 404 and links simply open in the browser.
 
-For a server other than zvena.app, also change the host in
+Build for your own server by setting `APP_URL` to it:
+
+```sh
+export APP_URL=https://zvena.example.com    # your zvena server
+npm run sync                                # writes www/app-url.js, the iOS host, the native configs
+```
+
+`scripts/prepare.cjs` writes the host of `APP_URL` into
 `ios/App/App/Info.plist` (`WKAppBoundDomains`) and
-`ios/App/App/App.entitlements` (`applinks:`).
+`ios/App/App/App.entitlements` (`applinks:`). The committed files carry the
+placeholder `zvena.example.com`, and `www/app-url.js` is empty until
+`prepare.cjs` runs.
 
 ## Everyday commands
 
 ```sh
 npm ci                 # Capacitor and plugins (exact versions)
 npm test               # link rules (node --test)
-npm run sync           # www/ + config + plugins → android/ and ios/ (needed after a fresh clone)
+npm run sync           # www/ + config + plugins → android/ and ios/ (needs APP_URL; after a fresh clone)
 npm run icons          # after changing clients/brand/ (needs sharp; SHARP=/path/to/sharp)
 node scripts/strings.mjs
 ```
@@ -77,11 +87,11 @@ Needs JDK 21 and the Android SDK (platform 36, build-tools 36). Gradle comes
 with the wrapper.
 
 ```sh
-export ANDROID_HOME=~/Android/Sdk JAVA_HOME=/path/to/jdk-21
+export ANDROID_HOME=~/Android/Sdk JAVA_HOME=/path/to/jdk-21 APP_URL=https://zvena.example.com
 npm run sync:android
 cd android
 ./gradlew assembleDebug            # app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest        # LinksTest
+./gradlew testDebugUnitTest        # LinksTest (Gradle needs APP_URL, or a prior sync)
 ```
 
 Release (Play Store wants an App Bundle):
@@ -115,14 +125,14 @@ Needs Xcode 16+ (Swift Package Manager; no CocoaPods).
 2. Signing & Capabilities, for **both** targets `App` (`app.zvena.mobile`)
    and `ShareExtension` (`app.zvena.mobile.share`): pick the team.
    Capabilities already in the entitlements files:
-   - App: Push Notifications, Associated Domains (`applinks:zvena.app`),
+   - App: Push Notifications, Associated Domains (`applinks:<your host>`, written from `APP_URL`),
      App Groups (`group.app.zvena.mobile`).
    - ShareExtension: App Groups (`group.app.zvena.mobile`).
    Register the App Group in the developer account if Xcode does not offer
    to.
 3. Put `TEAMID.app.zvena.mobile` into `ZVENA_IOS_APP_ID` on the web server
    (universal links). Apple's CDN fetches the file; check with
-   `https://app-site-association.cdn-apple.com/a/v1/zvena.app`.
+   `https://app-site-association.cdn-apple.com/a/v1/<your host>`.
 4. Run on a device; Product → Archive → Distribute App → App Store Connect.
 
 The share extension (`ios/App/ShareExtension/`) stores the item in the App

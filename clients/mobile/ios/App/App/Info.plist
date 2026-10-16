@@ -51,10 +51,11 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<!-- With limitsNavigationsToAppBoundDomains (capacitor.config.js): only these hosts load in the app's web view. -->
+	<!-- With limitsNavigationsToAppBoundDomains (capacitor.config.js): only these hosts load in the app's web view.
+	     The host is written by scripts/prepare.cjs from APP_URL (committed with the placeholder zvena.example.com). -->
 	<key>WKAppBoundDomains</key>
 	<array>
-		<string>zvena.app</string>
+		<string>zvena.example.com</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

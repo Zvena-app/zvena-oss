@@ -1,2 +1,2 @@
-// Written by scripts/prepare.cjs from APP_URL (the build's server).
-window.ZVENA_APP_URL = "https://zvena.app/";
+// Written by scripts/prepare.cjs from APP_URL (the build's server); empty until then.
+window.ZVENA_APP_URL = "";

@@ -5,10 +5,11 @@
 	<!-- Push: Xcode signs store builds with "production" from the provisioning profile. -->
 	<key>aps-environment</key>
 	<string>development</string>
-	<!-- Universal links, verified against https://zvena.app/.well-known/apple-app-site-association. -->
+	<!-- Universal links, verified against <APP_URL>/.well-known/apple-app-site-association.
+	     The host is written by scripts/prepare.cjs from APP_URL (committed with the placeholder zvena.example.com). -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:zvena.app</string>
+		<string>applinks:zvena.example.com</string>
 	</array>
 	<!-- Shared with the share extension (items it hands over). -->
 	<key>com.apple.security.application-groups</key>

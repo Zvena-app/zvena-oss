@@ -4,7 +4,7 @@
 //
 //   zvena://docs?ws=…#Page-<id>   → <APP_URL>/docs?ws=…#Page-<id>
 //   zvena://open?url=<abs URL>    → that URL, only on the app's own origin
-//   https://zvena.app/docs…       → itself (universal links / App Links)
+//   <APP_URL>/docs…               → itself (universal links / App Links)
 // Anything else, or anything that would leave the app's origin, opens nothing.
 
 "use strict";

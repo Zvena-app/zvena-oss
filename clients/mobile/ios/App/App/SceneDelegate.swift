@@ -2,7 +2,7 @@ import UIKit
 import Capacitor
 
 /// The window with the zvena web app, and the links iOS hands it: zvena://
-/// links, universal links (https://zvena.app/docs…) and items the share
+/// links, universal links (<APP_URL>/docs…) and items the share
 /// extension left. Each opens its page in the app's web view, only on the
 /// app's own origin (Links); Capacitor's plugins still get every event.
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {

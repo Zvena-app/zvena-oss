@@ -1,7 +1,12 @@
 apply plugin: 'com.android.application'
 
-// The server this build opens (the same APP_URL `npx cap sync` read): its host gets the App Links.
-def appUrl = System.getenv("APP_URL") ?: "https://zvena.app"
+// The server this build opens: APP_URL, else the server.url that `npx cap sync` wrote from it.
+// Required (there is no built-in server); its host gets the App Links.
+def syncedConfig = file("src/main/assets/capacitor.config.json")
+def appUrl = System.getenv("APP_URL") ?: (syncedConfig.exists() ? new groovy.json.JsonSlurper().parse(syncedConfig).server?.url : null)
+if (!appUrl) {
+    throw new GradleException("APP_URL is not set. It is the address of the zvena server this build opens, for example: APP_URL=https://zvena.example.com npm run sync:android")
+}
 def appLinkHost = new URI(appUrl).host
 
 android {
