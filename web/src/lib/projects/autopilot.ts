@@ -178,7 +178,11 @@ function memberCriteria(ctx: Ctx, teamId: string): { criteria: Record<string, st
   return keys.size ? { criteria, keys } : null;
 }
 
-async function afterIssueCreated(c: PjChange): Promise<void> {
+/**
+ * A new issue: one question about its empty fields. `again`: whether a title or description
+ * changed while the question was out is asked about once more (the second round does not).
+ */
+async function afterIssueCreated(c: PjChange, again = true): Promise<void> {
   if (!smartOn(c.ws)) return;
   const ctx = autoCtx(c.by, c.ws);
   if (!ctx) return;
@@ -245,6 +249,18 @@ async function afterIssueCreated(c: PjChange): Promise<void> {
 
   const out = await ask(c.ws, { title: issue.title, description: plainText(description, 2000) }, questions);
   if (!out) return;
+  // The answer is about the text as it was sent: changed meanwhile, it is not used (the new
+  // text is asked about once more), as for goals (lib/decide/autogoal.ts).
+  let after: Issue;
+  try {
+    after = getIssueBrief(ctx, issue.id);
+  } catch {
+    return;
+  }
+  if (after.title !== issue.title || issueDescription(ctx, issue.id) !== description) {
+    if (again) await afterIssueCreated(c, false);
+    return;
+  }
   const answers = out.answers as Record<string, { type: string; score?: number; choice?: string; probabilities: Record<string, number>; confidence: number }>;
   const made: string[] = [];
   const now = Date.now();

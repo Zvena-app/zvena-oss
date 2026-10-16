@@ -179,6 +179,59 @@ test("autopilot: fills empty fields when sure, suggests the rest, marks it as au
   }
 });
 
+test("autopilot: an answer about a title or description that changed while the question was out is not used; asked once more", async () => {
+  Object.assign(process.env, { ZVENA_AI_KEY: "test-key", ZVENA_AI_URL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1/systemone`, ZVENA_AI_TIMEOUT_MS: "800" });
+  resetSmart();
+  startAutopilot();
+  setSmart(ws, true, owner);
+  const sure = (b: Body) => ({
+    ...(b.questions.priority ? { priority: { type: "score", score: 3, legend: {}, probabilities: { "0": 0.02, "1": 0.03, "2": 0.05, "3": 0.9 }, confidence: 0.9 } } : {}),
+    ...(b.questions.label ? { label: pickA(b.questions.label, keyOf(b.questions.label, "Bug"), 0.88) } : {}),
+    ...Object.fromEntries(["project", "assignee", "duplicate"].filter((k) => b.questions[k]).map((k) => [k, pickA(b.questions[k], "none", 0.9)])),
+  });
+  try {
+    // Changed once: the first answer is dropped, the new text is asked about and that answer is used.
+    let edit: ((b: Body) => void) | null = null;
+    reply = (b) => {
+      edit?.(b);
+      return sure(b);
+    };
+    const a = createIssue(as(owner), { teamId: team.id, title: "Login page is slow" });
+    edit = () => {
+      edit = null;
+      updateIssue(as(owner), a.id, { title: "Login page crashes on submit", description: "Every time since the release." });
+    };
+    bodies = [];
+    await autopilotIdle();
+    await new Promise((r) => setTimeout(r, 50));
+    await autopilotIdle();
+    assert.equal(bodies.length, 2, "asked again about the new text");
+    assert.equal(bodies[1].state.title, "Login page crashes on submit");
+    assert.equal(bodies[1].state.description, "Every time since the release.");
+    assert.equal(getIssueBrief(as(owner), a.id).priority, 1, "the answer about the text as it is now is used");
+    assert.equal(suggestionsOf(as(owner), a.id).filter((x) => x.kind === "priority").length, 1, "one decision, not two");
+
+    // Changing every time: given up, nothing filled in.
+    let k = 0;
+    const b = createIssue(as(owner), { teamId: team.id, title: "Search misses results" });
+    edit = () => updateIssue(as(owner), b.id, { description: `Seen ${++k} times` });
+    bodies = [];
+    await autopilotIdle();
+    await new Promise((r) => setTimeout(r, 50));
+    await autopilotIdle();
+    edit = null;
+    assert.equal(bodies.length, 2, "asked once more, not forever");
+    const after = getIssueBrief(as(owner), b.id);
+    assert.equal(after.priority, 0, "a stale answer fills nothing");
+    assert.deepEqual(after.labelIds, []);
+    assert.equal(suggestionsOf(as(owner), b.id).length, 0);
+  } finally {
+    reply = () => ({});
+    resetSmart();
+    delete process.env.ZVENA_AI_KEY;
+  }
+});
+
 test("goals from a document: lines a person may read become proposed projects and issues; the model or rules decide; only ticked ones are made", async () => {
   const now = Date.now();
   const id = "pjadoc000000000000000000000000q4";
