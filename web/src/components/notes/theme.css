@@ -173,6 +173,27 @@
 .nt-banner.nt-banner-info button:hover {
   background: var(--nt-hover);
 }
+/* The guest's notice: one line, and what is different without an account under it. */
+.nt-banner.nt-guest {
+  flex-direction: column;
+  gap: 6px;
+}
+.nt-guest-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 10px;
+}
+.nt-guest-limits {
+  margin: 0 auto 4px;
+  padding-left: 18px;
+  max-width: 640px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--nt-text-2);
+  text-align: left;
+}
 .nt-presence {
   margin: 4px 0 8px;
   padding: 6px 10px;

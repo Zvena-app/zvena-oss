@@ -18,6 +18,7 @@ const SECTIONS = [
   ["docs", "Docs"],
   ["design", "Design"],
   ["projects", "Projects"],
+  ["automations", "Goals and automations"],
   ["mail", "Mail"],
   ["calendar", "Calendar and booking"],
   ["clip", "Saving web pages"],
@@ -60,7 +61,8 @@ export default async function HelpPage() {
       </ol>
       <p>
         Just looking around? <Link href="/docs">Try Docs without an account</Link>. Your pages stay in this browser, and they move into your personal workspace when you
-        sign in. Files uploaded as a guest are deleted after {config.guestFileTtlDays} days without a visit.
+        sign in. Without an account you can upload pictures only, and they are deleted {config.guestFileTtlDays} days after upload unless you sign in; Design, Projects,
+        Calendar, Mail, sharing and publishing need an account.
       </p>
 
       <h2 id="roles">Workspaces and roles</h2>
@@ -89,7 +91,7 @@ export default async function HelpPage() {
         <li>
           Type <kbd>/</kbd> on an empty line to insert any block: headings, lists, to-dos, toggles, callouts, tables, databases, code, math and design frames.
         </li>
-        <li>Databases can be shown as a table, board, list, gallery, calendar, timeline, chart or form — with filters, sorts and grouping.</li>
+        <li>Databases can be shown as a table, board, list, gallery, calendar, timeline, chart, form, map, feed or dashboard — with filters, sorts and grouping.</li>
         <li>
           Publish a page to the web from <i>Share → Publish</i>. Anyone with the link can read the page and its sub-pages; nobody can edit them. Search engines skip it unless you allow indexing.
         </li>
@@ -139,6 +141,33 @@ export default async function HelpPage() {
           <b>Smart suggestions</b> propose a new issue&apos;s priority, label, project and assignee and flag likely duplicates. When the answer is confident, empty
           fields are filled in automatically &mdash; marked in the issue&apos;s history and undoable. The workspace owner can turn this off in Projects &rarr; Settings
           &rarr; Smart suggestions. What is sent and to whom is in the <Link href="/legal/privacy#suggestions">Privacy Policy</Link>.
+        </li>
+      </ul>
+
+      <h2 id="automations">Goals and automations</h2>
+      <ul>
+        <li>
+          A <b>goal</b> is an issue that closes by itself when a number reaches its target. Open an issue and choose <b>Close automatically when…</b>, or choose{" "}
+          <b>Set a goal</b> under a chart in Docs. The number can be typed in, sent from your analytics or a script (Home &rarr; Automations &rarr; <b>What runs by
+          itself</b> &rarr; <b>Numbers from your tools</b> makes a key), or counted by zvena: rows of a database or chart, a project&apos;s progress, meetings in a
+          calendar. When it gets there, the issue closes and, if <b>Also mark linked documents done</b> is on, the Docs rows linked to it are marked done.
+        </li>
+        <li>
+          <b>Exact rules</b> run the moment their condition becomes true, the same way every time, decided by the rule itself rather than a model: a goal&apos;s number reaching its target, a parent
+          issue closing when all its sub-issues are done (and reopening with one), an issue closing when its Design comment is resolved, an issue&apos;s due date
+          following its meeting. The workspace owner can switch the automatic ones off under <b>What runs by itself</b>.
+        </li>
+        <li>
+          <b>Smart suggestions</b> are proposals a person confirms: fields of a new issue, likely duplicates, a goal for an issue whose title names a target, and a
+          Docs automation&apos;s <b>Run only if…</b> condition when the answer is not clear. They wait under <b>Waiting for you</b> on Home and on the issue, with
+          Accept or dismiss. They need smart suggestions to be on in the workspace (the owner decides), and each workspace has an hourly and a daily limit; past it, the
+          model is not asked until the limit resets &mdash; exact rules keep running, and some suggestions fall back to simple rules.
+        </li>
+        <li>
+          <b>Automatic actions</b> are applied at once and listed under <b>Done automatically</b> on Home: a rule&apos;s result, a Docs automation&apos;s run, and
+          suggestions the model is sure of (they fill only empty fields). <b>Undo</b> there puts back an automatic step &mdash; a parent issue it closed, a value an
+          automation set, a field it filled &mdash; unless someone has changed it since. A goal closed by its rule is reopened like any issue; messages and webhooks
+          an automation sent cannot be taken back.
         </li>
       </ul>
 
@@ -251,8 +280,8 @@ export default async function HelpPage() {
       <h2 id="data">Your data and account</h2>
       <ul>
         <li>
-          <b>Download everything:</b> <Link href="/settings">Settings</Link> → <i>Download all my data</i> gives you a ZIP with your docs (JSON and Markdown), uploaded
-          files, designs as .penpot files and your account data.
+          <b>Download everything:</b> <Link href="/settings">Settings</Link> → <i>Download all my data</i> gives you a ZIP with the docs (JSON and Markdown) of workspaces
+          you own or edit, your issues (JSON and CSV), uploaded files, designs as .penpot files, your security log and account data. Calendars download as .ics files.
         </li>
         <li>
           <b>Delete your account:</b> Settings → <i>Delete account</i>. It removes your account, personal workspace, docs, files and designs. Shared workspaces pass to the

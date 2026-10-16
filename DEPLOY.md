@@ -134,6 +134,8 @@ sudo git clone https://github.com/Zvena-app/zvena-oss.git src && sudo git -C src
 
 Do not clone with `--depth`: building Design and the "Source code" page need the tag `penpot-2.18.3` (the Penpot 2.18.3 snapshot that the changes are measured against). Check: `git cat-file -t "$(cat design/UPSTREAM)"` answers `commit`.
 
+**Releases** are tags (`v1.0.0`, …) of the public repository [Zvena-app/zvena-oss](https://github.com/Zvena-app/zvena-oss); no prebuilt images are published. To install a release, clone it as above, `git checkout v<version>`, and build the images (section 7). A release's `zvena-<version>-src.tar.gz` and `SHA256SUMS` (made from the tag by `tools/release/make-assets.sh`, reproducibly) are there to check and archive the exact source: `build-images.sh` and Design's build need the Git clone (the tag `penpot-2.18.3`), not the tarball.
+
 From here on, all paths are relative to `/opt/zvena/src`.
 
 ## 6. Settings
@@ -265,7 +267,7 @@ A backup contains:
 
 How it is kept:
 
-- encrypted (GPG, AES-256) in `/var/backups/zvena`;
+- encrypted (GPG, AES-256) in `/var/backups/zvena` (`BACKUP_DIR`; one folder per instance: `backup.sh` refuses a folder that holds another instance's backups, since old archives and the last-backup time that monitoring checks are kept per folder);
 - for `BACKUP_KEEP_DAYS` days (14 by default);
 - copied off-site if `BACKUP_RSYNC_TARGET` (rsync over SSH) or `BACKUP_RCLONE_REMOTE` (S3 through rclone) is set. Keep the off-site copy where your Privacy Policy says the data is stored. New archives are only **added** there (`rsync --ignore-existing`, `rclone copy --immutable`), never mirrored: an emptied, encrypted or wrong local folder cannot wipe the off-site copies. Off-site copies older than `BACKUP_REMOTE_KEEP_DAYS` (30 by default, 0 = never) are pruned separately, by the date in their name, and only after that day's backup succeeded. Better still: a bucket with versioning or object lock, and credentials that can write but not delete.
 
@@ -373,17 +375,17 @@ For the Privacy Policy and data-protection requests.
 | Data | Where | How long |
 |---|---|---|
 | Account: name, verified e-mail (from the e-mail sign-in or single sign-on), the single sign-on account id, sign-in times, the Terms version accepted and when. Profile pictures are not stored | web app's SQLite, volume `web-data` | while the account exists; deleted at once from Settings |
-| E-mail sign-in links and codes (HMACs only) | SQLite | 15 minutes or until used |
+| E-mail sign-in links and codes (HMACs only) | SQLite | 15 minutes or until used; expired ones are cleared hourly |
 | Docs, comments, Docs files | SQLite and `web-data/files` | while the workspace or the account exists |
 | Designs and their files | PostgreSQL, volume `assets` (or S3) | while the team exists; after deletion 30 days in Penpot's trash |
-| Sessions (HMACs of the tokens) | SQLite | up to 30 days |
-| Guest files | `web-data/files` | 30 days without a visit (a banner warns guests) |
+| Sessions (HMACs of the tokens) | SQLite | 30 days after the last renewal (renewed while in use) |
+| Guest files | `web-data/files` | `ZVENA_GUEST_FILE_TTL_DAYS` (30) after upload, or sooner when the guest stops visiting (Docs shows guests the date) |
 | Security journal: ids and actions, no content | SQLite | 1 year |
 | Workspace security settings, verified domains, site domain claims, SSO settings (OIDC client secret sealed with a key derived from `AUTH_SECRET`), SCIM tokens (HMACs only) | SQLite | while the workspace exists |
 | SSO sign-ins in flight, SAML request ids, used assertion ids | SQLite | 10–15 minutes |
-| Reports: page address, reason, text, optional contact | SQLite | until a moderator removes them |
+| Reports: page address, reason, text, optional contact | SQLite | kept with the moderator's decision; the reporter's account link is removed when that account is deleted |
 | Request log (IP cut to /16) | volume `caddy-data` | 30 days |
-| Backups (encrypted) | `/var/backups/zvena` and the off-site copy | `BACKUP_KEEP_DAYS` |
+| Backups (encrypted) | `/var/backups/zvena` and the off-site copy | `BACKUP_KEEP_DAYS` (14) locally, `BACKUP_REMOTE_KEEP_DAYS` (30) off-site; any further copy you keep (an offline disk) must match what the Privacy Policy says |
 
 ## 17. Custom domains for sites, SSO and SCIM
 

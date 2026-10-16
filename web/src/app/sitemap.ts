@@ -17,7 +17,7 @@ const PAGES: [string, number, MetadataRoute.Sitemap[number]["changeFrequency"]][
 ];
 
 /** When the public pages last changed; move it with each website release. */
-const SITE_UPDATED = "2026-10-15";
+const SITE_UPDATED = "2026-10-16";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (config.isTestStand) return [];

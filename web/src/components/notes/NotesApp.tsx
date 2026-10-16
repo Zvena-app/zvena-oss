@@ -1043,7 +1043,6 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
   }
 }
 
-/** A guest's reminder: documents live in this browser; uploads are kept while they visit. */
 /**
  * Changes this device could not keep (IndexedDB refused the write, or this
  * browser keeps nothing): said plainly, with a retry, and closing the tab
@@ -1072,22 +1071,45 @@ function SaveNotice({ state, guest, onRetry }: { state: SaveState; guest: boolea
   );
 }
 
+/**
+ * A guest's reminder: documents live in this browser only. "What's different?"
+ * lists what an account adds and what signing in does with the pages
+ * (lib/notes/store.ts adoptGuestStash, lib/storage.ts adoptGuestFiles).
+ */
 function GuestBanner({ onSignIn }: { onSignIn: () => void }) {
   const { t, locale } = useNotesT();
-  const [info, setInfo] = useState<{ files: number; removeAt: number | null; ttlDays: number } | null>(null);
+  const [info, setInfo] = useState<{ files: number; removeAt: number | null; ttlDays: number; uploadMb?: number } | null>(null);
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     void fetch("/api/guest", { cache: "no-store" })
-      .then((r) => (r.ok ? (r.json() as Promise<{ files: number; removeAt: number | null; ttlDays: number }>) : null))
+      .then((r) => (r.ok ? (r.json() as Promise<{ files: number; removeAt: number | null; ttlDays: number; uploadMb?: number }>) : null))
       .then(setInfo)
       .catch(() => undefined);
   }, []);
   const date = info?.removeAt ? new Date(info.removeAt).toLocaleDateString(intlOf(locale), { day: "numeric", month: "long" }) : null;
   return (
-    <div className="nt-banner nt-banner-info">
-      <span>{date ? t("guest.warn", { date }) : t("guest.banner", { days: info?.ttlDays ?? 30 })}</span>
-      <button type="button" className="nt-btn-reset" onClick={onSignIn}>
-        {t("side.signIn")}
-      </button>
+    <div className="nt-banner nt-banner-info nt-guest" data-test="guest-banner">
+      <div className="nt-guest-line">
+        <span>
+          {t("guest.banner")}
+          {date && ` ${t("guest.warn", { date })}`}
+        </span>
+        <button type="button" className="nt-btn-reset" aria-expanded={open} aria-controls="nt-guest-limits" onClick={() => setOpen((v) => !v)}>
+          {open ? t("guest.less") : t("guest.more")}
+        </button>
+        <button type="button" className="nt-btn-reset" onClick={onSignIn}>
+          {t("side.signIn")}
+        </button>
+      </div>
+      {open && (
+        <ul id="nt-guest-limits" className="nt-guest-limits" data-test="guest-limits">
+          <li>{t("guest.limitBrowser")}</li>
+          <li>{t("guest.limitShare")}</li>
+          <li>{t("guest.limitApps")}</li>
+          <li>{t("guest.limitFiles", { mb: info?.uploadMb ?? 20, days: info?.ttlDays ?? 30 })}</li>
+          <li>{t("guest.limitSignIn")}</li>
+        </ul>
+      )}
     </div>
   );
 }

@@ -310,10 +310,17 @@ function SharePopover({ note, anchor, onClose }: { note: Note; anchor: HTMLEleme
                     <Globe strokeWidth={1.4} />
                   </div>
                   <div className="nt-share-title">{t("share.publishTitle")}</div>
-                  <div className="nt-share-hint">{t("share.publishHint")}</div>
-                  <button type="button" className="nt-btn nt-btn-primary nt-btn-reset" style={{ width: "100%" }} disabled={busy} onClick={() => void publish()}>
-                    {busy ? "…" : t("share.publishBtn")}
-                  </button>
+                  {/* Publishing needs an account (the server refuses a guest): say so instead of failing. */}
+                  <div className="nt-share-hint">{api.user ? t("share.publishHint") : t("share.guestPublish")}</div>
+                  {api.user ? (
+                    <button type="button" className="nt-btn nt-btn-primary nt-btn-reset" style={{ width: "100%" }} disabled={busy} onClick={() => void publish()}>
+                      {busy ? "…" : t("share.publishBtn")}
+                    </button>
+                  ) : (
+                    <button type="button" className="nt-btn nt-btn-primary nt-btn-reset" style={{ width: "100%" }} onClick={() => (onClose(), api.signIn())}>
+                      {t("settings.signIn")}
+                    </button>
+                  )}
                   <div style={{ marginTop: 12, fontSize: 12, color: "var(--nt-text-3)", textAlign: "center" }}>{t("share.privateNote")}</div>
                 </>
               )}

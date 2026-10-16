@@ -3,7 +3,7 @@
 A free, open-source workspace for teams — design, docs, projects, calendar and mail in one place. This is the software behind [zvena.app](https://zvena.app); you can run your own server with it.
 
 - **Design** — an interface design tool, a fork of [Penpot](https://github.com/penpot/penpot) 2.18.3: components, auto layout, prototypes, inspect mode, real-time collaboration;
-- **Docs** — pages and databases (table, board, calendar, timeline, gallery, chart and form views), built on the BlockNote editor;
+- **Docs** — pages and databases (table, board, list, gallery, calendar, timeline, chart, form, map, feed and dashboard views), built on the BlockNote editor;
 - **Projects** — an issue tracker: issues, teams, projects, cycles, roadmap, boards, triage, goals, inbox;
 - **Calendar and Mail** — calendars with booking pages and CalDAV sync; a mail client for your own IMAP/SMTP mailbox;
 - **Teams** — workspaces, invite links, roles (owner, editor, commenter, viewer), single sign-on (SAML, OpenID Connect) and SCIM, shared by every section;
@@ -81,11 +81,13 @@ The Penpot 2.18.3 snapshot that Design's changes are measured against is the tag
 ```bash
 cd web && npm ci
 npm run dev                # http://localhost:3100 (env variables: deploy/.env.example)
-npm run typecheck && npm run lint
+npm run typecheck && npx eslint --max-warnings 0 .
 npm test                   # unit and API tests: a temporary database in a temporary folder
 npm run check:no-ai        # the decision model is called only from lib/decide/smart.ts
-node scripts/i18n.mjs check
+npm run check:i18n         # all 10 languages have every string
 ```
+
+GitHub Actions runs these, the production build, the client apps' tests, shellcheck and the access-log masking test on every push and pull request (`.github/workflows/ci.yml`).
 
 Design (the Penpot fork) builds in Docker: `design/bin/build-frontend.sh` and `design/bin/build-backend.sh`.
 
@@ -96,7 +98,7 @@ BASE=http://localhost:3100 DESIGN=http://localhost:3110 WEB_CONTAINER=<stand>-we
 PLAYWRIGHT_CORE=/path/to/playwright-core node tests/e2e/checklist.mjs   # also smoke, design, consent, projects…
 ```
 
-A test stand is its own compose project with settings outside Git: `ZVENA_STAND=test` (plain http on localhost; the test sign-in may be enabled with `ZVENA_DEV_LOGIN=1`), started with `ZVENA_ENV=/etc/zvena/<name>.env deploy/scripts/up.sh`. Use fake data only.
+A test stand is its own compose project with settings outside Git: `sudo ZVENA_ENV=/etc/zvena/<name>.env deploy/scripts/init-env.sh`, then in that file `ZVENA_STAND=test` (plain http on localhost; the test sign-in may be enabled with `ZVENA_DEV_LOGIN=1`), `APP_URL=http://localhost:<port>`, `DESIGN_URL=http://localhost:<design port>`, the same ports in `WEB_PORT`, `DESIGN_PORT` (and a free `DESIGN_BACKEND_PORT`; all bound to 127.0.0.1 only) and `DESIGN_EXTRA_FLAGS=disable-secure-session-cookies` (Design's cookies over http); start it with `sudo ZVENA_ENV=/etc/zvena/<name>.env deploy/scripts/up.sh` (`backup.sh` and `restore.sh` take the same `ZVENA_ENV`). Next to another zvena on the same machine it gets its own compose project (`zvena-<name>`), passphrase file and `BACKUP_DIR`, and the scripts refuse a compose project or backup folder that belongs to another settings file. Use fake data only.
 
 ## Contributing
 

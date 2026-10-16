@@ -22,7 +22,7 @@ function ownHost(): string {
 }
 
 /** When the legal texts last changed (privacy: settings, Design library usage; 2026-10-15). */
-const LEGAL_UPDATED = "2026-10-15";
+const LEGAL_UPDATED = "2026-10-16";
 
 export const config = {
   /** Public address of the app (home, Documents, account). */

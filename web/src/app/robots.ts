@@ -6,8 +6,10 @@ export const dynamic = "force-dynamic";
 
 // /robots.txt: the public site and published pages are open (each published
 // page still says noindex unless its author allowed indexing); the app, the
-// API, forms and people's pages are not. A test stand is never indexed.
-const APP_PATHS = ["/templates", "/projects", "/inbox", "/new", "/eco/", "/signin/", "/mail", "/calendar", "/cal/invite/", "/clip", "/clipper", "/scim/", "/offline", "/share-target", "/welcome"];
+// API, forms and people's pages are not. Template previews (/templates/<id>)
+// are public; the gallery itself (/templates, "$": that path only) is the
+// app's and needs an account anyway. A test stand is never indexed.
+const APP_PATHS = ["/templates$", "/projects", "/inbox", "/new", "/eco/", "/signin/", "/mail", "/calendar", "/cal/invite/", "/clip", "/clipper", "/scim/", "/offline", "/share-target", "/welcome"];
 
 export default function robots(): MetadataRoute.Robots {
   if (config.isTestStand) return { rules: [{ userAgent: "*", disallow: "/" }] };

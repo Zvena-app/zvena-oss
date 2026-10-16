@@ -107,7 +107,6 @@ const ru = {
   "home.openProjects": "Открыть проекты",
   "nav.inbox": "Входящие",
   "nav.search": "Поиск",
-  "home.guestBanner": "Вы работаете без аккаунта: документы хранятся только в этом браузере, загруженные файлы удаляются через {days} дн. без посещений. Войдите, чтобы сохранить всё.",
   "home.guestWarn": "Ваши загруженные файлы будут удалены {date}, если вы не войдёте.",
 
   "ws.personal": "Личное",
@@ -202,7 +201,7 @@ const ru = {
   "settings.storage.design": "Дизайн",
   "settings.data": "Ваши данные",
   "settings.export": "Скачать все мои данные",
-  "settings.exportHint": "Архив ZIP: документы (JSON и Markdown), загруженные файлы, макеты в формате .penpot и данные аккаунта.",
+  "settings.exportHint": "Архив ZIP: документы (JSON и Markdown) пространств, где вы владелец или редактор, задачи (JSON и CSV), загруженные файлы, макеты в формате .penpot, ваш журнал безопасности и данные аккаунта.",
   "settings.exporting": "Готовим архив…",
   "settings.sessions": "Выйти на всех устройствах",
   "settings.delete": "Удалить аккаунт",
@@ -744,7 +743,6 @@ const en: Record<MessageKey, string> = {
   "home.openProjects": "Open Projects",
   "nav.inbox": "Inbox",
   "nav.search": "Search",
-  "home.guestBanner": "You are working without an account: docs stay in this browser only, and uploaded files are deleted after {days} days without a visit. Sign in to keep everything.",
   "home.guestWarn": "Your uploaded files will be deleted on {date} unless you sign in.",
 
   "ws.personal": "Personal",
@@ -839,7 +837,7 @@ const en: Record<MessageKey, string> = {
   "settings.storage.design": "Design",
   "settings.data": "Your data",
   "settings.export": "Download all my data",
-  "settings.exportHint": "A ZIP archive: docs (JSON and Markdown), uploaded files, designs as .penpot files and account data.",
+  "settings.exportHint": "A ZIP archive: docs (JSON and Markdown) of workspaces you own or edit, issues (JSON and CSV), uploaded files, designs as .penpot files, your security log and account data.",
   "settings.exporting": "Preparing the archive…",
   "settings.sessions": "Sign out on all devices",
   "settings.delete": "Delete account",

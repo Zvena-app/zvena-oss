@@ -15,7 +15,7 @@ function lastLetter(to) {
   return execFileSync("docker", ["exec", container, "node", "-e", js], { encoding: "utf8" });
 }
 
-const PAGES = ["/help", "/developers", "/legal/privacy", "/legal/terms", "/legal/cookies", "/source", "/status", "/signin", "/report"];
+const PAGES = ["/help", "/developers", "/legal/privacy", "/legal/terms", "/legal/cookies", "/source", "/status", "/signin", "/report", "/templates/task-tracker"];
 
 const browser = await launch();
 try {

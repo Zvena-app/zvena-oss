@@ -19,7 +19,8 @@ export default async function CookiesPage() {
       <div className="zv-legal-summary">
         <p>
           zvena uses only cookies and browser storage that are <b>strictly necessary</b> to sign you in, keep your settings and make the editor work. There are no
-          analytics, advertising or tracking cookies, so there is nothing to opt in or out of, and no consent banner beyond a short notice.
+          analytics, advertising or tracking cookies, so there is nothing to opt in or out of, and no consent banner beyond a short notice. An embed someone adds
+          to a page (such as a video or a map), or a picture linked from another site, loads from that site, which may set its own cookies under its own policy.
         </p>
       </div>
 
@@ -43,16 +44,30 @@ export default async function CookiesPage() {
             </tr>
             <tr>
               <td>
+                <code>auth-token</code> (Design)
+              </td>
+              <td>Keeps you signed in to Design, on its own subdomain. HttpOnly.</td>
+              <td>7 days, renewed while you use Design; removed when you sign out</td>
+            </tr>
+            <tr>
+              <td>
+                <code>zv-share-&hellip;</code> (Design)
+              </td>
+              <td>Remembers that you entered the password of a password-protected design link. HttpOnly.</td>
+              <td>7 days</td>
+            </tr>
+            <tr>
+              <td>
                 <code>zv_g</code>
               </td>
               <td>A random guest id, so files you upload without an account stay yours and move into your account when you sign in</td>
-              <td>Until you sign in; guest files are deleted after {config.guestFileTtlDays} days without a visit</td>
+              <td>Up to 400 days, renewed when you visit; removed when you sign in. Guest files are deleted {config.guestFileTtlDays} days after upload</td>
             </tr>
             <tr>
               <td>
                 <code>zv_lang</code>
               </td>
-              <td>Your interface language</td>
+              <td>Your interface language (also read by Design on zvena&rsquo;s own subdomain)</td>
               <td>400 days</td>
             </tr>
             <tr>
@@ -81,11 +96,11 @@ export default async function CookiesPage() {
         <li>
           <b>localStorage</b> <code>zvena-settings</code> &mdash; theme and editor settings; <code>nt-*</code> &mdash; Docs panel layout, views and editor preferences;{" "}
           <code>pj:*</code> &mdash; Projects view preferences; <code>zvena-search-recent</code> &mdash; your recent searches; <code>zvena-desktop-links</code> &mdash;
-          whether links open in the zvena desktop app, if you use it; <code>zv-cookie-ok</code> &mdash; that you have seen the cookie notice.
+          whether links open in the zvena desktop app, if you use it; <code>zv-cookie-ok</code> &mdash; that you have seen the cookie notice; <code>zv.rail.folds</code> &mdash; which sidebar sections you folded.
         </li>
         <li>
           <b>sessionStorage</b> <code>zv-tz</code> &mdash; that your time zone was sent to our server (used for dates and reminders); <code>zvena-stay-in-browser</code> &mdash; that you chose to stay in the browser
-          instead of opening the app. Both go when you close the tab.
+          instead of opening the app; <code>zv-lang-shared</code> &mdash; that your language choice was passed on to Design. They go when you close the tab.
         </li>
         <li>
           <b>IndexedDB</b> <code>zvena-docs</code> &mdash; a local copy of the open workspace&rsquo;s documents, so they open instantly and keep working offline. If you use
