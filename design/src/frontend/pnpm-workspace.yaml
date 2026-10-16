@@ -22,7 +22,7 @@ allowBuilds:
 
 overrides:
   ajv@>=7.0.0-alpha.0 <8.18.0: ^8.18.0
-  immutable@<3.8.3: ^3.8.3
+  immutable@<3.8.4: ^3.8.4
   lodash@<=4.17.23: ^4.17.24
   lodash@>=4.0.0 <=4.17.23: ^4.17.24
   minimatch@>=10.0.0 <10.2.1: ^10.2.1

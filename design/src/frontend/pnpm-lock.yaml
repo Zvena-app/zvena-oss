@@ -164,7 +164,7 @@ settings:
 
 overrides:
   ajv@>=7.0.0-alpha.0 <8.18.0: ^8.18.0
-  immutable@<3.8.3: ^3.8.3
+  immutable@<3.8.4: ^3.8.4
   lodash@<=4.17.23: ^4.17.24
   lodash@>=4.0.0 <=4.17.23: ^4.17.24
   minimatch@>=10.0.0 <10.2.1: ^10.2.1
@@ -1658,7 +1658,7 @@ packages:
     engines: {node: '>= 10.0.0'}
 
   '@penpot/svgo@https://codeload.github.com/penpot/svgo/tar.gz/65b3a645df9edbe3c00acf4267dd06c2ca736021':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/penpot/svgo/tar.gz/65b3a645df9edbe3c00acf4267dd06c2ca736021}
+    resolution: {gitHosted: true, integrity: sha512-hG/pgVEWhmHEFMU+evGZkB5kHauff5Zo6ZO+Ro7HY0efsQTJft6svM4isH5jDISeSVrZ1CDGnhWBXuqkztsTWw==, tarball: https://codeload.github.com/penpot/svgo/tar.gz/65b3a645df9edbe3c00acf4267dd06c2ca736021}
     version: 3.3.0
 
   '@penpot/ua-parser@https://codeload.github.com/penpot/ua-parser/tar.gz/90b970f39f2dc08378b975a0f01045b4ec8e89a4':
@@ -2475,6 +2475,7 @@ packages:
   '@xmldom/xmldom@0.8.13':
     resolution: {integrity: sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==}
     engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@zip.js/zip.js@2.8.34':
     resolution: {integrity: sha512-+6a3lyqq69rpseLbvDPiVIWsZ/HdTGAAD6afFtug6ECPDGttb2dHnPC6cJgdPofYkzL9OvXizegq+DQVfL2rnA==}
@@ -2823,6 +2824,7 @@ packages:
   clone-buffer@1.0.0:
     resolution: {integrity: sha512-KLLTJWrvwIP+OPfMn0x2PheDEP20RPUcGXj/ERegTgdmPEZylALQldygiqrPPu8P45uNuPs7ckmReLY6v/iA5g==}
     engines: {node: '>= 0.10'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   clone-stats@1.0.0:
     resolution: {integrity: sha512-au6ydSpg6nsrigcZ4m8Bc9hxjeW+GJ8xh5G3BJCMt4WXe1H10UNaVOamqQTmrx1kjVuxAHIQSNU6hY4Nsn9/ag==}
@@ -3789,8 +3791,8 @@ packages:
     resolution: {integrity: sha512-BAg6QkE8W+TuQLrrw0Ugr7HegXduRuuj8/ti2kSOc+jz1dmx8/WNcjr6XGnq5YpDWxFwwaavqD0+jIUOKelTsw==}
     engines: {node: '>= 4'}
 
-  immutable@3.8.3:
-    resolution: {integrity: sha512-AUY/VyX0E5XlibOmWt10uabJzam1zlYjwiEgQSDc5+UIkFNaF9WM0JxXKaNMGf+F/ffUF+7kRKXM9A7C0xXqMg==}
+  immutable@3.8.4:
+    resolution: {integrity: sha512-ZQv17KolYrYmsDoDB8N67zhIKsNi9mGYlk96y/yuxyAqJB2hLzSGSM7k/sB0/ZvO4kx27U9+fBeD/XlLGh/uXQ==}
     engines: {node: '>=0.10.0'}
 
   immutable@5.1.9:
@@ -8695,7 +8697,7 @@ snapshots:
   draft-js@https://codeload.github.com/penpot/draft-js/tar.gz/c58ebd9429a6359d72a88cff87e078aaf6fe285d(encoding@0.1.13)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       fbjs: 3.0.5(encoding@0.1.13)
-      immutable: 3.8.3
+      immutable: 3.8.4
       object-assign: 4.1.1
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
@@ -9444,7 +9446,7 @@ snapshots:
 
   ignore@7.0.6: {}
 
-  immutable@3.8.3: {}
+  immutable@3.8.4: {}
 
   immutable@5.1.9: {}
 
