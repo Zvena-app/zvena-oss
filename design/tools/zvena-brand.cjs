@@ -1,4 +1,4 @@
-// Generates Design's brand assets (the Penpot fork) from the owner's logo
+// Generates Design's brand assets (the Penpot fork) from zvena's logo
 // files in web/public/brand: the mark (two shapes in a 185-unit box), the
 // "zvena." wordmark (logo-horizontal.svg), app icons (white mark on a black
 // square, as logo-black-bg.svg), the e-mail logo, the link preview and the
@@ -17,7 +17,7 @@ const font = opentype.loadSync(path.join(ROOT, "brand/fonts/InterDisplay-SemiBol
 const NAVY = "#000000"; // the brand is black and white
 const BLUE = "#0D99FF";
 
-// The owner's mark: two shapes in a 185x185 box.
+// zvena's mark: two shapes in a 185x185 box.
 const MARK = ["M46.5 54.3H156L98.4 94H86C64.2 94 46.5 76.2 46.5 54.3Z", "M98.4 94C126 94 149 111.9 149 134H39Z"];
 
 /** The mark scaled into a box of `s` units at (x, y). */
@@ -34,7 +34,7 @@ function iconSvg({ size = 500, fill = null } = {}) {
   return svg(size, size, mark(0, 0, size, fill));
 }
 
-/** The owner's wordmark ("zvena." 1270x218), optionally recolored. */
+/** zvena's wordmark ("zvena." 1270x218), optionally recolored. */
 function wordmarkSvg({ fill = null } = {}) {
   let src = fs.readFileSync(path.join(BRAND, "logo-horizontal.svg"), "utf8");
   if (fill) src = src.replace(/fill="#000000"/g, `fill="${fill}"`);

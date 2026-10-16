@@ -1,4 +1,4 @@
-// The app's icons from the owner's logo files (clients/brand): the white
+// The app's icons from zvena's logo files (clients/brand): the white
 // mark on a black square, as the website's favicon. Writes build/icon.png
 // (macOS, Windows), build/icons/<n>x<n>.png (Linux), assets/icon.png (the
 // Linux window) and assets/tray.png. Needs sharp: the web app's copy is used

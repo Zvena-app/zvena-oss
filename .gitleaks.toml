@@ -1,13 +1,7 @@
-# Secret scanning (gitleaks): the default rules plus our own.
+# Secret scanning (gitleaks): the default rules.
 
 [extend]
 useDefault = true
-
-[[rules]]
-id = "resend-api-key"
-description = "Resend API key"
-regex = '''\bre_[A-Za-z0-9]{8,}_[A-Za-z0-9]{16,}\b'''
-keywords = ["re_"]
 
 [[allowlists]]
 description = "Message ids (modals.some-dialog.hint1) in translation files are not keys"

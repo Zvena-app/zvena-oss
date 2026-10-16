@@ -5,7 +5,7 @@
 ;; Copyright (c) zvena
 
 (ns app.zvena.management
-  "zvena: the internal API zvena.app uses to keep Design in step with its
+  "zvena: the internal API the zvena web app uses to keep Design in step with its
   accounts, workspaces and roles, and to read what Documents shows from
   Design (file lists, frame previews, usage, exports).
 
@@ -13,7 +13,7 @@
   same shared key (PENPOT_MANAGEMENT_API_KEY, header x-shared-key), never
   exposed by the frontend's nginx. JSON in and out (camelCase keys).
 
-  A person is known here by a technical login (u-<id>@users.zvena.app) that
+  A person is known here by a technical login (u-<id>@users.zvena.invalid) that
   zvena gives them; Design never sees their real e-mail."
   (:require
    [app.binfile.common :as bfc]

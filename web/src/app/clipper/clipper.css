@@ -1,7 +1,7 @@
 /* The Web Clipper's Connect pages and the /clip page ("Save to zvena"):
    zvena's panel with the shared tokens (app/ui-theme.css). */
 
-/* The owner's wordmark (public/brand/logo-horizontal.svg, 1270×218) in the text color, so it turns white in the dark theme. */
+/* zvena's wordmark (public/brand/logo-horizontal.svg, 1270×218) in the text color, so it turns white in the dark theme. */
 .zv-clipper .zv-clipper-logo { display: block; width: 105px; height: 18px; margin: 0 auto 18px; background: var(--ui-text); -webkit-mask: url(/brand/logo-horizontal.svg) center / contain no-repeat; mask: url(/brand/logo-horizontal.svg) center / contain no-repeat; }
 .zv-clipper h1 { font-size: 22px; }
 .zv-clipper-scope { background: var(--ui-bg-2); border-radius: var(--ui-radius-md); padding: 12px 14px; margin: 0 0 14px; font-size: var(--ui-text-md); }

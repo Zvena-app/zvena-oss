@@ -393,12 +393,12 @@ Workspace owners find these in **Settings**: Security, Identity (verified domain
 
 ### Custom domains for published sites
 
-A workspace owner connects `docs.example.com` to a published page in **Settings → Sites**. The customer proves the domain with either record that zvena shows them:
+A workspace owner connects `docs.example.com` to a published page in **Settings → Sites**. The workspace owner proves the domain with either record that zvena shows them:
 
 - **CNAME** `docs.example.com` → `zv-<claim>.sites.example.com` (a name of their own under `ZVENA_SITES_CNAME`, so a CNAME left dangling cannot be claimed by someone else), or
 - **TXT** `_zvena-site.docs.example.com` = `zvena-site=<token>`, for a root domain whose A record points at the server.
 
-On zvena's side, once:
+On your server, once:
 
 1. DNS (Cloudflare): `sites.example.com` **A** server IP and `*.sites.example.com` **A** server IP (plus AAAA with IPv6), both **DNS only (grey cloud)**. A proxied record cannot work: Cloudflare would answer for the customer's host name itself.
 2. Caddy: the `Caddyfile` in this repository already has the pieces — the global `on_demand_tls { ask http://web:3100/api/sites/domain-check }`, the catch-all `https://` site with `tls { on_demand }`, and the `http://` redirect. The ask endpoint answers 200 only for a verified domain whose page is published, not taken down and in a workspace that allows publishing; Caddy then gets a Let's Encrypt certificate on the first HTTPS request (TLS-ALPN-01, port 443 open to the internet). It is answered 404 on the public site, so only Caddy (inside the Docker network) uses it.

@@ -32,7 +32,7 @@ RUN sed -i \
       /tmp/nginx.conf.template \
  && grep -qF '"$request_method $uri $server_protocol"' /tmp/nginx.conf.template \
  && ! grep -qF -e 'http_referer' -e '"$request"' /tmp/nginx.conf.template
-# The management API is internal (zvena.app calls the backend directly):
+# The management API is internal (the zvena web app calls the backend directly):
 # never reachable through the public frontend.
 RUN sed -i 's|^    server {$|    server {\n        location /management/ { return 404; }|' /tmp/nginx.conf.template \
  && grep -q 'location /management/ { return 404; }' /tmp/nginx.conf.template

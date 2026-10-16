@@ -58,9 +58,8 @@ test("navigation: the app and its own subdomains stay, the rest goes to the brow
   assert.equal(L.navigationVerdict("javascript:alert(1)", APP, null), "block");
   assert.equal(L.navigationVerdict("data:text/html,<b>x</b>", APP, null), "block");
   assert.equal(L.navigationVerdict("zvena-ui://ui/settings.html", APP, null), "block");
-  // Sign-in providers stay in the app (the cookie must land here), the rest of GitHub does not.
-  assert.equal(L.navigationVerdict("https://accounts.google.com/o/oauth2/v2/auth?x", APP, null), "app");
-  assert.equal(L.navigationVerdict("https://github.com/login/oauth/authorize?x", APP, null), "app");
+  // Other sites' pages, sign-in pages included, open in the browser.
+  assert.equal(L.navigationVerdict("https://accounts.google.com/o/oauth2/v2/auth?x", APP, null), "browser");
   assert.equal(L.navigationVerdict("https://github.com/someone/repo", APP, null), "browser");
   // A local test stand never trusts "subdomains" of an IP or localhost.
   assert.equal(L.isInAppUrl("http://x.localhost:3955/", "http://localhost:3955", null), false);

@@ -4,7 +4,7 @@
 // two people in two browsers, no foreign hosts anywhere.
 //
 //   BASE=http://localhost:3100 DESIGN=http://localhost:3110 \
-//   ZVENA_DB_PATH=<the dev server's db> | WEB_CONTAINER=zvena-staging-web-1 \
+//   ZVENA_DB_PATH=<the dev server's db> | WEB_CONTAINER=zvena-web-1 \
 //   PLAYWRIGHT_CORE=… SHOTS=<dir> node tests/e2e/checklist.mjs
 import { BASE, check, context, DESIGN, designSettled, devSignIn, DOCS_NAV, foreignHosts, launch, moveToWorkspace, pastWelcome, summary } from "./lib.mjs";
 
@@ -31,7 +31,7 @@ async function designReady(page, timeout = 90000) {
 }
 
 // The moderator of the stand: the database file (dev server) or the web
-// container (WEB_CONTAINER=zvena-staging-web-1).
+// container (WEB_CONTAINER=zvena-web-1).
 async function makeAdmin(userId) {
   if (!/^[0-9a-f]+$/.test(userId)) throw new Error("bad user id");
   if (process.env.WEB_CONTAINER) {

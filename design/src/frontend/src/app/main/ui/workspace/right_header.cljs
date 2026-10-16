@@ -136,7 +136,7 @@
 
         can-edit?         (:can-edit permissions)
 
-        ;; zvena: teams and invitations are managed on zvena.app (Design's
+        ;; zvena: teams and invitations are managed in the zvena web app (Design's
         ;; invite calls are refused), so Share is the prototype link there.
         can-invite?
         (and (not (:is-default team))

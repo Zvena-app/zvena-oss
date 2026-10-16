@@ -1,6 +1,6 @@
 // The Terms changed: a signed-in person accepts the new version before going
 // on (pages, Docs and Design through OIDC), or signs out.
-//   BASE=… WEB_CONTAINER=zvena-webtest-web-1 PLAYWRIGHT_CORE=… node tests/e2e/consent.mjs
+//   BASE=… WEB_CONTAINER=zvena-web-1 PLAYWRIGHT_CORE=… node tests/e2e/consent.mjs
 import { execFileSync } from "node:child_process";
 import { BASE, check, context, devSignIn, launch, summary } from "./lib.mjs";
 
@@ -8,7 +8,7 @@ const RUN = Math.random().toString(36).slice(2, 7);
 function staleConsent(userId) {
   if (!/^[0-9a-f]+$/.test(userId)) throw new Error("bad user id");
   const js = `const {DatabaseSync}=require("node:sqlite");new DatabaseSync(process.env.ZVENA_DB_PATH).prepare("UPDATE users SET consent_version = '2000-01-01' WHERE id = ?").run("${userId}");`;
-  execFileSync("docker", ["exec", process.env.WEB_CONTAINER || "zvena-webtest-web-1", "node", "--no-warnings", "-e", js], { stdio: "ignore" });
+  execFileSync("docker", ["exec", process.env.WEB_CONTAINER || "zvena-web-1", "node", "--no-warnings", "-e", js], { stdio: "ignore" });
 }
 
 const browser = await launch();

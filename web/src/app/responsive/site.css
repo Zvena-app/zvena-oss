@@ -1,7 +1,7 @@
 /* zvena on phones and tablets: site (the public website, lib/site.ts puts
  * `zs` on <body>). Breakpoints and rules: responsive/shell.css and
- * the comments there. The site's own sheets (site.css,
- * landing.css, content.css, legal.css, pricing.css) load after this one,
+ * the comments there. The public pages' own sheets (site.css,
+ * content.css, legal.css) load after this one,
  * so selectors are rooted in :root and doubled. The test-stand badge and the
  * cookie notice are shared with the app: responsive/workspace.css. */
 
@@ -15,8 +15,6 @@
   :root:root .zs.zs .zs-footer-col h2 { margin-bottom: 4px; }
   :root:root .zs.zs .zs-footer-col a { display: flex; align-items: center; min-height: 40px; }
   :root:root .zs.zs .zs-footer-bottom a { display: inline-flex; align-items: center; min-height: 40px; }
-  /* "Read the … guide →" links between sections. */
-  :root:root .zs.zs .zl-more { min-height: 40px; }
   /* The menu's rows. */
   :root:root .zs.zs .zs-mobile a { min-height: 44px; display: flex; align-items: center; }
 }
@@ -94,16 +92,4 @@
 @media (max-height: 500px) {
   /* Landscape phone: no vertical centring under a 64 px header. */
   :root:root .zs.zs .zv-center { min-height: 0; place-items: start center; padding-top: 20px; padding-bottom: 40px; }
-}
-
-/* ------------------------------------------------------------------ the home page's hero, landscape phone */
-
-@media (max-height: 500px) and (min-width: 641px) and (max-width: 1080px) {
-  /* The line and the way in on the left, the product on the right: the
-     button is on the first screen instead of two screens down. */
-  :root:root .zs.zs .zl-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; row-gap: 20px; padding-top: 28px; align-items: start; }
-  :root:root .zs.zs .zl-hero h1 { grid-column: 1; grid-row: 1; align-self: end; font-size: 38px; }
-  :root:root .zs.zs .zl-hero-media { grid-column: 2; grid-row: 1 / span 2; padding: 0; }
-  :root:root .zs.zs .zl-hero-cta { grid-column: 1; grid-row: 2; }
-  :root:root .zs.zs .zl-big-btn { font-size: 22px; padding: 12px 28px; border-radius: 12px; }
 }

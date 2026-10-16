@@ -280,7 +280,7 @@ h1, h2, h3 { font-family: var(--zv-font); font-weight: 700; letter-spacing: -0.0
 .zv-table th { font-size: 14px; color: var(--zv-text-2); font-weight: 400; }
 .zv-table-wrap { overflow-x: auto; border-radius: 6px; background: var(--zv-card); box-shadow: var(--zv-shadow); }
 
-/* Public pages: header, landing, footer */
+/* Public pages: header, footer */
 .zv-header { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--zv-bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--zv-border); }
 .zv-header-in { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; gap: 18px; padding: 12px 24px; }
 .zv-header-in .zv-logo { font-size: 21px; color: var(--zv-text); text-decoration: none; }
@@ -291,19 +291,6 @@ h1, h2, h3 { font-family: var(--zv-font); font-weight: 700; letter-spacing: -0.0
 @media (max-width: 860px) { .zv-header-nav { display: none; } .zv-header-in { padding: 10px 16px; } }
 @media (max-width: 400px) { .zv-header-signin { display: none; } }
 
-.zv-hero { max-width: 1120px; margin: 0 auto; padding: 72px 24px 40px; text-align: center; }
-.zv-hero h1 { font-size: clamp(34px, 5.4vw, 58px); max-width: 860px; margin: 0 auto 18px; }
-.zv-hero p { font-size: clamp(16px, 2vw, 19px); color: var(--zv-text-2); max-width: 680px; margin: 0 auto 28px; }
-.zv-hero .zv-actions { justify-content: center; }
-@media (max-width: 520px) { .zv-hero .zv-actions { flex-direction: column; align-items: stretch; } .zv-hero .zv-actions .zv-btn { height: auto; min-height: 44px; padding: 10px 16px; } }
-.zv-features { max-width: 1120px; margin: 0 auto; padding: 24px 24px 40px; display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
-@media (max-width: 900px) { .zv-features { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px) { .zv-features { grid-template-columns: 1fr; } }
-.zv-feature { background: var(--zv-card); border-radius: 8px; box-shadow: var(--zv-shadow); padding: 24px; }
-.zv-feature h3 { font-size: 21px; margin-bottom: 8px; }
-.zv-feature p { margin: 0; color: var(--zv-text-2); }
-.zv-feature-icon { width: 40px; height: 40px; border-radius: 6px; background: var(--zv-accent-soft); color: var(--zv-accent); display: grid; place-items: center; margin-bottom: 14px; }
-.zv-feature-icon svg { width: 22px; height: 22px; }
 .zv-note { max-width: 1120px; margin: 0 auto; padding: 8px 24px 48px; text-align: center; color: var(--zv-text-2); }
 
 .zv-footer { border-top: 0.5px solid var(--zv-border); margin-top: 64px; background: var(--zv-side); }

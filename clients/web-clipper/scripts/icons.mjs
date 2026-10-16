@@ -1,4 +1,4 @@
-// Toolbar and store icons from the owner's mark (clients/brand/favicon.svg:
+// Toolbar and store icons from zvena's mark (clients/brand/favicon.svg:
 // the white mark on a black square). The PNGs are kept in src/icons, so a
 // build (and AMO's review build) needs no image tools; run this only when
 // the brand file changes:

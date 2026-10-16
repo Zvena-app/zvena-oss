@@ -7,7 +7,7 @@
 (ns app.zvena.limits
   "zvena: the storage quota and upload compression in Design.
 
-  One quota per account covers documents, their files and designs (zvena.app
+  One quota per account covers documents, their files and designs (the zvena web app
   decides it, default 2 GB). A team's uploads count against the team owner
   (zvena's workspace owner pays for its workspace). Design asks zvena for the
   quota and the documents' share (GET /api/internal/usage, cached a minute)
@@ -96,7 +96,7 @@
              (* 2 1024 1024 1024))))
 
 (defn- fetch-usage
-  "{:quota bytes :docs bytes} from zvena.app; throws on any failure."
+  "{:quota bytes :docs bytes} from the zvena web app; throws on any failure."
   [base key email]
   (let [uri  (str (str/rtrim base "/") "/api/internal/usage?login="
                   (URLEncoder/encode (str email) StandardCharsets/UTF_8))
@@ -117,7 +117,7 @@
       {:quota (long quota) :docs (long docs)})))
 
 (defn- zvena-usage
-  "{:quota bytes :docs bytes} for a Design login: zvena.app's answer (cached
+  "{:quota bytes :docs bytes} for a Design login: the zvena web app's answer (cached
   a minute), else its last answer, else the default quota with no
   documents (fail closed)."
   [email]

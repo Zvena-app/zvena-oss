@@ -29,7 +29,7 @@ function isOwner(userId: string, ws: string): boolean {
 /**
  * Whether a sign-in with `provider` must go through SSO instead: the
  * address the provider vouches for and the account's own address are both
- * looked at (a GitHub login linked to a company account is still that
+ * looked at (a sign-in without an e-mail, linked to a company account, is still that
  * account). Returns the enforcing workspace, or null to let it through.
  */
 export function ssoRequired(provider: string, userId: string | null, emails: (string | null | undefined)[]): string | null {

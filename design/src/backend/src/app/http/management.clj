@@ -86,7 +86,7 @@
      :allowed-methods #{:post}
      :transaction true}]
 
-   ;; zvena: accounts, workspaces and roles come from zvena.app (app.zvena.management).
+   ;; zvena: accounts, workspaces and roles come from the zvena web app (app.zvena.management).
    (zvena/routes)])
 
 ;; ---- HELPERS

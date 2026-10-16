@@ -140,7 +140,7 @@ docker run --rm --name zvcli-ext-$$ --network host -v $PWD:/clipper:ro \
    - Single purpose: "Save web pages to the user's zvena workspace."
    - Permission justifications: use the table above.
    - Data usage: website content, sent only when the user saves a clip. It is not sold, not used for ads, and not used for unrelated purposes.
-   - Privacy policy URL: `https://zvena.app/legal/privacy`.
+   - Privacy policy URL: your server's privacy policy (`ZVENA_PRIVACY_URL`).
 4. The store assigns the item ID. Give it to the server (see "Server side" below).
 
 **Edge Add-ons (Partner Center)**

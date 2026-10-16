@@ -28,7 +28,7 @@ Design (the Penpot fork) builds in Docker: `design/bin/build-frontend.sh` and `d
    npm run typecheck && npx eslint --max-warnings 0 . && npm test && npm run check:no-ai
    node scripts/i18n.mjs check --strict   # every UI string exists in all 10 languages, same placeholders
    ```
-   and the browser suites that cover what you touched (`web/tests/e2e/*.mjs`, see README). GitHub runs the same checks, plus `npm run build`, the client apps' tests, the backup engine's tests, shellcheck and the access-log masking test, on every push and pull request (`.github/workflows/ci.yml`); a lint warning fails it.
+   and the browser suites that cover what you touched (`web/tests/e2e/*.mjs`, see README). GitHub runs the same checks, plus `npm run build`, the client apps' tests, shellcheck and the access-log masking test, on every push and pull request (`.github/workflows/ci.yml`); a lint warning fails it.
 4. **Data and privacy.** If the change collects new personal data, sends anything to a new service, or changes what goes to an existing one (for example the decision model behind smart suggestions), say so in the pull request and in `DEPLOY.md` (operators must update their privacy policies), and add a test that pins what is sent.
 5. **Help texts** (`web/src/app/help`) describe what the code does today. A feature behind a flag is not described as available.
 6. Write the commit message as what changed and why. Commits made with an AI coding assistant are marked with a `Co-Authored-By:` line; much of zvena's code has been written that way under the maintainers' direction.

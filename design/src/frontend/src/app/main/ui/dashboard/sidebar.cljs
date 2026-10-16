@@ -417,7 +417,7 @@
                             (:default-team-id profile))
 
         teams (dissoc teams default-team-id)
-        ;; zvena: workspaces (teams) are created on zvena.app, which keeps
+        ;; zvena: workspaces (teams) are created in the zvena web app, which keeps
         ;; Design's teams in step with their members and roles.
         on-create-team-click
         (mf/use-fn
@@ -478,7 +478,7 @@
       [:span {:class (stl/css :team-text)} (tr "zvena.dashboard.new-workspace")]]]))
 
 ;; zvena: members, roles, invite links, renaming, leaving and deleting live
-;; on zvena.app (one team for Documents and Design), which keeps this team in
+;; in the zvena web app (one team for Documents and Design), which keeps this team in
 ;; step: the menu leads there.
 (mf/defc team-options-dropdown*
   {::mf/private true}
@@ -1004,7 +1004,7 @@
        [:> sidebar-search* {:search-term search-term
                             :team-id (:id team)}]
 
-       ;; zvena: Home, Documents and Team of this workspace (on zvena.app).
+       ;; zvena: Home, Documents and Team of this workspace (in the zvena web app).
        [:> zvena-nav* {:team-id (:id team)}]
 
        [:ul {:class (stl/css :sidebar-nav)}

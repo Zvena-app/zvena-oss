@@ -1,11 +1,11 @@
-// Writes zvena's icon files from the owner's logo files in public/brand/
+// Writes zvena's icon files from zvena's logo files in public/brand/
 // (favicon.svg: the white mark on a black square; logo-horizontal.svg: the
 // long logo "zvena."):
 //   src/app/icon.svg, src/app/apple-icon.png, src/app/favicon.ico — favicons;
 //   public/brand/icon-192.png, icon-512.png, icon-maskable-512.png — the web
 //     app manifest (app/manifest.ts) and the logo in structured data;
 //   public/brand/zvena-logo-email.png — the long logo in e-mails (no SVG there).
-// Re-run after the owner's files change:  node scripts/brand-icons.mjs
+// Re-run after the brand files change:  node scripts/brand-icons.mjs
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +14,7 @@ import sharp from "sharp";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const brand = (name) => readFileSync(join(ROOT, "public/brand", name), "utf8");
 
-// The square icon as drawn by the owner (185 × 185, full bleed).
+// The square icon as drawn in the brand files (185 × 185, full bleed).
 const square = brand("favicon.svg").replace(/ width="\d+" height="\d+"/, "");
 /** The same icon with the mark scaled about the center (for maskable icons). */
 const scaled = (k) => square.replace('<g fill="#fff">', `<g fill="#fff" transform="translate(${(92.5 * (1 - k)).toFixed(2)} ${(92.5 * (1 - k)).toFixed(2)}) scale(${k})">`);

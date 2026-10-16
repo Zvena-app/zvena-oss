@@ -6,7 +6,7 @@
 
 (ns app.main.ui.zvena.nav
   "zvena's sections at the top of Design's file browser: Home, Documents and
-  Team of the open workspace (= this Penpot team), on zvena.app."
+  Team of the open workspace (= this Penpot team), in the zvena web app."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]

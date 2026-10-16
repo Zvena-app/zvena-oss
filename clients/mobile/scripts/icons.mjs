@@ -1,4 +1,4 @@
-// App icons and splash screens from the owner's logo (clients/brand/): the
+// App icons and splash screens from zvena's logo (clients/brand/): the
 // white two-shape mark on black. Run after changing the brand files:
 //   npm run icons   (SHARP=/path/to/sharp to use another sharp install)
 //

@@ -13,7 +13,7 @@
 //      its id and secret in GOOGLE_CALENDAR_CLIENT_ID / _SECRET (or
 //      MS_CALENDAR_CLIENT_ID / _SECRET) — separate from sign-in's app;
 //   2. a connect route doing the authorization-code flow with PKCE and
-//      offline access (lib/oauth.ts shows the pattern), keeping the refresh
+//      offline access (lib/enterprise/sso.ts shows the pattern), keeping the refresh
 //      token sealed in cal_accounts.secret (seal(), aad "<provider>:<id>"),
 //      provider = "google" | "microsoft";
 //   3. `sync` here: events.list with a syncToken (Google) or a delta query

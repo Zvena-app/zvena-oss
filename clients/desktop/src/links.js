@@ -62,19 +62,6 @@ function isInAppUrl(raw, appOrigin, designOrigin) {
   return u.hostname.endsWith(`.${app.hostname}`);
 }
 
-/**
- * Sign-in providers stay in the app (the session cookie has to land in the
- * app, not the browser): Google's account pages and GitHub's sign-in pages
- * only, so the rest of GitHub opens in the browser.
- */
-function isSignInUrl(raw) {
-  const u = parse(raw);
-  if (!u || u.protocol !== "https:") return false;
-  if (u.hostname === "accounts.google.com") return true;
-  if (u.hostname === "github.com") return /^\/(login|session|sessions)(\/|$)/.test(u.pathname);
-  return false;
-}
-
 /** What the system browser may be asked to open (never file:, javascript:, custom schemes). */
 function isExternalOpenable(raw) {
   const u = parse(raw);
@@ -87,7 +74,7 @@ function isExternalOpenable(raw) {
  * file:, javascript:, data:, custom schemes).
  */
 function navigationVerdict(raw, appOrigin, designOrigin) {
-  if (isInAppUrl(raw, appOrigin, designOrigin) || isSignInUrl(raw)) return "app";
+  if (isInAppUrl(raw, appOrigin, designOrigin)) return "app";
   return isExternalOpenable(raw) ? "browser" : "block";
 }
 
@@ -278,7 +265,6 @@ module.exports = {
   resolveAppOrigin,
   isAppUrl,
   isInAppUrl,
-  isSignInUrl,
   isExternalOpenable,
   navigationVerdict,
   deepLinkTarget,

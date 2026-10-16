@@ -2,12 +2,12 @@
 // every public page answers in English with no foreign hosts or console
 // errors, old addresses redirect, robots/sitemap exist, and the e-mail link
 // and code (read from the stand's outbox) sign in, link accounts and work once.
-//   BASE=… WEB_CONTAINER=zvena-webtest-web-1 PLAYWRIGHT_CORE=… node tests/e2e/public.mjs
+//   BASE=… WEB_CONTAINER=zvena-web-1 PLAYWRIGHT_CORE=… node tests/e2e/public.mjs
 import { execFileSync } from "node:child_process";
 import { BASE, check, context, foreignHosts, landed, launch, pastWelcome, summary } from "./lib.mjs";
 
 const RUN = Math.random().toString(36).slice(2, 7);
-const container = process.env.WEB_CONTAINER || "zvena-webtest-web-1";
+const container = process.env.WEB_CONTAINER || "zvena-web-1";
 
 /** The newest letter in the stand's outbox addressed to `to`. */
 function lastLetter(to) {

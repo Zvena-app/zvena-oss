@@ -3,9 +3,10 @@
 // published pages and proves it, either way:
 //
 //   CNAME  docs.example.com → <claim>.<ZVENA_SITES_CNAME> (default
-//          sites.zvena.app; a wildcard record sends every such name to us)
+//          sites.<APP_URL's host>; a wildcard record sends every such name
+//          to this server)
 //   TXT    _zvena-site.docs.example.com = "zvena-site=<token>" (for a bare
-//          domain, whose A record then points at us)
+//          domain, whose A record then points at this server)
 //
 // Both carry the claim's own secret: a CNAME to the shared sites.zvena.app
 // alone proves nothing (anyone could claim a domain whose old CNAME was left

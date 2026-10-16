@@ -97,7 +97,7 @@ CASES=(
   "/signin/email?token=$S" "/signin/email?token=***"
   "/signin?next=%2Fjoin%2F$S" "/signin?next=***"
   "/signin?next=/share/$S" "/signin?next=***"
-  "/api/auth/callback/google?code=$S&state=$S" "/api/auth/callback/google?code=***&state=***"
+  "/api/sso/oidc/w1/callback?code=$S&state=$S" "/api/sso/oidc/w1/callback?code=***&state=***"
   "/api/projects/attachments/a1b2?exp=1700000000&sig=$S" "/api/projects/attachments/a1b2?exp=1700000000&sig=***"
   "/api/mail/img?u=https%3A%2F%2Fmail.example%2Fp%3Fid%3D$S&s=$S" "/api/mail/img?u=***&s=***"
   "/api/main/methods/get-view-only-bundle?file-id=f1&share-id=$S" "/api/main/methods/get-view-only-bundle?file-id=f1&share-id=***"

@@ -5,7 +5,7 @@
 ;; Copyright (c) zvena
 
 (ns app.zvena.teams
-  "zvena: teams are zvena.app's workspaces. Their members and roles are set
+  "zvena: teams are the zvena web app's workspaces. Their members and roles are set
   by zvena (app.zvena.management/sync-team); Design's own team commands
   (create, invite, change roles, leave, delete…) refuse to run while the
   `zvena` flag is on, so the two never drift apart.
@@ -41,12 +41,12 @@
     (reset! schema-ready true)))
 
 (defn check-managed!
-  "Refuses a team change made inside Design: zvena.app manages teams."
+  "Refuses a team change made inside Design: the zvena web app manages teams."
   []
   (when (enabled?)
     (ex/raise :type :restriction
               :code :zvena-teams-managed
-              :hint "teams are managed on zvena.app")))
+              :hint "teams are managed in the zvena web app")))
 
 (def ^:private sql:can-comment
   "SELECT f.can_comment

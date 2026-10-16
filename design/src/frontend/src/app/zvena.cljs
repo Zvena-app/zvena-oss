@@ -9,7 +9,7 @@
   Documents, Team, help, legal pages, complaints and the source code page.
   zvena's address comes from `penpotZvenaURI` in config.js (set by the
   frontend image from PENPOT_ZVENA_URI); without it, it is the Design
-  address without its leading \"design.\" (design.zvena.app → zvena.app)."
+  address without its leading \"design.\" (design.example.com → example.com)."
   (:require
    [app.config :as cf]
    [app.util.globals :refer [global]]

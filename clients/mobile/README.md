@@ -28,7 +28,7 @@ capacitor.config.js      app id app.zvena.mobile, server.url = APP_URL, allowNav
 www/                     local pages: error.html (no connection, in 10 languages), index.html (bridge to server.url)
 src/links.js             deep link, universal link and share mapping (the reference rules)
 scripts/prepare.cjs      writes www/app-url.js from APP_URL (run by npm run sync*)
-scripts/icons.mjs        icons and splash screens from clients/brand/ (the owner's logo)
+scripts/icons.mjs        icons and splash screens from clients/brand/ (zvena's logo)
 scripts/strings.mjs      native strings in the 10 interface languages
 scripts/ios-project.mjs  adds Links.swift, entitlements and the share extension target to the Xcode project
 android/                 Android Studio project (MainActivity handles share and links)
@@ -131,8 +131,7 @@ page. Extensions get no `UIApplication`, so it reaches the host app through
 the responder chain, which needs `APPLICATION_EXTENSION_API_ONLY = NO` on that
 target (set). If iOS ever refuses that, the item is still saved in the App
 Group and the app opens Save to zvena the next time it comes to the front
-(within ten minutes). **This has not been compiled here** (no macOS): build it
-once in Xcode before release. If the project ever needs re-creating by hand:
+(within ten minutes). If the project ever needs re-creating by hand:
 File → New → Target → Share Extension named `ShareExtension`, delete its
 generated files, add the files in `ios/App/ShareExtension/` to it, set
 `INFOPLIST_FILE = ShareExtension/Info.plist`,

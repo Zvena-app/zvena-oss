@@ -52,9 +52,7 @@ platform, setBadge }`.
   all to other origins.
 - Navigation: a tab stays on the server's origin, the Design origin
   (`DESIGN_URL` or Settings) and https subdomains of the server's domain
-  (design.zvena.app next to zvena.app). Sign-in pages of Google
-  (accounts.google.com) and GitHub (`/login`, `/session`) are allowed too, so
-  the session cookie lands in the app. Every other http(s)/mailto link opens
+  (design.example.com next to example.com). Every other http(s)/mailto link opens
   in the system browser. Other schemes (file:, javascript:, data:, custom)
   go nowhere. New windows are never created: an app link becomes a tab,
   anything else goes to the browser.
@@ -84,7 +82,7 @@ npm test                                     # node --test: links, shortcuts, se
 npm run icons                                # build/ and assets/ icons from ../brand (needs sharp; uses ../../web/node_modules)
 ```
 
-The icons are made from the owner's logo files in `clients/brand/` (the
+The icons are made from zvena's logo files in `clients/brand/` (the
 white mark on a black square). Never use another mark.
 
 ## Build
@@ -120,7 +118,7 @@ an EV certificate or Azure Trusted Signing, add `win.signtoolOptions` or
 electron-updater from a generic feed (a folder with `latest*.yml` and the
 packages, as electron-builder writes them to `dist/`):
 
-- `ZVENA_UPDATE_URL=https://downloads.zvena.app/desktop/` **at build time**
+- `ZVENA_UPDATE_URL=https://downloads.example.com/desktop/` **at build time**
   bakes the feed into the app (`app-update.yml`);
 - or the same variable **at run time** points an installed app at a feed.
 

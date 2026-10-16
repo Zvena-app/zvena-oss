@@ -16,15 +16,9 @@ import "./template.css";
 // A template before you use it (and before you have an account): what it is
 // and what is in it, rendered from the template itself. "Use this template"
 // signs a visitor in and comes back here with ?use=1 (lib/public-templates.ts),
-// which then adds it to the open workspace. The website is in English.
+// which then adds it to the open workspace. The page is in English.
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ use?: string }> };
-
-/** Real screenshots of the Design templates opened in Design (tests/e2e/landing-shots.mjs). */
-const DESIGN_SHOT: Record<string, { src: string; alt: string }> = {
-  landing: { src: "/landing/hero.webp", alt: "The Landing page template open in zvena Design" },
-  uiKit: { src: "/landing/design.webp", alt: "The UI kit template open in zvena Design" },
-};
 
 function info(t: PublicTemplate) {
   if (t.kind === "design") {
@@ -59,7 +53,6 @@ export default async function TemplatePage({ params, searchParams }: Props) {
     const site = (await headers()).get("sec-fetch-site");
     if (canAdd && (!site || site === "same-origin" || site === "none")) redirect(useHref);
   }
-  const shot = t.kind === "design" ? DESIGN_SHOT[t.key] : undefined;
   return (
     <>
       <PublicHeader locale={locale} signedIn={Boolean(user)} />
@@ -103,9 +96,6 @@ export default async function TemplatePage({ params, searchParams }: Props) {
               </h2>
               <TemplatePreview node={i.node} />
             </div>
-          ) : shot ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={shot.src} alt={shot.alt} width={1600} height={1000} loading="eager" decoding="async" />
           ) : (
             <p className="zt-muted">Open it in Design to see every screen.</p>
           )}

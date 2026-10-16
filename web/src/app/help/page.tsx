@@ -34,7 +34,7 @@ export default async function HelpPage() {
   const quota = formatBytes(config.storageQuota, "en");
   const support = config.company.supportEmail;
   return (
-    <ContentPage eyebrow="Help" title="zvena Help Center" lead="The essentials in one place. Can't find an answer? Write to us and a person will reply." cta={false}>
+    <ContentPage eyebrow="Help" title="zvena Help Center" lead="The essentials in one place. Can't find an answer? Ask the people who run this server." cta={false}>
       <nav className="zc-toc" aria-label="Contents">
         <p className="zc-toc-title">Contents</p>
         <ol>
@@ -228,7 +228,7 @@ export default async function HelpPage() {
       </ul>
 
       <h2 id="admin">Single sign-on and admin</h2>
-      <p>For owners of team workspaces. These are free, like everything else.</p>
+      <p>For owners of team workspaces.</p>
       <ul>
         <li>
           <b>Verified domains</b> (Settings &rarr; Identity): add your company&apos;s domain and put the TXT record zvena shows you in its DNS. You can then let people with a
@@ -304,7 +304,7 @@ export default async function HelpPage() {
       <h2 id="report">Reporting content</h2>
       <p>
         See something illegal or abusive on a published page, form or design? Use the <i>Report</i> button on that page or fill in the <Link href="/report">report form</Link>.
-        A moderator reviews every report and takes content down when it breaks our <Link href="/legal/terms">Terms</Link>.
+        This server&apos;s moderators review reports and take content down when it breaks the <Link href="/legal/terms">Terms</Link>.
       </p>
 
       <h2 id="contact">Contact us</h2>

@@ -801,7 +801,7 @@
       (throw (IllegalArgumentException. "invalid data for provider")))))
 
 (def ^:private zvena-locales
-  "zvena: zvena.app's interface languages (its `locale` claim) as Design
+  "zvena: the zvena web app's interface languages (its `locale` claim) as Design
   locales."
   {"en" "en" "zh" "zh_cn" "hi" "hi" "es" "es" "ar" "ar"
    "fr" "fr" "bn" "bn" "pt" "pt_br" "ru" "ru" "id" "id"})
@@ -819,7 +819,7 @@
 (defn- update-profile-with-info
   [cfg {:keys [id props] :as profile} info]
   (let [props' (merge props (:props info))
-        ;; zvena: Design follows the language picked on zvena.app
+        ;; zvena: Design follows the language picked in the zvena web app
         lang   (info-lang info)
         lang?  (and (some? lang) (not= lang (:lang profile)))]
     (if (or (not= props props') lang?)

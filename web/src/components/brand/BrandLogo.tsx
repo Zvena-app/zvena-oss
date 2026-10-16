@@ -1,4 +1,4 @@
-// zvena's logo, from the owner's files (public/brand/: logo-horizontal.svg,
+// zvena's logo, from the brand files (public/brand/: logo-horizontal.svg,
 // logo-black.svg, favicon.svg). Two forms:
 //   - BrandWordmark: the long logo "zvena." (website header and footer, app
 //     sidebars via BrandLogo);

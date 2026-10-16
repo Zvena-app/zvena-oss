@@ -1,10 +1,10 @@
 # Governance
 
-How decisions about zvena are made today. This is a description of the current state, kept short on purpose; it will change when the nonprofit that will operate zvena is registered.
+How decisions about zvena are made today. This is a description of the current state, kept short on purpose; it will change when the nonprofit that will steward zvena is registered.
 
 ## Who runs zvena
 
-- zvena is a non-commercial project founded and led by **Ethan Merker**, who builds and runs it with a team of five people.
+- zvena is a non-commercial project founded and led by **Ethan Merker**, together with the project's contributors.
 - A nonprofit organization to steward zvena is being registered. It does not exist yet; until it does, the founder holds the project's name, this repository and its releases.
 - There are no investors and no company behind zvena.
 
@@ -21,7 +21,7 @@ If the founder can no longer lead the project, there is no written succession pr
 
 ## Money
 
-The project has no income today: no paid plans, no ads, no investors. If the project starts accepting donations or sponsorship, the sources and how the money is spent will be published, and sponsors get no say over users' data.
+The project has no income today: no ads and no investors. If the project starts accepting donations or sponsorship, the sources and how the money is spent will be published, and sponsors get no say over users' data.
 
 ## Open tasks
 

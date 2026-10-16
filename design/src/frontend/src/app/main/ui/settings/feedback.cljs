@@ -129,7 +129,7 @@
       [:p {:class (stl/css :field-text)} (tr "feedback.penpot.link")]
       [:& fm/input {:label ""
                     :name :error-href
-                    :placeholder "https://design.zvena.app/#/workspace?…"
+                    :placeholder "https://design.example.com/#/workspace?…"
                     :show-success? true}]
 
       (when report

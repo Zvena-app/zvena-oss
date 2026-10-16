@@ -61,7 +61,7 @@
    ;; zvena
    {:label "বাংলা" :value "bn"}])
 
-;; zvena: the interface language chosen on zvena.app (the zv_lang cookie,
+;; zvena: the interface language chosen in the zvena web app (the zv_lang cookie,
 ;; shared with Design through the parent domain) wins over everything
 ;; else, so Design opens in the language the person picked there.
 (def ^:private zvena-locales
@@ -93,7 +93,7 @@
 
 (defn- autodetect
   []
-  ;; zvena: like zvena.app, English unless the person picked a language
+  ;; zvena: like the zvena web app, English unless the person picked a language
   ;; there; the browser's languages don't switch the interface.
   (or (zvena-locale) cf/default-language))
 

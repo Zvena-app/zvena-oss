@@ -106,6 +106,6 @@ jobs:
       - name: shellcheck (preinstalled on the runner)
         run: |
           shellcheck --version | head -2
-          git ls-files -z -- 'deploy/*.sh' 'tools/*.sh' 'tools/hooks/*' 'design/bin/*.sh' | xargs -0 shellcheck -x -S warning
+          git ls-files -z -- 'deploy/*.sh' 'tools/*.sh' 'tools/release/*.sh' 'design/bin/*.sh' | xargs -0 shellcheck -x -S warning
       - name: Access logs keep no secrets (real Caddyfile, dummy token, Docker)
         run: deploy/caddy/test-log-masking.sh
