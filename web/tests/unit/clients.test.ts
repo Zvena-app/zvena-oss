@@ -23,7 +23,7 @@ interface Policy {
   storable(res: { status: number; type?: string; redirected?: boolean; headers: { get(k: string): string | null } }, kind: string): boolean;
 }
 const sw = createRequire(__filename)(join(process.cwd(), "public", "sw.js")) as Policy;
-const O = "https://zvena.app";
+const O = "https://zvena.example.com";
 const nav = (path: string, headers: Record<string, string> = {}) => sw.classify({ url: `${O}${path}`, method: "GET", mode: "navigate", headers, origin: O });
 
 test("service worker: API answers, page data and other sites are never stored", () => {
@@ -104,10 +104,10 @@ test("sw scope: an HMAC of the account, the same across sessions, guest without 
 });
 
 test("desktop links: pages of this site map to zvena://, others do not", () => {
-  assert.equal(desktopLink("https://zvena.app/docs?ws=abc#Plan-123", "https://zvena.app"), "zvena://docs?ws=abc#Plan-123");
-  assert.equal(desktopLink("/home", "https://zvena.app"), "zvena://home");
-  assert.equal(desktopLink("https://evil.example/docs", "https://zvena.app"), null);
-  assert.equal(desktopLink("javascript:alert(1)", "https://zvena.app"), null);
+  assert.equal(desktopLink("https://zvena.example.com/docs?ws=abc#Plan-123", "https://zvena.example.com"), "zvena://docs?ws=abc#Plan-123");
+  assert.equal(desktopLink("/home", "https://zvena.example.com"), "zvena://home");
+  assert.equal(desktopLink("https://evil.example/docs", "https://zvena.example.com"), null);
+  assert.equal(desktopLink("javascript:alert(1)", "https://zvena.example.com"), null);
 });
 
 test("app links: from the environment only, malformed values dropped; 404 without them", async () => {
