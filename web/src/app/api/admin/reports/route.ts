@@ -1,6 +1,8 @@
 import { crossSite, currentUser, fail, json } from "@/lib/http";
 import { rateLimited } from "@/lib/rate-limit";
-import { listReports, resolveReport, restoreContent, type ReportKind } from "@/lib/reports";
+import { listReports, parseTarget, resolveReport, restoreContent, type ReportKind } from "@/lib/reports";
+import { removeFileByModerator } from "@/lib/storage";
+import { audit } from "@/lib/store";
 import { readJsonCapped } from "@/lib/safe-json";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +11,8 @@ export const dynamic = "force-dynamic";
 // GET ?status=new|done                         → { reports }
 // POST { id, action: "removed" | "rejected", note? } → { ok }
 // POST { restore: { kind, target } }           → { ok }
+// POST { deleteFile: "<file link or name>" }   → { ok, removed } — takes an
+//   uploaded file down without a report (deleted, blocked from coming back)
 
 function admin(req: Request) {
   const me = currentUser(req);
@@ -32,7 +36,14 @@ export async function POST(req: Request) {
   if (!user) return fail(404, "not found");
   const p = await readJsonCapped(req, 10_000);
   if (!p.ok) return fail(400, "bad request");
-  const b = p.value as { id?: unknown; action?: unknown; note?: unknown; restore?: { kind?: unknown; target?: unknown } };
+  const b = p.value as { id?: unknown; action?: unknown; note?: unknown; restore?: { kind?: unknown; target?: unknown }; deleteFile?: unknown };
+  if (b.deleteFile !== undefined) {
+    const t = typeof b.deleteFile === "string" ? parseTarget(b.deleteFile.includes("/") ? b.deleteFile : `/api/notes/file/${b.deleteFile}`) : null;
+    if (t?.kind !== "file") return fail(400, "not a file link");
+    const removed = await removeFileByModerator(t.target, user.id);
+    audit(user.id, "file.removed", t.target);
+    return json({ ok: true, removed });
+  }
   if (b.restore && (b.restore.kind === "page" || b.restore.kind === "form") && typeof b.restore.target === "string") {
     restoreContent(b.restore.kind as ReportKind, b.restore.target, user.id);
     return json({ ok: true });

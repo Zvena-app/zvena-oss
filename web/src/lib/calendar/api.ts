@@ -34,7 +34,7 @@ import { PROVIDERS, syncNow } from "./providers";
 import { tokenHash } from "./seal";
 import { importFile, refreshStale, subscribe } from "./subscriptions";
 import { addDays, dayOf, validTimeZone } from "./tz";
-import { RSVPS, type Bootstrap, type Rsvp } from "./types";
+import { RSVPS, type Bootstrap, type EventItem, type InitialCalendar, type LayerItem, type Rsvp } from "./types";
 
 type Body = Record<string, unknown>;
 type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -90,25 +90,33 @@ function poke(c: Call, calId: string): void {
 
 // --- Bootstrap -------------------------------------------------------------------
 
-on("GET", "bootstrap", (c): Bootstrap => {
-  rememberLocale(c.me.id, c.locale);
-  const prefs = prefsOf(c.me.id);
-  ensureDefault(c.acc, c.me.name, validTimeZone(q(c, "tz")) ? (q(c, "tz") as string) : prefs.tz);
-  refreshStale(readableCalendars(c.acc));
-  const role = c.acc.role;
+function bootstrapOf(acc: CalAccess, me: Call["me"], locale: Locale, tz: string | null): Bootstrap {
+  rememberLocale(me.id, locale);
+  const prefs = prefsOf(me.id);
+  ensureDefault(acc, me.name, validTimeZone(tz) ? tz : prefs.tz);
+  refreshStale(readableCalendars(acc));
+  const role = acc.role;
   return {
-    me: { id: c.me.id, name: c.me.name, ...(c.me.email ? { email: c.me.email } : {}) },
-    ws: { id: c.acc.ws, name: (sql("SELECT name FROM workspaces WHERE id = ?").get(c.acc.ws) as { name: string } | undefined)?.name ?? "", canEdit: Boolean(role && can.edit(role)) },
+    me: { id: me.id, name: me.name, ...(me.email ? { email: me.email } : {}) },
+    ws: { id: acc.ws, name: (sql("SELECT name FROM workspaces WHERE id = ?").get(acc.ws) as { name: string } | undefined)?.name ?? "", canEdit: Boolean(role && can.edit(role)) },
     prefs,
-    prefsSaved: prefsSaved(c.me.id),
-    calendars: listCalendars(c.acc),
-    layers: listLayers(c.acc, c.locale),
-    links: listLinks(c.acc),
-    members: membersOf(c.acc),
+    prefsSaved: prefsSaved(me.id),
+    calendars: listCalendars(acc),
+    layers: listLayers(acc, locale),
+    links: listLinks(acc),
+    members: membersOf(acc),
     providers: PROVIDERS.map((p) => ({ id: p.id, available: p.available(), writable: p.writable })),
     mailOn: lettersLeave(),
   };
-});
+}
+
+async function eventsOf(acc: CalAccess, locale: Locale, tz: string, from: number, to: number, withLayers: boolean): Promise<{ items: EventItem[]; layers: LayerItem[] }> {
+  const items = listRange({ acc, tz }, { from, to });
+  const layers = withLayers ? await layerItems(acc, locale, addDays(dayOf(from, tz), -1), addDays(dayOf(to, tz), 1)) : [];
+  return { items, layers };
+}
+
+on("GET", "bootstrap", (c): Bootstrap => bootstrapOf(c.acc, c.me, c.locale, q(c, "tz")));
 on("PUT", "prefs", (c) => ({ prefs: savePrefs(c.me.id, c.body) }));
 
 // --- Events ------------------------------------------------------------------------
@@ -117,10 +125,7 @@ on("GET", "events", async (c) => {
   const from = num(c, "from");
   const to = num(c, "to");
   if (to <= from) throw new CalError(400, "bad range");
-  const tz = tzOf(c);
-  const items = listRange({ acc: c.acc, tz }, { from, to });
-  const layers = q(c, "layers") === "0" ? [] : await layerItems(c.acc, c.locale, addDays(dayOf(from, tz), -1), addDays(dayOf(to, tz), 1));
-  return { items, layers };
+  return eventsOf(c.acc, c.locale, tzOf(c), from, to, q(c, "layers") !== "0");
 });
 
 /** Teammates' busy times ("Meet with"): only calendars shared with the viewer at least as free/busy. */
@@ -320,6 +325,34 @@ function errorOf(e: unknown, where: string): Response {
   if (e instanceof SyntaxError) return fail(400, "bad request");
   console.error(`[calendar] ${where} failed (${e instanceof Error ? e.name : "error"})`);
   return fail(500, "internal error");
+}
+
+/**
+ * The calendar page's copy of what the app asks for first (app/calendar/page.tsx):
+ * the bootstrap and the events of the first view and of the coming week, read
+ * with the same access as GET bootstrap and GET events, so the first paint
+ * needs no round trip. Only once the person's zone is saved: a first visit
+ * asks the browser for it (null, and the app loads as before).
+ */
+export async function initialCalendar(
+  me: Call["me"],
+  ws: string,
+  locale: Locale,
+  range: (b: Bootstrap) => { from: number; to: number; upcomingFrom: number; upcomingTo: number }
+): Promise<InitialCalendar | null> {
+  try {
+    const acc = new CalAccess(me.id, ws);
+    if (!acc.member || !prefsSaved(me.id)) return null;
+    const boot = bootstrapOf(acc, me, locale, null);
+    const tz = boot.prefs.tz;
+    const r = range(boot);
+    if (!(r.to > r.from)) return { boot };
+    const [view, upcoming] = await Promise.all([eventsOf(acc, locale, tz, r.from, r.to, true), eventsOf(acc, locale, tz, r.upcomingFrom, r.upcomingTo, false)]);
+    return { boot, events: { from: r.from, to: r.to, tz, ...view }, upcoming: { from: r.upcomingFrom, items: upcoming.items } };
+  } catch (e) {
+    console.error(`[calendar] page bootstrap failed (${e instanceof Error ? e.name : "error"})`);
+    return null;
+  }
 }
 
 export async function handle(req: Request, method: Method, segs: string[]): Promise<Response> {

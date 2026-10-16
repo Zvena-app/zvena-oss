@@ -1,8 +1,9 @@
 "use client";
 
 // A live list of issues inside a document: a project's issues (its page in
-// Documents shows its work as it moves) or the reader's own. Checkboxes move
-// the issues; "Add issue" creates one in the project, linked to this page.
+// Documents shows its work as it moves) or the reader's own. Each issue's
+// status icon opens its team's workflow; "Add issue" creates one in the
+// project, linked to this page.
 
 import { useContext, useEffect, useState } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
@@ -20,27 +21,8 @@ const ID_RE = /^[A-Za-z0-9_-]{6,64}$/;
 function Row({ ws, card, editable }: { ws: string; card: Card; editable: boolean }) {
   const live = useCard(ws, card.key);
   const c = live === undefined ? card : live;
-  const [busy, setBusy] = useState(false);
   if (!c) return null;
-  return (
-    <CardView
-      card={c}
-      variant="block"
-      busy={busy}
-      onToggle={
-        editable
-          ? (done) => {
-              setBusy(true);
-              eco
-                .issueDone(ws, c.key.slice("issue:".length), done)
-                .then((r) => cardStore(ws).seed([r.card]))
-                .catch(() => undefined)
-                .finally(() => setBusy(false));
-            }
-          : undefined
-      }
-    />
-  );
+  return <CardView card={c} variant="block" statusWs={editable ? ws : undefined} />;
 }
 
 function Picker({ ws, onPick }: { ws: string; onPick: (p: { projectId: string; scope: "project" | "mine" }) => void }) {

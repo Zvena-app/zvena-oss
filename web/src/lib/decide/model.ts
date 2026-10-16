@@ -4,7 +4,7 @@
 //         database was saved (notes), an issue changed in Projects (projects);
 //         Design adds its own through adapters (src/lib/decide/adapters.ts)
 //   if    always | a comparison of one field (exact, instant, no AI) |
-//         a yes/no question to Jev about the chosen fields only
+//         a yes/no question to the decision model about the chosen fields only
 //   then  actions of the products' adapters: a Documents row (notes.done,
 //         notes.set), an issue (issue.done, issue.set, issue.create — a goal
 //         is an issue), everything linked to something (links.done)
@@ -26,7 +26,7 @@ export type Condition =
       kind: "ask";
       /** The question, in plain words, about the fields ("Is the goal in `Описание` reached?"). */
       question: string;
-      /** The only fields sent to Jev (names of properties, "value", "@body"). */
+      /** The only fields sent to the model (names of properties, "value", "@body"). */
       fields: string[];
       /** At or above: act at once. */
       auto: number;

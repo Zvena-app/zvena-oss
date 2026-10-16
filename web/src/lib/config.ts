@@ -12,6 +12,15 @@ function url(name: string, def: string): string {
 
 export const GiB = 1024 ** 3;
 
+/** This instance's host name (from APP_URL): the default domain of its own addresses, never another install's. */
+function ownHost(): string {
+  try {
+    return new URL(url("APP_URL", "http://localhost:3100")).hostname;
+  } catch {
+    return "localhost";
+  }
+}
+
 /** When the legal texts last changed (privacy: settings, Design library usage; 2026-10-15). */
 const LEGAL_UPDATED = "2026-10-15";
 
@@ -51,6 +60,18 @@ export const config = {
   /** …and the app warns the guest this many days before. */
   get guestWarnDays() {
     return int("ZVENA_GUEST_WARN_DAYS", 7);
+  },
+  /** Guests (no account) upload pictures only: this many MB per guest… */
+  get guestUploadMb() {
+    return int("ZVENA_GUEST_UPLOAD_MB", 20);
+  },
+  /** …this many MB a day from one network (IPv4 address or IPv6 /64)… */
+  get guestUploadMbPerIp() {
+    return int("ZVENA_GUEST_UPLOAD_MB_PER_IP", 60);
+  },
+  /** …and this many MB a day from all guests together (0 = guests cannot upload). */
+  get guestUploadMbPerDay() {
+    return int("ZVENA_GUEST_UPLOAD_MB_PER_DAY", 1000);
   },
   /** Longest side of an uploaded photo after compression (px). */
   get imageMaxSide() {
@@ -112,8 +133,7 @@ export const config = {
   /** Who runs this server and how to reach them. Contact addresses default to
    *  addresses on the app's own domain; set them in the environment. */
   get company() {
-    const host = new URL(this.appUrl).hostname;
-    const email = (process.env.ZVENA_CONTACT_EMAIL || "").trim() || `admin@${host}`;
+    const email = (process.env.ZVENA_CONTACT_EMAIL || "").trim() || `admin@${ownHost()}`;
     return {
       name: (process.env.ZVENA_COMPANY_NAME || "").trim() || "the operator of this server",
       email,
@@ -152,6 +172,6 @@ export const config = {
   /** E-mail through Resend (https://resend.com): sign-in links, moderation notes. */
   get resend() {
     const apiKey = (process.env.RESEND_API_KEY || "").trim();
-    return { apiKey, from: (process.env.MAIL_FROM || "").trim() || `zvena <noreply@${new URL(this.appUrl).hostname}>`, enabled: Boolean(apiKey) };
+    return { apiKey, from: (process.env.MAIL_FROM || "").trim() || `zvena <noreply@${ownHost()}>`, enabled: Boolean(apiKey) };
   },
 };

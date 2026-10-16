@@ -1,13 +1,13 @@
 "use client";
 
-// The assistant's panels: Jev's suggestions and automatic changes on an
+// The assistant's panels: suggestions and automatic changes on an
 // issue (lib/projects/autopilot.ts), and the assistant's tools, computed on
-// the server by Jev (triage) or rules (lib/projects/assist.ts). Proposals
+// the server by smart suggestions (triage) or rules (lib/projects/assist.ts). Proposals
 // change nothing until confirmed; several changes (sub-issues) are listed
 // with checkboxes and created only on confirmation.
 
 import { useEffect, useState, type ReactNode } from "react";
-import { AlertTriangle, Check, ChevronDown, Clock, ListTree, MessagesSquare, Sparkles, Tags, Undo2, Wand2, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Clock, Lightbulb, ListTree, MessagesSquare, Tags, Undo2, Wand2, X } from "lucide-react";
 import type { Health, IssueDetail, IssueFilter, Priority, Suggestion } from "@/lib/projects/types";
 import { api, errorText, invalidateAll, localToday, saveIssue, toast, useLookups } from "./data";
 import { PriorityIcon, uiColor } from "./icons";
@@ -54,27 +54,27 @@ function Panel({ icon, title, children, onClose }: { icon: ReactNode; title: str
 export function AssistNote() {
   const { t } = useT();
   const L = useLookups();
-  return <p className="pj-small pj-muted pj-assist-note">{L.b.jev === "on" ? t("as.rulesJev") : L.b.jev === "off" ? t("as.rulesOff") : t("as.rules")}</p>;
+  return <p className="pj-small pj-muted pj-assist-note">{L.b.smart === "on" ? t("as.rulesSmart") : L.b.smart === "off" ? t("as.rulesOff") : t("as.rules")}</p>;
 }
 
-/** Who proposed a triage: Jev with its confidence, or the rules. */
-function SourceBadge({ source, confidence }: { source: "jev" | "rules"; confidence?: number }) {
+/** Who proposed a triage: smart suggestions with their confidence, or the rules. */
+function SourceBadge({ source, confidence }: { source: "model" | "rules"; confidence?: number }) {
   const { t } = useT();
   return (
     <span className="pj-assist-source" data-source={source}>
-      {source === "jev" ? t("as.byJev", { p: Math.round((confidence ?? 0) * 100) }) : t("as.byRules")}
+      {source === "model" ? t("as.bySmart", { p: Math.round((confidence ?? 0) * 100) }) : t("as.byRules")}
     </span>
   );
 }
 
-// --- Jev's suggestions on an issue (autopilot) --------------------------------------
+// --- Suggestions on an issue (autopilot) -------------------------------------------
 
 /**
- * What Jev did or proposes on this issue: fields it filled in (Undo), and
+ * What was done automatically or is proposed on this issue: fields filled in (Undo), and
  * suggestions a person accepts or dismisses — whom to call, a duplicate,
  * "the comment says it's done". Nothing here changes without the click.
  */
-export function JevSuggestions({ issue, canEdit }: { issue: IssueDetail; canEdit: boolean }) {
+export function IssueSuggestions({ issue, canEdit }: { issue: IssueDetail; canEdit: boolean }) {
   const { t } = useT();
   const L = useLookups();
   const [busy, setBusy] = useState<string | null>(null);
@@ -97,56 +97,56 @@ export function JevSuggestions({ issue, canEdit }: { issue: IssueDetail; canEdit
       case "priority":
         return (
           <>
-            <PriorityIcon priority={(v.priority ?? 0) as Priority} size={13} /> {t(s.state === "applied" ? "jev.applied.priority" : "jev.open.priority", { v: t(`prio.${(v.priority ?? 0) as 0}`) })}
+            <PriorityIcon priority={(v.priority ?? 0) as Priority} size={13} /> {t(s.state === "applied" ? "sg.applied.priority" : "sg.open.priority", { v: t(`prio.${(v.priority ?? 0) as 0}`) })}
           </>
         );
       case "label": {
         const l = v.labelId ? L.label.get(v.labelId) : null;
         return (
           <>
-            {l && <span className="pj-dot" style={{ background: uiColor(l.color) }} />} {t(s.state === "applied" ? "jev.applied.label" : "jev.open.label", { v: l?.name ?? "—" })}
+            {l && <span className="pj-dot" style={{ background: uiColor(l.color) }} />} {t(s.state === "applied" ? "sg.applied.label" : "sg.open.label", { v: l?.name ?? "—" })}
           </>
         );
       }
       case "project":
-        return t(s.state === "applied" ? "jev.applied.project" : "jev.open.project", { v: (v.projectId && L.project.get(v.projectId)?.name) || "—" });
+        return t(s.state === "applied" ? "sg.applied.project" : "sg.open.project", { v: (v.projectId && L.project.get(v.projectId)?.name) || "—" });
       case "assignee": {
         const p = v.userId ? L.person.get(v.userId) : null;
         return (
           <>
-            {p && <Avatar name={p.name} id={p.id} size={16} src={p.avatar} />} {t("jev.open.assignee", { v: p?.name ?? "—" })}
+            {p && <Avatar name={p.name} id={p.id} size={16} src={p.avatar} />} {t("sg.open.assignee", { v: p?.name ?? "—" })}
           </>
         );
       }
       case "duplicate":
         return (
           <>
-            {t("jev.open.duplicate")}{" "}
+            {t("sg.open.duplicate")}{" "}
             <Link to={`/issue/${v.identifier}`}>
               {v.identifier} {v.title}
             </Link>
           </>
         );
       case "done":
-        return t("jev.open.done");
+        return t("sg.open.done");
     }
   };
-  const acceptLabel = (s: Suggestion) => (s.kind === "duplicate" ? t("jev.markDuplicate") : s.kind === "done" ? t("jev.close") : s.kind === "assignee" ? t("jev.assign") : t("jev.accept"));
+  const acceptLabel = (s: Suggestion) => (s.kind === "duplicate" ? t("sg.markDuplicate") : s.kind === "done" ? t("sg.close") : s.kind === "assignee" ? t("sg.assign") : t("sg.accept"));
   return (
-    <section className="pj-jev" aria-label="Jev">
+    <section className="pj-suggest" aria-label={t("sg.label")}>
       {list.map((s) => (
-        <div key={s.id} className="pj-jev-row" data-state={s.state}>
-          <Sparkles size={14} className="pj-jev-icon" aria-hidden />
-          <span className="pj-jev-text">{describe(s)}</span>
-          <span className="pj-jev-conf" title={s.model}>
+        <div key={s.id} className="pj-suggest-row" data-state={s.state}>
+          <Lightbulb size={14} className="pj-suggest-icon" aria-hidden />
+          <span className="pj-suggest-text">{describe(s)}</span>
+          <span className="pj-suggest-conf">
             {Math.round(s.confidence * 100)}%
           </span>
           {canEdit && (
-            <span className="pj-jev-actions">
+            <span className="pj-suggest-actions">
               {s.state === "applied" ? (
                 <button type="button" className="pj-btn pj-btn-sm pj-btn-ghost" disabled={busy === s.id} onClick={() => void act(s, "undo")}>
                   <Undo2 size={13} />
-                  {t("jev.undo")}
+                  {t("sg.undo")}
                 </button>
               ) : (
                 <>
@@ -154,7 +154,7 @@ export function JevSuggestions({ issue, canEdit }: { issue: IssueDetail; canEdit
                     <Check size={13} />
                     {acceptLabel(s)}
                   </button>
-                  <button type="button" className="pj-icon-btn" aria-label={t("jev.dismiss")} title={t("jev.dismiss")} disabled={busy === s.id} onClick={() => void act(s, "dismiss")}>
+                  <button type="button" className="pj-icon-btn" aria-label={t("sg.dismiss")} title={t("sg.dismiss")} disabled={busy === s.id} onClick={() => void act(s, "dismiss")}>
                     <X size={14} />
                   </button>
                 </>
@@ -183,7 +183,7 @@ export function AssistIssue({ issue, canEdit }: { issue: IssueDetail; canEdit: b
     actions: { commentId: string; authorId: string | null; text: string }[];
     latest: { authorId: string | null; text: string } | null;
   }>();
-  const tr = useRun<{ priority: Priority | null; priorityReason: string | null; labels: { id: string; reason: string }[]; source: "jev" | "rules"; confidence?: number }>();
+  const tr = useRun<{ priority: Priority | null; priorityReason: string | null; labels: { id: string; reason: string }[]; source: "model" | "rules"; confidence?: number }>();
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [creating, setCreating] = useState(false);
 

@@ -428,6 +428,12 @@ test("a scheduling link: free times only, a booking makes the event and letters,
   const toGuest = letters.find((l) => /To: grace@example.net/.test(l))!;
   assert.ok(toGuest && /text\/calendar/.test(toGuest) && !toGuest.includes("evil.example"), "the guest's letter holds only the host's words and the .ics");
   assert.ok(letters.some((l) => /To: mason@example.com/.test(l)));
+  // The .ics too (it is base64 in the letter, and calendar apps show it at once): the guest's copy has no visitor text, the host's keeps the note.
+  const icsOf = (eml: string) => Buffer.from(/filename="invite\.ics"\r\nContent-Transfer-Encoding: base64\r\n\r\n([A-Za-z0-9+/=\r\n]+)/.exec(eml)?.[1].replace(/\s/g, "") ?? "", "base64").toString("utf8");
+  const guestIcs = icsOf(toGuest);
+  assert.match(guestIcs, /BEGIN:VEVENT/);
+  assert.ok(!/evil|talk|DESCRIPTION:\S/.test(guestIcs), guestIcs);
+  assert.match(icsOf(letters.find((l) => /To: mason@example.com/.test(l))!), /Let's talk/);
   // Host's Inbox.
   const inbox = await inboxOf({ userId: mate, wsId: ws, locale: "en" });
   assert.ok(inbox.items.some((i) => i.card?.key === `event:${ev.id}` && /Grace Guest/.test(i.text)));

@@ -43,7 +43,7 @@ const g = globalThis as unknown as Record<symbol, Map<string, Pending> | undefin
 const recent: Map<string, Pending> = (g[KEY] ??= new Map());
 
 function announce(ws: string, file: string, name: string, by: string, thread: string | null = null): void {
-  // A thread resolved or reopened is its own news (Jev's hub follows that thread): never folded into another's.
+  // A thread resolved or reopened is its own news (the automations hub follows that thread): never folded into another's.
   const k = `${ws}:${file}:${name === "update-comment-thread" && thread ? `thread:${thread}` : /comment/.test(name) ? "comment" : "file"}`;
   const data = (n: string) => ({ event: n, ...(n === "update-comment-thread" && thread ? { thread } : {}) });
   const now = Date.now();

@@ -24,7 +24,7 @@ import { payerOf, quotaLeft } from "../storage";
 import { sql } from "../store";
 import { LimitError } from "../workspaces";
 import * as assist from "./assist";
-import { jevState, triageSmart } from "./assist-jev";
+import { smartState, triageSmart } from "./assist-smart";
 import { resolveSuggestion, similarIssues, startAutopilot, suggestionsOf } from "./autopilot";
 import { claimConversions, createFromDoc, pendingConversions, planFromDoc } from "./from-doc";
 import { goalCountFor, type GoalEvent } from "./goals";
@@ -127,7 +127,7 @@ const issueRef = (c: Call) => resolveIssueId(c.ctx, c.p.ref);
 
 // --- Bootstrap and change feed -------------------------------------------------
 
-const bootOf = (ctx: Ctx, locale: string, today?: string) => ({ ...bootstrap(ctx, { personalName: translate(isLocale(locale) ? locale : "en", "ws.personal"), today }), jev: jevState(ctx.wsId) });
+const bootOf = (ctx: Ctx, locale: string, today?: string) => ({ ...bootstrap(ctx, { personalName: translate(isLocale(locale) ? locale : "en", "ws.personal"), today }), smart: smartState(ctx.wsId) });
 on("GET", "bootstrap", (c) => bootOf(c.ctx, c.locale, q(c, "today") ?? undefined));
 
 /**
@@ -282,7 +282,7 @@ on("POST", "notifications", (c) => ({ changed: markNotifications(c.ctx, c.body.i
 on("GET", "search", (c) => search(c.ctx, q(c, "q") ?? ""));
 on("GET", "insights", (c) => insights(c.ctx, { teamId: q(c, "team"), projectId: q(c, "project"), weeks: q(c, "weeks"), today: q(c, "today") }));
 
-// --- Assistant (rules; Jev for triage when the owner turned it on) --------------------------------------------------
+// --- Assistant (rules; smart triage when the owner left it on) ------------------------------------------------------
 
 on(
   "POST",
@@ -325,7 +325,7 @@ on("POST", "from-doc", (c) => createFromDoc(c.ctx, c.body));
 on("GET", "doc-conversions", (c) => ({ lines: pendingConversions(c.ctx, q(c, "note")) }));
 on("POST", "doc-conversions/claim", (c) => ({ lines: claimConversions(c.ctx, c.body.note, c.body.blocks) }));
 
-// Jev's autopilot follows new issues and comments (instrumentation starts it too).
+// The autopilot follows new issues and comments (instrumentation starts it too).
 startAutopilot();
 
 // --- Uploads and downloads -----------------------------------------------------

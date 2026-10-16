@@ -17,8 +17,8 @@ export interface PjChange {
   deleted?: boolean;
   /** A new issue or comment (not an edit). */
   created?: boolean;
-  /** Made by Jev's autopilot on the person's behalf. */
-  via?: "jev";
+  /** Made automatically (the autopilot) on the person's behalf. */
+  via?: "auto";
   /** Background work (first-run examples): no autopilot. */
   quiet?: boolean;
   /** A project (goal) moved by its issues: met, reopened, started, a milestone met, or its counts moved (lib/projects/goals.ts). */

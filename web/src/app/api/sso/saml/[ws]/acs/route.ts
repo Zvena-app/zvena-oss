@@ -4,6 +4,7 @@ import { samlBounce, ssoFinish } from "@/lib/enterprise/sso-http";
 import { finishSaml, SSO_COOKIE } from "@/lib/enterprise/sso";
 import { crossSite } from "@/lib/http";
 import { rateLimited } from "@/lib/rate-limit";
+import { readFormCapped } from "@/lib/safe-json";
 import { signInError } from "@/lib/signin";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ ws: str
   if (rl) return rl;
   const { ws } = await params;
   if (!/^[A-Za-z0-9_-]{8,40}$/.test(ws)) return signInError("sso-failed", "/home");
-  const form = await req.formData().catch(() => null);
+  const form = await readFormCapped(req, 1_300_000);
   const samlResponse = form?.get("SAMLResponse");
   const relay = form?.get("RelayState");
   if (typeof samlResponse !== "string" || samlResponse.length > 1_200_000) return signInError("sso-failed", "/home");

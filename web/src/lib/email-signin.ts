@@ -16,8 +16,22 @@ import { sql, sweepExpired } from "./store";
 
 const TTL = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
-/** Letters per address per hour (on top of the per-IP rate limit). */
+/** Letters per address per hour and per day (on top of the per-IP rate limit). */
 const PER_ADDRESS_HOUR = 5;
+const PER_ADDRESS_DAY = 12;
+
+/**
+ * Letters sent per address, kept apart from email_signin: those rows go when
+ * they expire (15 minutes), are used or are voided by wrong codes, so they
+ * cannot count an hour. Only a keyed hash of the address is kept, for a day.
+ */
+let logReady = false;
+function sentLog(): void {
+  if (logReady) return;
+  sql("CREATE TABLE IF NOT EXISTS email_signin_sent (who TEXT NOT NULL, at INTEGER NOT NULL)").run();
+  sql("CREATE INDEX IF NOT EXISTS email_signin_sent_who ON email_signin_sent(who, at)").run();
+  logReady = true;
+}
 
 export function normalizeEmail(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
@@ -42,8 +56,13 @@ export function createEmailSignIn(rawEmail: unknown, opts: { next: string; guest
   const email = normalizeEmail(rawEmail);
   if (!email) return { ok: false, error: "invalid" };
   sweepExpired();
-  const recent = sql("SELECT COUNT(*) AS n FROM email_signin WHERE email = ? AND created_at > ?").get(email, Date.now() - 3600_000) as { n: number };
-  if (Number(recent.n) >= PER_ADDRESS_HOUR) return { ok: false, error: "too-many" };
+  sentLog();
+  const who = mac("email-sent", email);
+  const now0 = Date.now();
+  sql("DELETE FROM email_signin_sent WHERE at < ?").run(now0 - 86_400_000);
+  const counts = sql("SELECT COUNT(*) AS day, SUM(at > ?) AS hour FROM email_signin_sent WHERE who = ? AND at > ?").get(now0 - 3600_000, who, now0 - 86_400_000) as { day: number; hour: number | null };
+  if (Number(counts.hour ?? 0) >= PER_ADDRESS_HOUR || Number(counts.day) >= PER_ADDRESS_DAY) return { ok: false, error: "too-many" };
+  sql("INSERT INTO email_signin_sent (who, at) VALUES (?, ?)").run(who, now0);
   const token = randomBytes(32).toString("base64url");
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const id = mac("email-link", token);
@@ -104,7 +123,7 @@ export function signInLetter(email: string, token: string, code: string): { subj
 
 export async function sendSignInLetter(email: string, token: string, code: string): Promise<boolean> {
   const l = signInLetter(email, token, code);
-  const r = await sendMail({ to: email, subject: l.subject, text: l.text, html: l.html });
+  const r = await sendMail({ to: email, subject: l.subject, text: l.text, html: l.html, kind: "signin" });
   return r === "sent" || r === "outbox";
 }
 

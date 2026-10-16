@@ -158,18 +158,19 @@ test("invite by e-mail: an account gets access at once, anyone else a one-use gu
     assert.equal((await invitePageByEmail(t.ws, page.id, t.olga, " Mira@Example.com ", "comment", "en")).status, "granted");
     assert.equal(levelOf(t.ws, known, page.id), "comment");
     assert.equal(letters[0].to, "mira@example.com");
-    assert.match(letters[0].subject, /Launch plan/);
+    assert.equal(letters[0].subject, "You were invited to a page in zvena", "nothing typed by people in the subject");
+    assert.match(letters[0].text, /Launch plan/);
     // A new address: a link that works once.
     assert.equal((await invitePageByEmail(t.ws, page.id, t.olga, "new@example.org", "view", "ru")).status, "sent");
     const token = /\/share\/([A-Za-z0-9_-]+)/.exec(letters[1].text)?.[1] as string;
     assert.ok(token, letters[1].text);
-    assert.match(letters[1].subject, /приглашает/);
+    assert.match(letters[1].subject, /пригласили/);
     const newcomer = person("Newcomer");
     assert.equal(acceptPageInvite(newcomer, token)?.level, "view");
     assert.equal(acceptPageInvite(person("Second"), token), null, "one use only");
     // Any interface language: a letter in Spanish.
     assert.equal((await invitePageByEmail(t.ws, page.id, t.olga, "otra@example.org", "view", "es")).status, "sent");
-    assert.match(letters[2].subject, /te invitó a «Launch plan»/);
+    assert.equal(letters[2].subject, "Te invitaron a una página en zvena");
     await assert.rejects(invitePageByEmail(t.ws, page.id, t.olga, "not an email", "view", "en"));
     // No mail service (and no outbox): nothing is mailed; an account still gets access, a new address is a link for the inviter.
     const outbox = process.env.ZVENA_MAIL_OUTBOX;

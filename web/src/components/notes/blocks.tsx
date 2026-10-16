@@ -9,7 +9,7 @@ import { BlockNoteSchema, createCodeBlockSpec, createStyleSpec, defaultBlockSpec
 import { createReactBlockSpec, createReactInlineContentSpec, createReactStyleSpec } from "@blocknote/react";
 import { DesignBlock } from "./design";
 import { PdfBlock } from "./pdf";
-import { CustomEmojiInline } from "./custom-emoji";
+import { CustomEmojiInline } from "./custom-emoji-inline";
 import { LinkMentionInline } from "./link-mention";
 import { IssueBlock } from "@/components/eco/IssueBlock";
 import { IssuesBlock } from "@/components/eco/IssuesBlock";

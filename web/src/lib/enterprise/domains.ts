@@ -58,9 +58,9 @@ function safeHost(u: string): string {
   }
 }
 
-/** Where custom domains of sites point (CNAME): ZVENA_SITES_CNAME, default sites.zvena.app. */
+/** Where custom domains of sites point (CNAME): ZVENA_SITES_CNAME, default sites.<this instance's host> (APP_URL). */
 export function sitesCnameTarget(): string {
-  return normalizeDomain(process.env.ZVENA_SITES_CNAME || "") ?? "sites.zvena.app";
+  return normalizeDomain(process.env.ZVENA_SITES_CNAME || "") ?? normalizeDomain(`sites.${new URL(config.appUrl).hostname}`) ?? "sites.localhost";
 }
 
 export function domainsOf(ws: string): WsDomain[] {

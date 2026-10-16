@@ -219,6 +219,17 @@ export interface Bootstrap {
   mailOn: boolean;
 }
 
+/**
+ * What the calendar page sends along (lib/calendar/api.ts initialCalendar): the
+ * bootstrap, and the events of the view it expects the app to open first and
+ * of the coming week (the app uses those when its own range is the same).
+ */
+export interface InitialCalendar {
+  boot: Bootstrap;
+  events?: { from: number; to: number; tz: string; items: EventItem[]; layers: LayerItem[] };
+  upcoming?: { from: number; items: EventItem[] };
+}
+
 /** An answer of a write: the event as stored, and how to put things back (⌘Z). */
 export interface WriteResult {
   event?: EventDetail;

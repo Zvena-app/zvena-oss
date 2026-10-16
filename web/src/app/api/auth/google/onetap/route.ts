@@ -5,6 +5,7 @@ import { crossSite, guestId } from "@/lib/http";
 import { parseAcceptLanguage, resolveLocale, translate, UI_LANG_COOKIE } from "@/lib/i18n";
 import { safeNext } from "@/lib/oauth";
 import { rateLimited } from "@/lib/rate-limit";
+import { readFormCapped } from "@/lib/safe-json";
 import { finishSignIn, signInError } from "@/lib/signin";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
   if (rl) return rl;
   const bad = crossSite(req);
   if (bad) return bad;
-  const form = await req.formData().catch(() => null);
+  const form = await readFormCapped(req);
   const next = safeNext(String(form?.get("next") ?? "/home"));
   if (!config.google.enabled) return signInError("provider", next);
   const profile = await verifyOneTap(String(form?.get("credential") ?? ""), readCookie(req, ONETAP_NONCE_COOKIE));

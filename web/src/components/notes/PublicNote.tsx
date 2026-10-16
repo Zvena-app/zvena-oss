@@ -248,7 +248,7 @@ export default function PublicNote({ snapshot, updatedAt, shareId, app = "" }: {
             <span>{t("public.updated", { when: new Date(updatedAt).toLocaleDateString(intlOf(locale), { dateStyle: "medium" }) })}</span>
             <Link href={`${app}/`}>{t("public.by")}</Link>
             <a href={`${app}/report?url=${encodeURIComponent(typeof location === "undefined" ? "" : location.href)}`} rel="nofollow">
-              {t("public.report")}
+              {t("public.reportAbuse")}
             </a>
           </footer>
         </div>

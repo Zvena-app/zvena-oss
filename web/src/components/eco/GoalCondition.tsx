@@ -7,7 +7,7 @@
 // fills as the number moves.
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Pencil, Sparkles, Target, X } from "lucide-react";
+import { Check, Lightbulb, Pencil, Target, Wand2, X } from "lucide-react";
 import { pulse, pulseHeaders } from "@/lib/pulse/client";
 import type { EcoKey } from "@/lib/eco/strings";
 import { useEt } from "./i18n";
@@ -27,7 +27,7 @@ interface Metric {
 interface Proposal {
   id: string;
   subject: string;
-  source: "jev" | "rule";
+  source: "model" | "rule";
   confidence: number | null;
   detail: Record<string, string | number | boolean | null>;
 }
@@ -121,8 +121,8 @@ export function GoalCondition({ ws, issueId, canEdit }: { ws: string; issueId: s
     }
     load();
   };
-  // Jev looks for the live number that measures this goal (the title's target, the workspace's numbers).
-  const askJev = async () => {
+  // Looks for the live number that measures this goal (the title's target, the workspace's numbers).
+  const findNumber = async () => {
     setAsking(true);
     setNoMatch(false);
     try {
@@ -191,21 +191,21 @@ export function GoalCondition({ ws, issueId, canEdit }: { ws: string; issueId: s
       })}
       {proposal && goals.length === 0 && (
         <div className="eco-goal-row eco-goal-proposal">
-          <Sparkles size={14} aria-hidden />
+          <Lightbulb size={14} aria-hidden />
           <span className="eco-goal-text">
-            {et(proposal.source === "jev" ? "goalProposal" : "goalProposalRule", {
+            {et(proposal.source === "model" ? "goalProposal" : "goalProposalRule", {
               number: String(proposal.detail.number ?? ""),
               op: OP_TEXT[(proposal.detail.op as Op) ?? ">="] ?? "≥",
               target: typeof proposal.detail.target === "number" ? fmt(proposal.detail.target, locale) : "",
             })}
-            {proposal.confidence !== null && <span className="eco-goal-now"> · {et("jevSure", { p: Math.round(proposal.confidence * 100) })}</span>}
+            {proposal.confidence !== null && <span className="eco-goal-now"> · {et("autoSure", { p: Math.round(proposal.confidence * 100) })}</span>}
           </span>
           {canEdit && (
             <>
               <button type="button" className="eco-btn eco-btn-primary" onClick={() => void settle(proposal.id, "accept")}>
-                <Check size={13} aria-hidden /> {et("jevAccept")}
+                <Check size={13} aria-hidden /> {et("autoAccept")}
               </button>
-              <button type="button" className="eco-icon-btn" title={et("jevDismiss")} aria-label={et("jevDismiss")} onClick={() => void settle(proposal.id, "dismiss")}>
+              <button type="button" className="eco-icon-btn" title={et("autoDismiss")} aria-label={et("autoDismiss")} onClick={() => void settle(proposal.id, "dismiss")}>
                 <X size={14} />
               </button>
             </>
@@ -219,12 +219,12 @@ export function GoalCondition({ ws, issueId, canEdit }: { ws: string; issueId: s
             {et("goalAdd")}
           </button>
           {!proposal && (
-            <button type="button" className="eco-btn eco-btn-ghost" disabled={asking} onClick={() => void askJev()}>
-              <Sparkles size={14} />
-              {et("goalAskJev")}
+            <button type="button" className="eco-btn eco-btn-ghost" disabled={asking} onClick={() => void findNumber()}>
+              <Wand2 size={14} />
+              {et("goalFind")}
             </button>
           )}
-          {noMatch && <span className="eco-related-note">{et("goalJevNone")}</span>}
+          {noMatch && <span className="eco-related-note">{et("goalFindNone")}</span>}
         </div>
       )}
       {canEdit && editing && (

@@ -1,15 +1,18 @@
 // Reports about public content (the "Report" button) and the moderators'
-// queue. A report names a public page (/n/<id>), a form (/f/<id>) or a
-// published design (Design's view link with share-id). A moderator takes it
-// down or rejects the report; both are recorded.
+// queue. A report names a public page (/n/<id>), a form (/f/<id>), a
+// published design (Design's view link with share-id) or an uploaded file
+// (/api/notes/file/<hash>.<ext>). A moderator takes it down or rejects the
+// report; both are recorded. A file taken down is deleted and blocked.
 
 import { config } from "./config";
+import { NOTE_FILE_RE } from "./notes/files";
 import { NOTE_SHARE_ID_RE } from "./notes/server-store";
 import { FORM_ID_RE } from "./notes/types";
 import { unpublish } from "./penpot";
+import { removeFileByModerator } from "./storage";
 import { audit, newId, sql } from "./store";
 
-export type ReportKind = "page" | "form" | "design";
+export type ReportKind = "page" | "form" | "design" | "file";
 export const REASONS = ["illegal", "harassment", "violence", "children", "selfharm", "personal", "copyright", "fraud", "spam", "other"] as const;
 export type Reason = (typeof REASONS)[number];
 
@@ -39,6 +42,8 @@ export function parseTarget(raw: string): { kind: ReportKind; target: string } |
   if (page && NOTE_SHARE_ID_RE.test(page[1])) return { kind: "page", target: page[1] };
   const form = /^\/f\/([A-Za-z0-9_-]{10,40})\/?$/.exec(u.pathname);
   if (form && FORM_ID_RE.test(form[1])) return { kind: "form", target: form[1] };
+  const file = /^\/api\/notes\/file\/([^/]+)$/.exec(u.pathname);
+  if (file && NOTE_FILE_RE.test(file[1])) return { kind: "file", target: file[1] };
   // Design: …/#/view?file-id=…&share-id=<uuid>
   const share = /share-id=([0-9a-f-]{36})/i.exec(u.hash || u.search);
   if (share) return { kind: "design", target: share[1].toLowerCase() };
@@ -48,6 +53,7 @@ export function parseTarget(raw: string): { kind: ReportKind; target: string } |
 export function urlOf(kind: ReportKind, target: string): string {
   if (kind === "page") return `${config.appUrl}/n/${target}`;
   if (kind === "form") return `${config.appUrl}/f/${target}`;
+  if (kind === "file") return `${config.appUrl}/api/notes/file/${target}`;
   return `${config.designUrl}/#/view?share-id=${target}`;
 }
 
@@ -114,6 +120,7 @@ export async function resolveReport(id: string, moderator: string, action: "remo
   if (action === "removed") {
     if (r.kind === "page") sql("UPDATE note_shares SET removed_at = ? WHERE id = ?").run(now, r.target);
     else if (r.kind === "form") sql("UPDATE note_forms SET removed_at = ? WHERE id = ?").run(now, r.target);
+    else if (r.kind === "file") await removeFileByModerator(r.target, moderator);
     else await unpublish(r.target);
     sql("UPDATE reports SET status = 'removed', resolved_by = ?, resolved_at = ?, resolution = ? WHERE kind = ? AND target = ? AND status = 'new'").run(moderator, now, note.slice(0, 1000), r.kind, r.target);
   } else {

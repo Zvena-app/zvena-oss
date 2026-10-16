@@ -6,6 +6,7 @@
 // security journal notes the invitation without the address.
 
 import { config } from "../config";
+import { defang } from "../calendar/defang";
 import { lettersLeave, sendMail } from "../mail";
 import { audit, sql } from "../store";
 import { roleIn } from "../workspaces";
@@ -16,6 +17,14 @@ import { createPageInvite, type InviteLevel } from "./page-invites";
 
 export const EMAIL_RE = /^[^\s@<>"',;]{1,64}@[^\s@<>"',;]{1,190}\.[^\s@<>"',;.]{2,24}$/;
 const PER_DAY = 50;
+/** An account younger than a week sends fewer (a fresh account is the cheapest tool for spam). */
+const PER_DAY_NEW = 10;
+const NEW_ACCOUNT_MS = 7 * 86_400_000;
+/** All page-invite letters of the server in a day (ZVENA_INVITE_MAIL_PER_DAY). */
+function globalPerDay(): number {
+  const n = Number(process.env.ZVENA_INVITE_MAIL_PER_DAY);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1000;
+}
 
 export class InviteMailError extends Error {}
 
@@ -28,11 +37,17 @@ export function setInviteSenderForTests(fn: Sender): Sender {
   return prev;
 }
 
-function letter(locale: string, inviter: string, title: string, url: string, known: boolean): { subject: string; text: string } {
+/**
+ * The letter. The inviter's name and the page title are typed by people and
+ * reach any address from zvena's sender: they stay out of the subject, and
+ * in the body their links are made inert (lib/calendar/defang.ts).
+ */
+export function letter(locale: string, inviter: string, title: string, url: string, known: boolean): { subject: string; text: string } {
   const t = (key: NotesKey, vars?: Record<string, string>) => notesT(locale, key, vars);
-  const page = title || t("page.untitled");
+  inviter = defang(inviter) || "zvena";
+  const page = defang(title) || t("page.untitled");
   return {
-    subject: t("invite.subject", { inviter, page }),
+    subject: t("invite.subject"),
     text: `${t("invite.shared", { inviter, page })}\n\n${t(known ? "invite.open" : "invite.signUp")}: ${url}\n\n${known ? "" : `${t("invite.once")}\n\n`}— zvena`,
   };
 }
@@ -52,7 +67,13 @@ export async function invitePageByEmail(ws: string, noteId: string, actor: strin
   const email = rawEmail.trim().toLowerCase();
   if (!EMAIL_RE.test(email)) throw new InviteMailError("bad email");
   const sent = sql("SELECT COUNT(*) AS n FROM audit WHERE actor = ? AND action = 'page.invite.mail' AND at > ?").get(actor, now - 86_400_000) as { n: number };
-  if (Number(sent.n) >= PER_DAY) throw new InviteMailError("daily limit");
+  const age = now - Number((sql("SELECT created_at FROM users WHERE id = ?").get(actor) as { created_at: number } | undefined)?.created_at ?? 0);
+  if (Number(sent.n) >= (age < NEW_ACCOUNT_MS ? PER_DAY_NEW : PER_DAY)) throw new InviteMailError("daily limit");
+  const all = sql("SELECT COUNT(*) AS n FROM audit WHERE action = 'page.invite.mail' AND at > ?").get(now - 86_400_000) as { n: number };
+  if (Number(all.n) >= globalPerDay()) {
+    console.error("[mail] page invitations: the server's daily cap is reached (ZVENA_INVITE_MAIL_PER_DAY)");
+    throw new InviteMailError("daily limit");
+  }
   const inviter = (sql("SELECT name FROM users WHERE id = ?").get(actor) as { name: string } | undefined)?.name ?? "zvena";
   const title = String((sql("SELECT json_extract(json, '$.title') AS t FROM notes WHERE ws = ? AND id = ? AND deleted = 0").get(ws, noteId) as { t: string | null } | undefined)?.t ?? "").slice(0, 200);
   const known = sql("SELECT id FROM users WHERE lower(email) = ? AND blocked_at IS NULL").get(email) as { id: string } | undefined;

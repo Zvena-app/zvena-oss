@@ -40,7 +40,7 @@ function Face({ card }: { card: Card }) {
   // eslint-disable-next-line @next/next/no-img-element
   if (card.kind === "design" && card.image) return <img src={card.image} alt="" loading="lazy" decoding="async" />;
   if (card.icon && (card.kind === "note" || card.kind === "project")) return <span className="ds-card-emoji">{card.icon}</span>;
-  if (card.kind === "issue" && card.status) return <StatusIcon category={card.status.category} color={card.status.color} size={26} />;
+  if (card.kind === "issue" && card.status) return <StatusIcon category={card.status.category} color={card.status.color} fraction={card.status.fraction} size={26} />;
   if (card.kind === "project") return <FolderKanban aria-hidden style={{ color: card.color }} />;
   return <>{KIND[card.kind].icon}</>;
 }

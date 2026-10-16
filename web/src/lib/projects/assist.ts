@@ -19,9 +19,9 @@
 // them and applies the accepted ones through the normal, permission-checked
 // API (bulk changes ask for confirmation first).
 //
-// One exception is Jev, zvena's sanctioned decision model (src/lib/decide/jev.ts):
-// when the server has it and the workspace owner turned it on, triage asks it
-// first (assist-jev.ts) and falls back to the rules here. A generative model
+// One exception is the optional decision model (src/lib/decide/smart.ts):
+// when the server has it and the workspace owner left it on, triage asks it
+// first (assist-smart.ts) and falls back to the rules here. A generative model
 // could sit behind `AssistProvider`; none is wired (`provider()` is null).
 
 import { sql } from "../store";
@@ -44,7 +44,7 @@ export function provider(): AssistProvider | null {
   return null;
 }
 
-/** The interface language (any of zvena's): what Jev writes is in it. */
+/** The interface language (any of zvena's): the drafts are written in it. */
 type Lang = string;
 
 /** A case-insensitive pattern where \b and \w also work for Cyrillic. */
@@ -61,8 +61,8 @@ export function describe(request: string, lang: Lang): { title: string; descript
   const isBug = R(String.raw`\b(ошибк|баг|падает|не работает|сломал|crash|bug|broken|error|fails?)\w*`).test(text);
   const w = (k: ProjKey) => projText(lang, k);
   const sections = isBug
-    ? [`## ${w("jev.bug.happens")}`, text, `## ${w("jev.bug.steps")}`, "1. ", `## ${w("jev.bug.expected")}`, "", `## ${w("jev.bug.env")}`, `- ${w("jev.bug.device")}: `, `## ${w("jev.doneWhen")}`, `- [ ] ${w("jev.bug.gone")}`, `- [ ] ${w("jev.bug.test")}`]
-    : [`## ${w("jev.task.context")}`, text, `## ${w("jev.task.goal")}`, "", `## ${w("jev.task.tasks")}`, "- [ ] ", `## ${w("jev.doneWhen")}`, "- [ ] ", `## ${w("jev.task.outOfScope")}`, "- "];
+    ? [`## ${w("draft.bug.happens")}`, text, `## ${w("draft.bug.steps")}`, "1. ", `## ${w("draft.bug.expected")}`, "", `## ${w("draft.bug.env")}`, `- ${w("draft.bug.device")}: `, `## ${w("draft.doneWhen")}`, `- [ ] ${w("draft.bug.gone")}`, `- [ ] ${w("draft.bug.test")}`]
+    : [`## ${w("draft.task.context")}`, text, `## ${w("draft.task.goal")}`, "", `## ${w("draft.task.tasks")}`, "- [ ] ", `## ${w("draft.doneWhen")}`, "- [ ] ", `## ${w("draft.task.outOfScope")}`, "- "];
   return { title, description: sections.join("\n\n") };
 }
 
@@ -234,12 +234,12 @@ export function projectUpdate(ctx: Ctx, projectId: string, lang: Lang): { health
   const w = (k: ProjKey, vars?: Record<string, string | number>) => projText(lang, k, vars);
   const list = (items: typeof rows) => items.slice(0, 6).map((r) => `- ${r.ident} ${r.title}`).join("\n");
   const parts = [
-    w("jev.upd.progress", { pct, done: done.length, total: live.length }),
-    p.targetDate ? w("jev.upd.target", { date: p.targetDate }) : "",
-    doneWeek.length ? `**${w("jev.upd.doneWeek")}** (${doneWeek.length}):\n${list(doneWeek)}` : w("jev.upd.noneWeek"),
-    inProgress.length ? `**${w("jev.upd.inProgress")}** (${inProgress.length}):\n${list(inProgress)}` : "",
-    blocked.length ? `**${w("jev.upd.blocked")}** (${blocked.length}):\n${list(blocked)}` : "",
-    overdue.length ? `**${w("jev.upd.overdue")}** (${overdue.length}):\n${list(overdue)}` : "",
+    w("draft.upd.progress", { pct, done: done.length, total: live.length }),
+    p.targetDate ? w("draft.upd.target", { date: p.targetDate }) : "",
+    doneWeek.length ? `**${w("draft.upd.doneWeek")}** (${doneWeek.length}):\n${list(doneWeek)}` : w("draft.upd.noneWeek"),
+    inProgress.length ? `**${w("draft.upd.inProgress")}** (${inProgress.length}):\n${list(inProgress)}` : "",
+    blocked.length ? `**${w("draft.upd.blocked")}** (${blocked.length}):\n${list(blocked)}` : "",
+    overdue.length ? `**${w("draft.upd.overdue")}** (${overdue.length}):\n${list(overdue)}` : "",
   ].filter(Boolean);
   return {
     health,
@@ -298,11 +298,11 @@ export function cycleReport(ctx: Ctx, cycleId: string, lang: Lang): { text: stri
   const added = c.burnup.length ? c.burnup[c.burnup.length - 1].scope - c.burnup[0].scope : 0;
   const w = (k: ProjKey, vars?: Record<string, string | number>) => projText(lang, k, vars);
   const lines = [
-    w(c.name ? "jev.cyc.headNamed" : "jev.cyc.head", { n: c.number, name: c.name ?? "", from: c.startsOn, to: c.endsOn, passed, days }),
-    w("jev.cyc.done", { done: c.progress.completed, total: c.progress.total, pct, started: c.progress.started }),
-    c.progress.points ? w("jev.cyc.points", { done: c.progress.pointsDone, total: c.progress.points }) : "",
-    added > 0 ? w("jev.cyc.added", { n: added }) : "",
-    c.summary ? w("jev.cyc.completed", { carried: c.summary.carriedOver, canceled: c.summary.canceled }) : passed / days > pct / 100 + 0.25 ? w("jev.cyc.behind") : "",
+    w(c.name ? "draft.cyc.headNamed" : "draft.cyc.head", { n: c.number, name: c.name ?? "", from: c.startsOn, to: c.endsOn, passed, days }),
+    w("draft.cyc.done", { done: c.progress.completed, total: c.progress.total, pct, started: c.progress.started }),
+    c.progress.points ? w("draft.cyc.points", { done: c.progress.pointsDone, total: c.progress.points }) : "",
+    added > 0 ? w("draft.cyc.added", { n: added }) : "",
+    c.summary ? w("draft.cyc.completed", { carried: c.summary.carriedOver, canceled: c.summary.canceled }) : passed / days > pct / 100 + 0.25 ? w("draft.cyc.behind") : "",
   ].filter(Boolean);
   return { text: lines.join("\n"), facts: { total: c.progress.total, completed: c.progress.completed, started: c.progress.started, pct, passed, days, added } };
 }

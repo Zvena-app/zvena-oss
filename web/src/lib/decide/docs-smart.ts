@@ -1,20 +1,21 @@
-// Documents' database automations under Jev. Server-only.
+// Documents' database automations in the automations hub. Server-only.
 //
 // Two things join Notion-style automations ("when a page is added / a
-// property changes → set, add a page, notify, webhook") to Jev's hub:
+// property changes → set, add a page, notify, webhook") to the hub:
 //
 //   journal   every run (on a write, by the clock, after a yes) is a line of
-//             Jev's journal (journal.ts): Home shows it with the rest, and
+//             the journal (journal.ts): Home shows it with the rest, and
 //             Undo puts back what it set (options, numbers, dates,
 //             checkboxes, people) and takes away the pages it added, while
 //             nobody changed them since;
-//   judge     "Only if Jev agrees": the automation asks Jev a yes/no question
-//             about the page, sending only the properties it names (never
-//             one that names a person, never a column its author may not
-//             see). Sure (≥ 85 %): it runs. Less sure (≥ 60 %), or set to
-//             always ask: it waits on Jev's list for a person's yes, and its
-//             author hears of it in the Inbox. Unsure, Jev off or down: it
-//             does not run, and the automation's last run says why.
+//   judge     "Run only if …": the automation asks the decision model a
+//             yes/no question about the page, sending only the properties
+//             it names (never one that names a person, never a column its
+//             author may not see). Sure (≥ 85 %): it runs. Less sure
+//             (≥ 60 %), or set to always ask: it waits as a suggestion for
+//             a person's yes, and its author hears of it in the Inbox.
+//             Unsure, smart suggestions off or the model down: it does not
+//             run, and the automation's last run says why.
 //
 // The writes are the automation's own (lib/notes/automations-server.ts): its
 // author's access, or, after a person's yes, that person's.
@@ -32,7 +33,7 @@ import { notify } from "../eco/inbox";
 import { sql } from "../store";
 import { personalColumns } from "./adapters";
 import { ensureSchema, settingsOf } from "./engine";
-import { ask, jevAvailable, noul } from "./jev";
+import { ask, noul, smartAvailable } from "./smart";
 import { recordHub, registerHubKind, type HubPayload, type Settle } from "./journal";
 
 /** Sure enough to run by itself / to ask a person. */
@@ -56,7 +57,7 @@ interface State {
   /** Rows being judged now (one question per row and automation at a time). */
   judging: Set<string>;
 }
-const KEY = Symbol.for("zvena.decide.docs-jev");
+const KEY = Symbol.for("zvena.decide.docs-smart");
 const g = globalThis as unknown as Record<symbol, State | undefined>;
 const st: State = (g[KEY] ??= { started: false, asks: new Map(), lines: new Map(), judging: new Set() });
 
@@ -80,7 +81,7 @@ function load(ws: string, id: string): Note | null {
   }
 }
 
-/** What Jev is told about a row: the named properties as a person reads them, minus people and columns hidden from `author`. */
+/** What the model is told about a row: the named properties as a person reads them, minus people and columns hidden from `author`. */
 export function factsFor(ws: string, db: Note, row: Note, fields: readonly string[], author: string | null): Record<string, string> {
   const props = db.db?.properties ?? [];
   const hidden = author ? deniedColumns(db.db, { id: author, ...groupsOf(ws, author, db.id) }) : new Map<string, string>();
@@ -102,7 +103,7 @@ function groupsOf(ws: string, userId: string, dbId: string): { groups: ReadonlyS
 
 const subjectOf = (row: string | null, db: string) => `note:${row ?? db}`;
 
-/** What Jev judged, as a short hash: a yes given later holds only while the page still says the same. */
+/** What the model judged, as a short hash: a yes given later holds only while the page still says the same. */
 export const factsHash = (state: Record<string, string>): string => createHash("sha256").update(JSON.stringify(state)).digest("base64url").slice(0, 22);
 
 /** A waiting yes for this automation on this row, if any. */
@@ -112,18 +113,18 @@ function waiting(ws: string, row: string, automation: string): boolean {
   );
 }
 
-/** Judges one fired "only if Jev agrees" automation (exported for tests; awaited there). */
+/** Judges one fired "run only if …" automation (exported for tests; awaited there). */
 export async function judgeAutomation(job: { ws: string; db: Note; row: Note; automation: Automation; actorId: string | null }): Promise<"ran" | "waiting" | "no" | "off" | "skip"> {
   const { ws, db, row, automation: a } = job;
-  if (!a.jev) return "skip";
+  if (!a.onlyIf) return "skip";
   const k = `${ws}|${row.id}|${a.id}`;
   if (st.judging.has(k) || waiting(ws, row.id, a.id)) return "skip";
-  if (!settingsOf(ws).jev || !jevAvailable()) {
-    noteRun(ws, db.id, a.id, "Jev is off");
+  if (!settingsOf(ws).smart || !smartAvailable()) {
+    noteRun(ws, db.id, a.id, "smart suggestions and automations are off");
     return "off";
   }
   if (!within(st.asks, ws, ASKS_PER_HOUR, 3600_000)) {
-    noteRun(ws, db.id, a.id, "too many questions to Jev this hour");
+    noteRun(ws, db.id, a.id, "too many checks this hour");
     return "off";
   }
   const author = automationAuthor(ws, db, a);
@@ -132,42 +133,42 @@ export async function judgeAutomation(job: { ws: string; db: Note; row: Note; au
     noteRun(ws, db.id, a.id, "its author cannot open this page");
     return "skip";
   }
-  const state = factsFor(ws, db, row, a.jev.fields, author);
+  const state = factsFor(ws, db, row, a.onlyIf.fields, author);
   if (!Object.keys(state).length) {
-    noteRun(ws, db.id, a.id, "nothing Jev may read");
+    noteRun(ws, db.id, a.id, "no property the condition may read");
     return "no";
   }
   st.judging.add(k);
   try {
-    const out = await ask(ws, state, { yes: noul(a.jev.question) }, { timeoutMs: 4000 });
+    const out = await ask(ws, state, { yes: noul(a.onlyIf.question) }, { timeoutMs: 4000 });
     if (!out) {
-      noteRun(ws, db.id, a.id, "Jev did not answer");
+      noteRun(ws, db.id, a.id, "the condition could not be checked in time");
       return "off";
     }
     const p = out.answers.yes.noul;
-    const jev = { confidence: p, model: out.model, ms: out.ms };
-    if (p >= AUTO && !a.jev.confirm) {
-      const res = runAutomationNow(ws, { db: db.id, row: row.id, automation: a.id, jev: JSON.stringify(a.jev) }, { actorId: job.actorId, jev });
+    const verdict = { confidence: p, model: out.model, ms: out.ms };
+    if (p >= AUTO && !a.onlyIf.confirm) {
+      const res = runAutomationNow(ws, { db: db.id, row: row.id, automation: a.id, onlyIf: JSON.stringify(a.onlyIf) }, { actorId: job.actorId, verdict });
       return res ? "ran" : "skip";
     }
     if (p >= SUGGEST) {
       ensureSchema();
       recordHub(ws, {
         subject: subjectOf(row.id, db.id),
-        source: "jev",
+        source: "model",
         mode: "suggest",
         status: "pending",
-        payload: { kind: "automation", db: db.id, row: row.id, automation: a.id, jev: JSON.stringify(a.jev), facts: factsHash(state) },
+        payload: { kind: "automation", db: db.id, row: row.id, automation: a.id, onlyIf: JSON.stringify(a.onlyIf), facts: factsHash(state) },
         confidence: p,
         model: out.model,
         ms: out.ms,
         by: author ?? "",
       });
       noteRun(ws, db.id, a.id, null);
-      if (author) notify(author, { ws, kind: "jev", ref: `note:${row.id}`, by: null, text: `${a.name || "⚡"}: ${row.title || ""}`.slice(0, 280) });
+      if (author) notify(author, { ws, kind: "proposal", ref: `note:${row.id}`, by: null, text: `${a.name || "⚡"}: ${row.title || ""}`.slice(0, 280) });
       return "waiting";
     }
-    noteRun(ws, db.id, a.id, `Jev said no (${Math.round(p * 100)}%)`);
+    noteRun(ws, db.id, a.id, `condition not met (${Math.round(p * 100)}%)`);
     return "no";
   } finally {
     st.judging.delete(k);
@@ -190,7 +191,7 @@ function changes(db: Note, before: Note | null, after: Note | null): { prev: Rec
   return Object.keys(next).length ? { prev, next } : null;
 }
 
-/** A run lands in Jev's journal. */
+/** A run lands in the journal. */
 export function journalRun(info: RanInfo): string | null {
   const { ws, db, before, automation: a, result } = info;
   if (result.error && !result.saved.length) return null;
@@ -202,24 +203,24 @@ export function journalRun(info: RanInfo): string | null {
     db: db.id,
     row: before?.id ?? null,
     automation: a.id,
-    ...(a.jev ? { jev: JSON.stringify(a.jev) } : {}),
+    ...(a.onlyIf ? { onlyIf: JSON.stringify(a.onlyIf) } : {}),
     ...(ch ? ch : {}),
     ...(added.length ? { added } : {}),
   };
   ensureSchema();
   // A person's yes: the proposal itself becomes what was done.
-  if (info.jev?.accepted) {
-    sql("UPDATE dz_decisions SET actions = ? WHERE id = ? AND ws = ?").run(JSON.stringify(payload), info.jev.accepted, ws);
-    return info.jev.accepted;
+  if (info.verdict?.accepted) {
+    sql("UPDATE dz_decisions SET actions = ? WHERE id = ? AND ws = ?").run(JSON.stringify(payload), info.verdict.accepted, ws);
+    return info.verdict.accepted;
   }
   if (!within(st.lines, ws, LINES_PER_MINUTE, 60_000)) return null;
   return recordHub(ws, {
     subject: subjectOf(before?.id ?? null, db.id),
-    source: info.jev ? "jev" : "rule",
+    source: info.verdict ? "model" : "rule",
     mode: "auto",
     status: "applied",
     payload,
-    ...(info.jev ? { confidence: info.jev.confidence, model: info.jev.model, ms: info.jev.ms } : {}),
+    ...(info.verdict ? { confidence: info.verdict.confidence, model: info.verdict.model, ms: info.verdict.ms } : {}),
     by: info.as ?? "",
   });
 }
@@ -236,17 +237,17 @@ function accept(ws: string, id: string, p: HubPayload, by: string): Settle {
   const db = load(ws, p.db);
   const a = db?.db?.automations?.find((x) => x.id === p.automation);
   const row = load(ws, p.row);
-  if (!db || !a?.jev || !row) return "gone";
+  if (!db || !a?.onlyIf || !row) return "gone";
   const author = automationAuthor(ws, db, a);
   // Nobody vouches for it any more (its author left or lost the page): it cannot run.
   if (!author || new AccessResolver(ws, author).level(p.row) === null) return "forbidden";
-  // Jev judged the page as it was: changed since, the question is stale.
-  if (p.facts && factsHash(factsFor(ws, db, row, a.jev.fields, author)) !== p.facts) return "gone";
+  // The model judged the page as it was: changed since, the question is stale.
+  if (p.facts && factsHash(factsFor(ws, db, row, a.onlyIf.fields, author)) !== p.facts) return "gone";
   const conf = (sql("SELECT confidence FROM dz_decisions WHERE id = ?").get(id) as { confidence: number | null } | undefined)?.confidence ?? 0;
   // The writes are the automation's, with its author's access, as any run of it; the person who
   // says yes must be able to edit the page too, and what goes out shows neither more than either may see.
   const as = author === by ? [by] : [author, by];
-  const res = runAutomationNow(ws, { db: p.db, row: p.row, automation: p.automation, ...(p.jev !== undefined ? { jev: p.jev } : {}) }, { actorId: by, as, jev: { confidence: conf, accepted: id } });
+  const res = runAutomationNow(ws, { db: p.db, row: p.row, automation: p.automation, ...(p.onlyIf !== undefined ? { onlyIf: p.onlyIf } : {}) }, { actorId: by, as, verdict: { confidence: conf, accepted: id } });
   if (!res) return "gone";
   sql("UPDATE dz_decisions SET status = 'accepted', resolved_by = ?, resolved_at = ? WHERE id = ?").run(by, Date.now(), id);
   return res.error ? "unchanged" : "applied";
@@ -282,7 +283,7 @@ function undo(ws: string, p: HubPayload, by: string): Settle {
 }
 
 /** Joins database automations to the hub (once per process; hub.ts). */
-export function startDocsJev(): void {
+export function startDocsSmart(): void {
   if (st.started) return;
   st.started = true;
   setAutomationHooks({

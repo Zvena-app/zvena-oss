@@ -17,7 +17,7 @@ test("dates and weeks follow the interface language, not just English and Russia
   assert.equal(notesT("es", "noaccess.request"), "Solicitar acceso");
 });
 
-test("i18n: Jev's issue templates are written in the interface language", async () => {
+test("i18n: the assistant's issue templates are written in the interface language", async () => {
   await import("@/i18n/server-catalogs");
   const { describe } = await import("@/lib/projects/assist");
   const en = describe("The export button crashes the page", "en").description;

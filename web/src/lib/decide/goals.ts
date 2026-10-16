@@ -5,7 +5,7 @@
 // it)". The number is typed in, pushed from outside, or a source counting what
 // the workspace already has (lib/decide/sources.ts: a Documents chart, a
 // project's progress). This module is the one way such a goal is made — by a
-// person (the issue's Goal panel, a chart's "Set a goal"), or by Jev
+// person (the issue's Goal panel, a chart's "Set a goal"), or automatically
 // (lib/decide/autogoal.ts) — and read back with its progress.
 
 import { randomBytes } from "node:crypto";
@@ -81,8 +81,8 @@ export interface GoalView {
   /** 0–1 toward the target (≥ / > goals with a positive target), else null. */
   progress: number | null;
   source: Source | null;
-  /** Made by Jev (not a person). */
-  byJev: boolean;
+  /** Set up automatically (not by a person). */
+  auto: boolean;
 }
 
 export function metNow(value: number | null, op: GoalOp, target: number): boolean {
@@ -101,9 +101,9 @@ export function goalsOf(ws: string, userId: string): GoalView[] {
   const metrics = new Map(visibleMetrics(ws, userId, metricsOf(ws)).map((m) => [m.key, m]));
   const sources = new Set(sourcesOf(ws).map((s) => s.key));
   const completed = new Set(listStatuses(ctx).filter((s) => s.category === "completed").map((s) => s.id));
-  // Goals Jev set up by itself (lib/decide/journal.ts keeps what it did).
-  const byJev = new Set(
-    (sql("SELECT reaction_id FROM dz_decisions WHERE ws = ? AND source = 'jev' AND status IN ('applied', 'accepted') AND actions LIKE '{\"kind\":\"goal\"%'").all(ws) as { reaction_id: string | null }[]).map((r) => r.reaction_id)
+  // Goals set up automatically (lib/decide/journal.ts keeps what was done).
+  const auto = new Set(
+    (sql("SELECT reaction_id FROM dz_decisions WHERE ws = ? AND source = 'model' AND status IN ('applied', 'accepted') AND actions LIKE '{\"kind\":\"goal\"%'").all(ws) as { reaction_id: string | null }[]).map((r) => r.reaction_id)
   );
   const out: GoalView[] = [];
   for (const r of reactionsOf(ws)) {
@@ -135,7 +135,7 @@ export function goalsOf(ws: string, userId: string): GoalView[] {
       met: metNow(value, op, target),
       progress: value !== null && (op === ">=" || op === ">") && target > 0 ? Math.max(0, Math.min(1, value / target)) : null,
       source: sourceOf(ws, key)?.source ?? null,
-      byJev: byJev.has(r.id),
+      auto: auto.has(r.id),
     });
   }
   return out;

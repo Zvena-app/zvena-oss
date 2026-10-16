@@ -1,6 +1,6 @@
 // The ecosystem, end to end, as two people of one workspace:
 //   a line of a document becomes an issue (block menu → "Turn into issue");
-//   the issue lives in the page: its checkbox moves it in Projects;
+//   the issue lives in the page: its status menu moves it in Projects;
 //   "/issue" creates another one in place;
 //   a teammate's change in Projects reaches the open document at once;
 //   the issue lists the document it came from; Cmd+K finds both;
@@ -47,8 +47,12 @@ try {
   const blockText = await page.locator(".eco-block").first().innerText();
   check("the line is now a live issue", /Write the launch post/.test(blockText) && /-1\b/.test(blockText), blockText.replace(/\s+/g, " "));
 
-  // 2. Its checkbox completes the issue in Projects.
+  // 2. Its status icon opens the team's whole workflow (Linear's status menu); Done completes it in Projects.
   await page.locator(".eco-block .eco-check").first().click();
+  await page.waitForSelector(".eco-status-menu [role=menuitemradio]", { timeout: 10000 });
+  const offered = await page.locator(".eco-status-menu [role=menuitemradio]").allInnerTexts();
+  check("the status menu offers the whole workflow", ["Backlog", "Todo", "In progress", "In review", "Done", "Canceled", "Duplicate"].every((n) => offered.some((o) => o.includes(n))), offered.join(" | ").replace(/\s+/g, " "));
+  await page.locator(".eco-status-menu [role=menuitemradio]", { hasText: "Done" }).click();
   await page.waitForSelector(".eco-block[data-done]", { timeout: 10000 });
   const rel = (await (await owner.request.get(`${BASE}/api/eco/related?ws=${ws}&ref=note:${id}`)).json()).items;
   const issue = rel.find((i) => i.card.kind === "issue")?.card;

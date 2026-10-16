@@ -342,13 +342,15 @@ function bookingEvent(link: PublicLink, b: { name: string; email: string; note: 
 async function letters(link: PublicLink, b: { name: string; email: string; note: string; locale: string; tz: string }, ev: EvRow, kind: "booked" | "canceled" | "moved", token: string | null): Promise<void> {
   const r = link.row;
   const guestWhen = whenLine(ev, b.locale, b.tz);
-  const ics = seriesIcs(ev.id, { method: kind === "canceled" ? "CANCEL" : "REQUEST", includeDeleted: kind === "canceled" });
-  const attach = [{ filename: "invite.ics", content: ics, contentType: `text/calendar; charset=utf-8; method=${kind === "canceled" ? "CANCEL" : "REQUEST"}` }];
+  const method = kind === "canceled" ? "CANCEL" : "REQUEST";
+  const icsFile = (outsider: boolean) => [{ filename: "invite.ics", content: seriesIcs(ev.id, { method, includeDeleted: kind === "canceled", outsider }), contentType: `text/calendar; charset=utf-8; method=${method}` }];
   const L = (k: Parameters<typeof calText>[1], v?: Record<string, string | number>) => calText(b.locale, k, v);
-  // To the guest: never what the visitor typed, and the host's own words only
-  // defanged (no live links, nothing in the subject): a booking form must not
-  // relay someone's text to any address. The title, place and call link are in
-  // the .ics, as every calendar shows them.
+  // To the guest — whatever address the visitor typed: the letter carries none
+  // of the visitor's text, and the host's own words only defanged (no live
+  // links, nothing in the subject), so a booking form cannot relay someone's
+  // text to any address. Its invite.ics is the outsider's copy: no description
+  // (the visitor's note stays with the host), title, place and names defanged,
+  // a call link only on a known video-call host.
   const guestLines = [
     kind === "canceled" ? L("mail.guestCanceledBody") : L("mail.bookedBody", { host: defang(link.hostName) }),
     "",
@@ -361,7 +363,7 @@ async function letters(link: PublicLink, b: { name: string; email: string; note:
   ];
   const guestSubject = kind === "canceled" ? L("mail.guestCanceledSubject", { when: guestWhen }) : kind === "moved" ? L("mail.guestMovedSubject", { when: guestWhen }) : L("mail.guestBookedSubject", { when: guestWhen });
   try {
-    await sendMail({ to: b.email, subject: guestSubject, text: guestLines.join("\n"), attachments: attach });
+    await sendMail({ to: b.email, subject: guestSubject, text: guestLines.join("\n"), attachments: icsFile(true) });
   } catch {
     // Mail trouble never undoes a booking.
   }
@@ -372,7 +374,7 @@ async function letters(link: PublicLink, b: { name: string; email: string; note:
   const subject = kind === "booked" ? H("mail.newBookingSubject", { name: b.name, title: r.title }) : kind === "canceled" ? H("mail.bookingCanceledSubject", { title: r.title, name: b.name }) : H("mail.bookingMovedSubject", { title: r.title, name: b.name });
   const lines = [H("mail.newBookingBody", { name: b.name, email: b.email, title: r.title }), "", H("mail.when", { when: hostWhen }), ...(b.note && kind === "booked" ? ["", H("mail.note", { note: b.note })] : []), "", H("mail.footer")];
   try {
-    await sendMail({ to: host.email, subject, text: lines.join("\n"), attachments: kind === "canceled" ? [] : attach });
+    await sendMail({ to: host.email, subject, text: lines.join("\n"), attachments: kind === "canceled" ? [] : icsFile(false) });
   } catch {
     // As above.
   }

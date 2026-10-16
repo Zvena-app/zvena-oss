@@ -8811,8 +8811,8 @@ button.nt-sub-toggle:hover {
   font-size: 13px;
   color: var(--nt-text-2);
 }
-/* "Only if Jev agrees": a box of its own between When and Do. */
-.nt-auto-jev {
+/* "Run only if …": a box of its own between When and Do. */
+.nt-auto-cond {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -8821,10 +8821,10 @@ button.nt-sub-toggle:hover {
   border: 1px solid var(--nt-border);
   border-radius: 8px;
 }
-.nt-auto-jev[data-on] {
+.nt-auto-cond[data-on] {
   background: var(--nt-blue-soft);
 }
-.nt-auto-jev-toggle {
+.nt-auto-cond-toggle {
   font-size: 13px;
   cursor: pointer;
 }
@@ -10014,6 +10014,12 @@ button.nt-sub-toggle:hover {
   margin: 0 0 12px;
   color: var(--nt-text-2);
   font-size: 13px;
+}
+/* "Never submit passwords through this form" (as Google Forms does). */
+.nt-formpage-warn {
+  margin: 4px 0 12px;
+  color: var(--nt-text-3);
+  font-size: 12px;
 }
 /* Chart series legend ("Group by"): one row under the chart. */
 .nt-chart-legend.nt-chart-legend-row-wrap {

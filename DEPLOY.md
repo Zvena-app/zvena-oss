@@ -5,7 +5,7 @@ How to run your own zvena server. You run every command yourself on your own ser
 > The only outside services the server talks to are:
 > - Google and GitHub — sign-in;
 > - Resend (or your SMTP server) — e-mail;
-> - TypeSafe AI — the model behind Jev, the assistant in Projects, only when `TYPESAFE_API_KEY` is set. It receives only the fields listed in `web/src/lib/decide/jev.ts`; a workspace owner can turn Jev off;
+> - your model provider — the optional decision model (an RLHF architecture and model) behind smart suggestions and automations, only when `ZVENA_AI_URL` and `ZVENA_AI_KEY` are set. It receives only the fields listed in `web/src/lib/decide/smart.ts` and its callers; a workspace owner can turn it off;
 > - Let's Encrypt — HTTPS certificates;
 > - Figma's API — only when someone imports a Figma file into Design with their own access token (never stored);
 > - Google Fonts — Design's font catalog, fetched by the server and cached (see "Fonts").
@@ -32,7 +32,7 @@ How to run your own zvena server. You run every command yourself on your own ser
 15. [Launch checklist](#15-launch-checklist)
 16. [What is stored where](#16-what-is-stored-where)
 17. [Custom domains for sites, SSO and SCIM](#17-custom-domains-for-sites-sso-and-scim)
-18. [Jev and the hub: what runs by itself](#18-jev-and-the-hub-what-runs-by-itself)
+18. [The hub: what runs by itself](#18-the-hub-what-runs-by-itself)
 
 ## 0. Before launch: legal checklist
 
@@ -40,8 +40,8 @@ This is not legal advice. Go through every item with a lawyer **before** the fir
 
 1. **Who runs the server.** You do. Set `ZVENA_COMPANY_NAME` and the contact addresses (`ZVENA_CONTACT_EMAIL`, optionally `ZVENA_SUPPORT_EMAIL`, `ZVENA_PRIVACY_EMAIL`, `ZVENA_ABUSE_EMAIL`), and make sure someone reads them.
 2. **Your Terms of Service and Privacy Policy.** zvena ships no legal text of its own. Publish yours and set `ZVENA_TERMS_URL` and `ZVENA_PRIVACY_URL`; `/legal/terms` and `/legal/privacy` send people there. `/legal/cookies` describes the cookies the software sets (`web/src/app/legal/cookies/page.tsx`). When your documents change materially, move `ZVENA_CONSENT_VERSION` to that day's date: signed-in people then accept them again.
-3. **Service providers.** List the providers that handle personal data for you (hosting, Cloudflare if used, Resend or your SMTP server, TypeSafe AI if you set `TYPESAFE_API_KEY`) in your Privacy Policy, with the agreements your law requires.
-4. **Jev (AI).** With `TYPESAFE_API_KEY` set, Jev sends issue, comment and document text (which can mention people) to TypeSafe AI, on by default in every workspace; `ZVENA_JEV_DEFAULT=off` makes it opt-in. What is sent is fixed in `web/src/lib/decide/jev.ts`. Without the key nothing is sent.
+3. **Service providers.** List the providers that handle personal data for you (hosting, Cloudflare if used, Resend or your SMTP server, your model provider if you set `ZVENA_AI_URL` and `ZVENA_AI_KEY`) in your Privacy Policy, with the agreements your law requires.
+4. **Smart suggestions (the decision model).** With `ZVENA_AI_URL` and `ZVENA_AI_KEY` set, smart suggestions send issue, comment and document text (which can mention people) to your model provider, on by default in every workspace; `ZVENA_AI_DEFAULT=off` makes it opt-in. What is sent is fixed in `web/src/lib/decide/smart.ts`. Without them nothing is sent.
 5. **Reports and moderation.** The report queue is at `/admin`. Appoint a moderator (section 10) and answer reports within the time your policies promise.
 6. **Source code (AGPL 3.0).** If you change zvena, people who use your server must be able to get the source of the version you run: publish it and set `ZVENA_SOURCE_URL`; the `/source` page links to it.
 
@@ -151,11 +151,15 @@ In `zvena.env` fill in:
 - the domains and `ACME_EMAIL`;
 - the company details and contact inboxes (section 0);
 - the sign-in keys and Resend (section 9);
-- `ZVENA_ADMIN_EMAIL` (new reports) and `ALERT_EMAIL` (outages).
+- `ZVENA_ADMIN_EMAIL` (new reports) and `ALERT_EMAIL` (outages);
+- `ZVENA_MAPS_CONTACT` (an e-mail or URL of yours) while maps use OpenStreetMap's public servers (the default): their tile and Nominatim policies require a contact, and without one heavy use gets the server's address blocked — the web app's log warns at start-up while it is empty. Tiles fetched from the map server are capped per person and for the whole server per day (`ZVENA_MAPS_TILES_PER_USER_DAY`, 5000; `ZVENA_MAPS_TILES_PER_DAY`, 50000; cached tiles don't count). For heavy use point `ZVENA_TILES_URL` / `ZVENA_GEOCODER_URL` at your own server or a provider.
 
-Every line is described in `deploy/.env.example`.
+Every line is described in `deploy/.env.example`. Visitors without an account may upload pictures only, within `ZVENA_GUEST_UPLOAD_MB*`; anything else needs an account, and uploaded files can be reported and taken down like pages.
 
-**Keep a copy of `/etc/zvena/backup.pass` away from the server**, for example in a password manager. Backups cannot be decrypted without it.
+**Keep a copy of `/etc/zvena/backup.pass` and of `/etc/zvena/zvena.env` away from the server**, for example in a password manager. Neither is inside the backups:
+
+- without `backup.pass` the backups cannot be decrypted;
+- without `AUTH_SECRET` (in `zvena.env`) a restored server cannot open what zvena keeps sealed in its database — workspaces' SSO client secrets, connected mailboxes' IMAP/SMTP passwords, CalDAV and booking secrets. A fresh `init-env.sh` makes a new `AUTH_SECRET`, and every SSO login, mailbox and calendar connection then has to be set up again. Keep `DESIGN_SECRET_KEY`, `PG_PASSWORD`, `DESIGN_OIDC_CLIENT_SECRET`, `DESIGN_MGMT_KEY` and `ZVENA_INTERNAL_KEY` with it (the simplest: the whole file).
 
 After any change to `zvena.env`: `sudo deploy/scripts/up.sh`.
 
@@ -242,6 +246,8 @@ A person types their e-mail and gets a letter with a one-time link and a 6-digit
 
 The same settings send report notices to moderators (`ZVENA_ADMIN_EMAIL`) and outage alerts (`ALERT_EMAIL`, section 12). Instead of Resend you can use any SMTP server (`SMTP_*`); Resend wins when both are set.
 
+Everything the app mails goes through one budget: `ZVENA_MAIL_PER_HOUR` (500) and `ZVENA_MAIL_PER_DAY` (3000) letters for the whole server, however many accounts there are. Past 80% of either only sign-in letters still go out, so people can sign in while invitations are paused; the log says when the budget is used up. Page invitations by e-mail also have a server-wide daily cap (`ZVENA_INVITE_MAIL_PER_DAY`, 1000) and carry no user text in their subject. Sign-in letters are limited to 5 an hour and 12 a day per address.
+
 Accounts: methods that report the same verified e-mail address lead to one account, so a person who first signed in with Google can later use GitHub or the e-mail link.
 
 ## 10. Moderators
@@ -278,9 +284,16 @@ How it is kept:
 
 - encrypted (GPG, AES-256) in `/var/backups/zvena`;
 - for `BACKUP_KEEP_DAYS` days (14 by default);
-- copied off-site if `BACKUP_RSYNC_TARGET` (rsync over SSH) or `BACKUP_RCLONE_REMOTE` (S3 through rclone) is set. Keep the off-site copy where your Privacy Policy says the data is stored.
+- copied off-site if `BACKUP_RSYNC_TARGET` (rsync over SSH) or `BACKUP_RCLONE_REMOTE` (S3 through rclone) is set. Keep the off-site copy where your Privacy Policy says the data is stored. New archives are only **added** there (`rsync --ignore-existing`, `rclone copy --immutable`), never mirrored: an emptied, encrypted or wrong local folder cannot wipe the off-site copies. Off-site copies older than `BACKUP_REMOTE_KEEP_DAYS` (30 by default, 0 = never) are pruned separately, by the date in their name, and only after that day's backup succeeded. Better still: a bucket with versioning or object lock, and credentials that can write but not delete.
 
 Once a month, test a restore on a separate test server (section 14).
+
+Restoring on a new server (the old one is gone):
+
+1. Install zvena as in sections 2–5, but **don't run `init-env.sh`**: put your saved `zvena.env` at `/etc/zvena/zvena.env` and `backup.pass` at `/etc/zvena/backup.pass` (both `chmod 600`).
+2. Copy the newest archive from the off-site copy to `/var/backups/zvena/`.
+3. Start once (`sudo deploy/scripts/up.sh`), then `sudo deploy/scripts/restore.sh /var/backups/zvena/zvena-<time>.tar.gpg`. On an empty new server there is nothing to save first: if the safety backup fails there, add `--i-have-no-backup`.
+4. Point DNS at the new server (section 3) and check sign-in, a document, a design, a connected mailbox.
 
 If Design's files live in S3 (`docker-compose.s3.yml`), turn on versioning and replication in the bucket: the script copies only the databases and Docs files.
 
@@ -300,7 +313,7 @@ Every 5 minutes `monitor.sh` checks:
 - free disk space;
 - the age of the last backup.
 
-When the state changes (outage / back to normal) it e-mails `ALERT_EMAIL` through Resend (or SMTP). The public status page is `https://example.com/status`.
+When the state changes (outage / back to normal) it e-mails `ALERT_EMAIL` through Resend (or SMTP). The new state is saved only once that letter went out, so an alert that failed is sent again on the next run. The Resend key and the SMTP password reach `curl` through a config on a file descriptor, never on its command line. The public status page is `https://example.com/status`.
 
 Logs:
 
@@ -352,9 +365,9 @@ sudo deploy/scripts/restore.sh /var/backups/zvena/zvena-<time>.tar.gpg
 
 `restore.sh`:
 
-- asks for confirmation (type `RESTORE`);
-- first makes a backup of the current state;
-- then replaces the data with the backup and checks the service's health.
+- asks for confirmation (type `RESTORE`; `--yes` skips this);
+- first makes a backup of the current state — if that fails, nothing is changed: it asks again (type `NO-BACKUP`), and with `--yes` it stops; only `--i-have-no-backup` restores without one;
+- then replaces the data with the backup (PostgreSQL in one transaction: a dump that does not load stops the restore) and checks the service's health.
 
 ## 15. Launch checklist
 
@@ -419,7 +432,7 @@ Per workspace, set up by its owner in **Settings → Identity** after verifying 
 
 The server must reach the identity provider over HTTPS for OIDC (discovery, keys, token endpoint; private and loopback addresses are refused). SAML needs no outgoing connection. "Require SSO" never locks out a workspace's owners: they keep their other sign-in methods.
 
-## 18. Jev and the hub: what runs by itself
+## 18. The hub: what runs by itself
 
 The hub (`web/src/lib/decide/hub.ts`) starts with the web server and needs no setup. Without any key it already runs the exact rules:
 
@@ -427,25 +440,28 @@ The hub (`web/src/lib/decide/hub.ts`) starts with the web server and needs no se
 - a parent issue closes with its last sub-issue and reopens with one;
 - an issue made from a Design comment closes when the comment is resolved in Design. This uses Design's bridge: the `enable-zvena-bridge` flag (on in `deploy/docker-compose.yml`) and `ZVENA_INTERNAL_KEY`, which `init-env.sh` creates;
 - an issue made from a meeting keeps its due date on the meeting's day;
-- Docs database automations run on the server, and every run is listed on Home under "What Jev did", with Undo.
+- Docs database automations run on the server, and every run is listed on Home under "Done automatically", with Undo.
 
-Workspace owners turn each rule off on Home → Jev → the settings button.
+Workspace owners turn each rule off on Home → Automations → the settings button.
 
-**Connecting Jev (the model).** Jev is TypeSafe AI's hosted model. With a key, it proposes and sets goals from issue titles, fills a new issue's priority, label and project, and answers the questions of automations set to "Only if Jev agrees". To connect it:
+**Connecting the decision model (optional).** Smart suggestions use an optional decision model — an RLHF architecture and model — called from the server only. With it, goals are proposed and set from issue titles, a new issue's priority, label and project are filled in, and automations set to "Run only if …" are checked. It is off unless both the endpoint and the key are set. To connect it:
 
-1. Get an API key from TypeSafe AI and put it in `/etc/zvena/zvena.env`:
+1. Put your model provider's endpoint and key in `/etc/zvena/zvena.env`:
    ```bash
-   TYPESAFE_API_KEY=…
-   ZVENA_JEV_DEFAULT=on        # off: nothing is sent until a workspace owner turns Jev on
-   ZVENA_JEV_MODEL=jev-latest
-   ZVENA_JEV_TIMEOUT_MS=1500
+   ZVENA_AI_URL=https://…       # the provider's endpoint (no default)
+   ZVENA_AI_KEY=…
+   ZVENA_AI_MODEL=              # optional: the model version to ask for (empty = the provider's default)
+   ZVENA_AI_TIMEOUT_MS=1500
+   ZVENA_AI_DEFAULT=on          # off: nothing is sent until a workspace owner turns it on
+   ZVENA_AI_DAILY_QUESTIONS=20000     # the spending budget: questions a day in all…
+   ZVENA_AI_WS_DAILY_QUESTIONS=1000   # …and per workspace; over it, rules alone until the next UTC day
    ```
 2. Run `sudo deploy/scripts/up.sh`.
-3. Check: on Home, the Jev panel no longer says "Model not set up on this server".
+3. Check: Projects → Settings → Smart suggestions shows the switch instead of "Not available on this server".
 
-What leaves the server is fixed in one place, `web/src/lib/decide/jev.ts` (list those fields in your Privacy Policy). Only that file may call the model; `npm run check:no-ai` fails the build otherwise. Fields that name a person, mail, files and designs are never sent. If the key is removed or TypeSafe AI is down, everything above keeps working on rules alone.
+What leaves the server is fixed in one place, `web/src/lib/decide/smart.ts` and its callers (list those fields in your Privacy Policy). Only that file may call the model; `npm run check:no-ai` fails the build otherwise. Fields that name a person, mail, files and designs are never sent. If the endpoint or key is removed, or the provider is down, everything above keeps working on rules alone.
 
-**Numbers from outside.** On Home → Jev → settings, the owner creates a key, which is shown once. With it, a script, a CRM or an analytics tool sends numbers:
+**Numbers from outside.** On Home → Automations → settings, the owner creates a key, which is shown once. With it, a script, a CRM or an analytics tool sends numbers:
 
 ```bash
 curl -X POST https://<your domain>/api/pulse/ingest \

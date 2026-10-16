@@ -136,9 +136,9 @@ export default async function HelpPage() {
           team&apos;s sprints, with a burn-up chart; unfinished issues move on when a cycle ends.
         </li>
         <li>
-          <b>Jev</b>, the assistant, suggests a new issue&apos;s priority, label, project and assignee and flags likely duplicates. When it is confident it fills empty
-          fields itself &mdash; marked in the issue&apos;s history and undoable. The workspace owner can turn it off in Projects &rarr; Settings &rarr; Assistant. What
-          it sends and to whom is in the <Link href="/legal/privacy#jev">Privacy Policy</Link>.
+          <b>Smart suggestions</b> propose a new issue&apos;s priority, label, project and assignee and flag likely duplicates. When the answer is confident, empty
+          fields are filled in automatically &mdash; marked in the issue&apos;s history and undoable. The workspace owner can turn this off in Projects &rarr; Settings
+          &rarr; Smart suggestions. What is sent and to whom is in the <Link href="/legal/privacy#suggestions">Privacy Policy</Link>.
         </li>
       </ul>
 

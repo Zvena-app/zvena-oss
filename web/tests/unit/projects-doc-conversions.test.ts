@@ -2,7 +2,7 @@ import "./env";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { signInWith } from "@/lib/auth";
-import { resetJev } from "@/lib/decide/jev";
+import { resetSmart } from "@/lib/decide/smart";
 import { sanitizeNote } from "@/lib/notes/model";
 import { pushNotes } from "@/lib/notes/server-store";
 import type { Note } from "@/lib/notes/types";
@@ -46,8 +46,8 @@ test("the task lines of a page the person may edit are queued once, handed to on
     trashedAt: null,
   }) as Note;
   pushNotes(ws, [{ id, note }], { by: owner, quotaLeft: Infinity });
-  resetJev();
-  delete process.env.TYPESAFE_API_KEY;
+  resetSmart();
+  delete process.env.ZVENA_AI_KEY;
 
   const plan = await planFromDoc(as(owner), id);
   const tasks = plan.lines.filter((l) => l.kind === "task");

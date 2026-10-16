@@ -6,12 +6,12 @@
 // Signed-in workspaces run automations on the server (lib/notes/automations-server.ts).
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { ArrowUpRight, Bell, CircleHelp, FilePlus2, Link2, Pencil, Plus, Repeat, Sparkles, Trash2, Webhook, X, Zap } from "lucide-react";
+import { ArrowUpRight, Bell, CircleHelp, FilePlus2, Link2, Pencil, Plus, Repeat, Trash2, Webhook, X, Zap } from "lucide-react";
 import type { DbCtl } from "./useDatabase";
 import { Menu, Popover } from "../ui";
 import { PagePicker, SETTABLE, ValueField, isDb } from "../ButtonEditor";
 import { displayTitle, shortId } from "@/lib/notes/model";
-import { MAX_AUTOMATIONS, type AutoAction, type AutoJev, type Automation, type AutoTrigger } from "@/lib/notes/automations";
+import { MAX_AUTOMATIONS, type AutoAction, type AutoOnlyIf, type Automation, type AutoTrigger } from "@/lib/notes/automations";
 import { people, subscribePeople } from "@/lib/notes/people";
 import { relativeTime } from "@/lib/notes/i18n";
 import type { DbProperty, Note, PropValue } from "@/lib/notes/types";
@@ -385,32 +385,31 @@ function TzField({ ctl, tz, onTz }: { ctl: DbCtl; tz: string | null; onTz: (tz: 
 }
 
 // ---------------------------------------------------------------------------
-// "Only if Jev agrees"
+// "Run only if …"
 
-/** Columns never sent to Jev: they name or reach a person, hold no words, or are computed from other pages and columns (lib/decide/docs-jev.ts says the same). */
-const NOT_FOR_JEV = new Set<DbProperty["type"]>(["person", "created_by", "last_edited_by", "email", "phone", "button", "files", "formula", "rollup", "relation"]);
+/** Columns never sent with the condition: they name or reach a person, hold no words, or are computed from other pages and columns (lib/decide/docs-smart.ts says the same). */
+const NOT_SENT = new Set<DbProperty["type"]>(["person", "created_by", "last_edited_by", "email", "phone", "button", "files", "formula", "rollup", "relation"]);
 
-function JevField({ ctl, value, onChange }: { ctl: DbCtl; value: AutoJev | undefined; onChange: (v: AutoJev | undefined) => void }) {
+function OnlyIfField({ ctl, value, onChange }: { ctl: DbCtl; value: AutoOnlyIf | undefined; onChange: (v: AutoOnlyIf | undefined) => void }) {
   const { t } = ctl.api;
   const [menu, setMenu] = useState<HTMLElement | null>(null);
-  const props = (ctl.schema?.properties ?? []).filter((p) => !NOT_FOR_JEV.has(p.type));
+  const props = (ctl.schema?.properties ?? []).filter((p) => !NOT_SENT.has(p.type));
   const on = value !== undefined;
-  const v: AutoJev = value ?? { question: "", fields: props.filter((p) => p.type === "title").map((p) => p.id) };
+  const v: AutoOnlyIf = value ?? { question: "", fields: props.filter((p) => p.type === "title").map((p) => p.id) };
   const choices = props.filter((p) => !v.fields.includes(p.id));
   return (
-    <div className="nt-auto-jev" data-on={on || undefined}>
-      <label className="nt-auto-row nt-auto-jev-toggle">
+    <div className="nt-auto-cond" data-on={on || undefined}>
+      <label className="nt-auto-row nt-auto-cond-toggle">
         <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked ? v : undefined)} />
-        <Sparkles size={14} aria-hidden />
-        <span>{t("auto.jevIf")}</span>
+        <span>{t("auto.onlyIf")}</span>
       </label>
       {on && (
         <>
           <div className="nt-auto-row">
-            <input className="nt-input" value={v.question} maxLength={500} placeholder={t("auto.jevQuestion")} aria-label={t("auto.jevIf")} onChange={(e) => onChange({ ...v, question: e.target.value })} />
+            <input className="nt-input" value={v.question} maxLength={500} placeholder={t("auto.onlyIfQuestion")} aria-label={t("auto.onlyIf")} onChange={(e) => onChange({ ...v, question: e.target.value })} />
           </div>
           <div className="nt-auto-row">
-            <span className="nt-auto-verb">{t("auto.jevFields")}</span>
+            <span className="nt-auto-verb">{t("auto.onlyIfFields")}</span>
             {v.fields.map((id) => (
               <span key={id} className="nt-chip">
                 {props.find((p) => p.id === id)?.name ?? "?"}
@@ -422,16 +421,16 @@ function JevField({ ctl, value, onChange }: { ctl: DbCtl; value: AutoJev | undef
             {choices.length > 0 && v.fields.length < 12 && (
               <button type="button" className="nt-chip nt-btn-reset" onClick={(e) => setMenu(e.currentTarget)}>
                 <Plus />
-                {t("auto.jevFieldsAdd")}
+                {t("auto.onlyIfFieldsAdd")}
               </button>
             )}
           </div>
           <label className="nt-auto-row">
             <input type="checkbox" checked={v.confirm === true} onChange={(e) => onChange({ ...v, confirm: e.target.checked || undefined })} />
-            <span>{t("auto.jevConfirm")}</span>
+            <span>{t("auto.onlyIfConfirm")}</span>
           </label>
           <small className="nt-auto-note" style={{ border: 0, margin: 0, padding: 0 }}>
-            {t("auto.jevHint")}
+            {t("auto.onlyIfHint")}
           </small>
           {menu && (
             <Popover anchor={menu} onClose={() => setMenu(null)}>
@@ -448,8 +447,8 @@ function JevField({ ctl, value, onChange }: { ctl: DbCtl; value: AutoJev | undef
   );
 }
 
-/** A Jev condition complete enough to save (or none). */
-const jevReady = (j: AutoJev | undefined) => !j || (j.question.trim() !== "" && j.fields.length > 0);
+/** A "run only if" condition complete enough to save (or none). */
+const onlyIfReady = (j: AutoOnlyIf | undefined) => !j || (j.question.trim() !== "" && j.fields.length > 0);
 
 // ---------------------------------------------------------------------------
 // The automation editor and the panel
@@ -515,8 +514,8 @@ function Editor({ ctl, initial, tz, onTz, onDone }: { ctl: DbCtl; initial: Autom
           <TzField ctl={ctl} tz={tz} onTz={onTz} />
         </>
       )}
-      {/* Jev judges a page: not a schedule, and only where a server runs it (signed in). */}
-      {a.trigger.type !== "schedule" && ctl.api.user && <JevField ctl={ctl} value={a.jev} onChange={(jev) => setA({ ...a, jev })} />}
+      {/* The condition is judged on a page: not a schedule, and only where a server runs it (signed in). */}
+      {a.trigger.type !== "schedule" && ctl.api.user && <OnlyIfField ctl={ctl} value={a.onlyIf} onChange={(onlyIf) => setA({ ...a, onlyIf })} />}
       <div className="nt-menu-label">{t("auto.do")}</div>
       {/* A schedule has no page of its own: nothing to edit or open. */}
       <ActionsEditor ctl={ctl} actions={a.actions} onChange={(actions) => setA({ ...a, actions })} allow={a.trigger.type === "schedule" ? SERVER_ACTIONS.filter((x) => x !== "set") : SERVER_ACTIONS} />
@@ -527,10 +526,10 @@ function Editor({ ctl, initial, tz, onTz, onDone }: { ctl: DbCtl; initial: Autom
         <button
           type="button"
           className="nt-btn nt-btn-primary nt-btn-reset"
-          disabled={!a.actions.some(usable) || !jevReady(a.jev)}
+          disabled={!a.actions.some(usable) || !onlyIfReady(a.onlyIf)}
           onClick={() => {
-            const { jev, ...rest } = a;
-            onDone({ ...rest, ...(jev && a.trigger.type !== "schedule" ? { jev: { ...jev, question: jev.question.trim() } } : {}), actions: cleanList(a.actions) });
+            const { onlyIf, ...rest } = a;
+            onDone({ ...rest, ...(onlyIf && a.trigger.type !== "schedule" ? { onlyIf: { ...onlyIf, question: onlyIf.question.trim() } } : {}), actions: cleanList(a.actions) });
           }}
         >
           {t("auto.save")}
@@ -620,7 +619,7 @@ export function AutomationsPanel({ ctl, anchor, onClose }: { ctl: DbCtl; anchor:
                   </b>
                   <small>
                     {triggerLabel(ctl, a.trigger)}
-                    {a.jev ? ` · ${t("auto.withJev")}` : ""} → {a.actions.map((x) => actionLabel(ctl, x)).join(", ")}
+                    {a.onlyIf ? ` · ${t("auto.withOnlyIf")}` : ""} → {a.actions.map((x) => actionLabel(ctl, x)).join(", ")}
                   </small>
                   {signedIn && (
                     <small className="nt-auto-run" data-error={run?.error ? true : undefined}>

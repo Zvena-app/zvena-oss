@@ -1,8 +1,8 @@
-// Jev runs the workspace, end to end, as a person sees it:
+// What runs by itself, end to end, as a person sees it:
 //   a chart in Documents gets a goal ("Won ≥ 1,000"): a goal issue appears in
 //   Projects, and when rows change the chart's goal fills and the issue closes
 //   by itself — the page under the chart follows without a reload;
-//   Home's Jev panel shows the goal met and what Jev did;
+//   Home's Automations panel shows the goal met and what was done automatically;
 //   a parent issue closes with its last sub-issue, and Undo on Home takes it back;
 //   an issue that states a target is proposed a goal on the matching number
 //   (rules: the stand has no model), accepted on the issue's Goal panel;
@@ -10,8 +10,8 @@
 //   from the issue and updates by itself;
 //   a goal on meetings in a calendar ("customer calls in the next 7 days")
 //   closes when the second call is booked;
-//   a database automation's run is on Home with Undo, and "Only if Jev
-//   agrees" is set in the automation's editor and saved with it.
+//   a database automation's run is on Home with Undo, and "Run only if …"
+//   is set in the automation's editor and saved with it.
 import { BASE, check, context, devSignIn, foreignHosts, launch, summary } from "./lib.mjs";
 
 const RUN = Math.random().toString(36).slice(2, 7);
@@ -20,7 +20,7 @@ const owner = await context(browser);
 const req = (ctx, method, path, data) =>
   ctx.request.fetch(`${BASE}${path}`, { method, data, headers: { origin: BASE } }).then(async (r) => ({ status: r.status(), body: await r.json().catch(() => null) }));
 const hex = () => [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
-const shot = async (p, name) => process.env.SHOTS && (await p.screenshot({ path: `${process.env.SHOTS}/jev-${name}.png` }).catch(() => {}));
+const shot = async (p, name) => process.env.SHOTS && (await p.screenshot({ path: `${process.env.SHOTS}/automations-${name}.png` }).catch(() => {}));
 const until = async (fn, ms = 20000) => {
   const end = Date.now() + ms;
   while (Date.now() < end) {
@@ -33,8 +33,8 @@ const until = async (fn, ms = 20000) => {
 let page;
 try {
   page = await owner.newPage();
-  await devSignIn(page, `Jo Jev ${RUN}`);
-  const ws = (await req(owner, "POST", "/api/ws", { name: `Jev ${RUN}` })).body.workspace.id;
+  await devSignIn(page, `Jo Auto ${RUN}`);
+  const ws = (await req(owner, "POST", "/api/ws", { name: `Walk ${RUN}` })).body.workspace.id;
   await req(owner, "POST", `/api/projects/start?ws=${ws}`, {});
   const boot = await (await owner.request.get(`${BASE}/api/projects/bootstrap?ws=${ws}`)).json();
   const team = boot.teams[0];
@@ -113,17 +113,21 @@ try {
   await req(owner, "PATCH", `/api/projects/issues/${s2.id}?ws=${ws}`, { statusId: status("completed").id });
   check("the parent closed with its last sub-issue", await until(async () => (await issueCat(parent.id)) === "completed"));
 
-  // Home: Jev's panel.
+  // Home: the Automations panel, with no persona and no status line.
   await page.goto(`${BASE}/home?ws=${ws}`);
-  const panel = page.locator(".eco-jev");
-  await panel.locator(".eco-jev-head h2").waitFor({ timeout: 20000 });
-  check("Home shows Jev", (await panel.locator(".eco-jev-head h2").innerText()).trim() === "Jev");
-  const goalItem = panel.locator(".eco-jev-goals li[data-met]");
+  const panel = page.locator(".eco-hub");
+  await panel.locator(".eco-hub-head h2").waitFor({ timeout: 20000 });
+  check("Home shows Automations", (await panel.locator(".eco-hub-head h2").innerText()).trim() === "Automations");
+  const head = (await panel.locator(".eco-hub-head").innerText()).trim();
+  check("…with only its title in the header (no \"working\" state)", head === "Automations", head);
+  const homeText = await page.locator("body").innerText();
+  check("Home names no model or provider", !/j[e]v|t[y]pe-?s[a]fe/i.test(homeText));
+  const goalItem = panel.locator(".eco-hub-goals li[data-met]");
   check("…with the met goal", (await goalItem.count()) >= 1);
-  const did = panel.locator(".eco-jev-items li");
+  const did = panel.locator(".eco-hub-items li");
   await did.first().waitFor({ timeout: 10000 });
   const lines = (await did.allInnerTexts()).join(" | ");
-  check("…and what it did: the goal met and the parent closed", /Goal met/.test(lines) && /Closed .*Onboarding revamp/.test(lines), lines.slice(0, 300));
+  check("…and what was done: the goal met and the parent closed", /Goal met/.test(lines) && /Onboarding revamp closed/.test(lines), lines.slice(0, 300));
   await shot(page, "home");
   // Undo the parent on Home.
   const parentLine = did.filter({ hasText: "Onboarding revamp" }).first();
@@ -210,9 +214,9 @@ try {
   const leadStage = async () => (await req(owner, "GET", `/api/notes/sync?ws=${ws}&since=0`)).body.notes.find((n) => n.id === lead)?.props?.st ?? null;
   check("the automation ran on the server", await until(async () => (await leadStage()) === "new"));
   await page.goto(`${BASE}/home?ws=${ws}`);
-  const ran = page.locator(".eco-jev-items li").filter({ hasText: `Tag new leads ${RUN}` }).first();
+  const ran = page.locator(".eco-hub-items li").filter({ hasText: `Tag new leads ${RUN}` }).first();
   check(
-    "Home shows the automation's run among what Jev did",
+    "Home shows the automation's run among what was done automatically",
     await ran
       .waitFor({ timeout: 15000 })
       .then(() => true)
@@ -221,51 +225,51 @@ try {
   await ran.getByRole("button", { name: "Undo" }).click();
   check("Undo on Home puts the value back", await until(async () => (await leadStage()) === null));
 
-  // "Only if Jev agrees": set in the automation's editor, saved with the automation.
+  // "Run only if …": set in the automation's editor, saved with the automation.
   await page.goto(`${BASE}/docs?ws=${ws}#Leads-${adb}`);
   await page.getByRole("button", { name: "Automations" }).first().click();
   await page.getByRole("button", { name: "New automation" }).click();
-  await page.locator(".nt-auto-name").fill(`Ask Jev ${RUN}`);
-  await page.locator(".nt-auto-jev-toggle input").check();
-  await page.locator(".nt-auto-jev .nt-input").fill("Is this lead a large company?");
-  await shot(page, "automation-jev");
+  await page.locator(".nt-auto-name").fill(`Ask first ${RUN}`);
+  await page.locator(".nt-auto-cond-toggle input").check();
+  await page.locator(".nt-auto-cond .nt-input").fill("Is this lead a large company?");
+  await shot(page, "automation-condition");
   await page.locator(".nt-auto-foot .nt-btn-primary").click();
   const saved = await until(async () => {
     const d = (await req(owner, "GET", `/api/notes/sync?ws=${ws}&since=0`)).body.notes.find((n) => n.id === adb);
-    return d?.db?.automations?.some((a) => a.name === `Ask Jev ${RUN}` && a.jev?.question === "Is this lead a large company?" && a.jev.fields.includes("title"));
+    return d?.db?.automations?.some((a) => a.name === `Ask first ${RUN}` && a.onlyIf?.question === "Is this lead a large company?" && a.onlyIf.fields.includes("title"));
   });
-  check("“Only if Jev agrees” is saved with the automation (the title is what Jev reads)", saved);
-  check("the list says it asks Jev", (await page.locator(".nt-auto-item").filter({ hasText: `Ask Jev ${RUN}` }).innerText()).includes("if Jev agrees"));
+  check("“Run only if …” is saved with the automation (the title is what is checked)", saved);
+  check("the list says it runs only if the condition holds", (await page.locator(".nt-auto-item").filter({ hasText: `Ask first ${RUN}` }).innerText()).includes("only if the condition holds"));
   await page.keyboard.press("Escape");
 
   // The owner makes a key for numbers from outside (shown once), and a number sent with it arrives.
   await page.goto(`${BASE}/home?ws=${ws}`);
-  await page.locator(".eco-jev-head").getByRole("button", { name: "What Jev does by itself" }).click();
+  await page.locator(".eco-hub-head").getByRole("button", { name: "What runs by itself" }).click();
   await page.getByRole("button", { name: "Create a key" }).click();
-  const example = page.locator("[data-test=jev-ingest-example]");
+  const example = page.locator("[data-test=ingest-example]");
   await example.waitFor({ timeout: 10000 });
   const keyText = (await example.innerText()).match(/zvi_[A-Za-z0-9_-]+/)?.[0];
-  check("Jev's settings make a key for numbers from outside, with an example", Boolean(keyText));
+  check("the Automations settings make a key for numbers from outside, with an example", Boolean(keyText));
   const pushed = await owner.request.post(`${BASE}/api/pulse/ingest`, { headers: { authorization: `Bearer ${keyText}`, "content-type": "application/json" }, data: { metric: "mrr", value: 4200, label: "MRR" } });
   check("…and a number sent with it arrives", pushed.status() === 200 && (await req(owner, "GET", `/api/decide?ws=${ws}`)).body.metrics.some((m) => m.key === "mrr" && m.value === 4200));
   await page.getByRole("button", { name: "Revoke the key" }).click();
-  await until(async () => (await req(owner, "GET", `/api/decide?ws=${ws}&view=jev`)).body.overview.ingest === false);
+  await until(async () => (await req(owner, "GET", `/api/decide?ws=${ws}&view=hub`)).body.overview.ingest === false);
   const refused = await owner.request.post(`${BASE}/api/pulse/ingest`, { headers: { authorization: `Bearer ${keyText}`, "content-type": "application/json" }, data: { metric: "mrr", value: 1 } });
   check("…revoked, it no longer works", refused.status() >= 400, String(refused.status()));
 
   // A phone: Home's panel fits.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${BASE}/home?ws=${ws}`);
-  await page.locator(".eco-jev-head h2").waitFor({ timeout: 20000 });
+  await page.locator(".eco-hub-head h2").waitFor({ timeout: 20000 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  check("Home with Jev fits a phone (no sideways scroll)", overflow <= 1, String(overflow));
+  check("Home with Automations fits a phone (no sideways scroll)", overflow <= 1, String(overflow));
   await shot(page, "home-phone");
 
   check("no foreign hosts", foreignHosts(owner).length === 0, foreignHosts(owner).join(", "));
   check("no console errors", owner.errors.length === 0, owner.errors.slice(0, 3).join(" | "));
 } catch (e) {
-  check("Jev walk finished", false, String(e).slice(0, 400));
-  if (process.env.SHOTS) await page?.screenshot({ path: `${process.env.SHOTS}/jev-failure.png` }).catch(() => {});
+  check("automations walk finished", false, String(e).slice(0, 400));
+  if (process.env.SHOTS) await page?.screenshot({ path: `${process.env.SHOTS}/automations-failure.png` }).catch(() => {});
 } finally {
   await browser.close();
 }

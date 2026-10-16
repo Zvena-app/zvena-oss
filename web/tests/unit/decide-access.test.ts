@@ -139,7 +139,7 @@ test("eco: Create document twice opens the same document", async () => {
   assert.equal(a.noteId, b.noteId);
 });
 
-test("decide: a column hidden from the rule's author is no fact of the rule (title, comparison, Jev)", async () => {
+test("decide: a column hidden from the rule's author is no fact of the rule (title, comparison, model)", async () => {
   startReactions();
   const t = setup();
   // The database moves to the workspace (Ben may open it) and Salary is visible to Ann only.

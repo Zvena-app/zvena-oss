@@ -5,6 +5,7 @@
 // write of a signed-in workspace, and the browser only for a guest's
 // local-only workspace (components/notes/automations-run.ts).
 
+import { LEGACY_ONLY_IF_FIELD } from "../legacy-names";
 import { localYmd } from "./dates";
 import type { DbSchema, Note, PropValue } from "./types";
 
@@ -44,16 +45,17 @@ export type AutoAction =
   | { type: "confirm"; text: string };
 
 /**
- * "Only if Jev agrees" (signed-in workspaces; not on a schedule): a yes/no
- * question about the page, and the only properties sent with it (never one
- * that names a person). Sure: it runs; less sure: it waits for a person on
- * Jev's list; unsure, or Jev off: it does not run.
+ * "Run only if …" (signed-in workspaces; not on a schedule): a condition in
+ * words — a yes/no question about the page for the decision model — and the
+ * only properties sent with it (never one that names a person). Sure: it
+ * runs; less sure: it waits for a person as a suggestion; unsure, or smart
+ * suggestions off: it does not run.
  */
-export interface AutoJev {
+export interface AutoOnlyIf {
   question: string;
-  /** Property ids sent to Jev with the question. */
+  /** Property ids sent with the question. */
   fields: string[];
-  /** Always wait for a person, however sure Jev is. */
+  /** Always wait for a person, however sure the answer is. */
   confirm?: boolean;
 }
 
@@ -62,8 +64,8 @@ export interface Automation {
   name: string;
   on: boolean;
   trigger: AutoTrigger;
-  /** Only if Jev agrees (lib/decide/docs-jev.ts). */
-  jev?: AutoJev;
+  /** Run only if … (lib/decide/docs-smart.ts). */
+  onlyIf?: AutoOnlyIf;
   actions: AutoAction[];
   /** Who set it up (the server's word): its runs write with their access, never more. */
   by?: string;
@@ -179,8 +181,8 @@ export function cleanSchedule(t: Record<string, unknown>): Extract<AutoTrigger, 
   };
 }
 
-/** A Jev condition from untrusted JSON (undefined: none). */
-export function cleanJev(v: unknown): AutoJev | undefined {
+/** A "run only if" condition from untrusted JSON (undefined: none). */
+export function cleanOnlyIf(v: unknown): AutoOnlyIf | undefined {
   const j = v as Record<string, unknown> | null;
   if (!j || typeof j !== "object" || typeof j.question !== "string" || !j.question.trim()) return undefined;
   const fields = [...new Set((Array.isArray(j.fields) ? j.fields : []).filter((f): f is string => typeof f === "string" && /^[\w-]{1,40}$/.test(f)))].slice(0, 12);
@@ -205,8 +207,9 @@ export function cleanAutomations(v: unknown): Automation[] | undefined {
     const actions = cleanActions(r.actions).filter((a) => a.type !== "openUrl" && a.type !== "openPage" && a.type !== "confirm");
     const by = typeof r.by === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(r.by) ? r.by : undefined;
     // A schedule has no page to ask about.
-    const jev = trigger.type === "schedule" ? undefined : cleanJev(r.jev);
-    out.push({ id: r.id.slice(0, 40), name: typeof r.name === "string" ? r.name.slice(0, 200) : "", on: r.on !== false, trigger, ...(jev ? { jev } : {}), actions, ...(by ? { by } : {}) });
+    // Databases saved by earlier releases keep the condition under its legacy key (lib/legacy-names.ts).
+    const onlyIf = trigger.type === "schedule" ? undefined : cleanOnlyIf(r.onlyIf ?? r[LEGACY_ONLY_IF_FIELD]);
+    out.push({ id: r.id.slice(0, 40), name: typeof r.name === "string" ? r.name.slice(0, 200) : "", on: r.on !== false, trigger, ...(onlyIf ? { onlyIf } : {}), actions, ...(by ? { by } : {}) });
   }
   return out.length ? out : undefined;
 }

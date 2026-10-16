@@ -3,8 +3,8 @@
 //
 //   1. readDoc     the lines a person may read: headings, list and checklist
 //                  items, short paragraphs (at most 40, 200 characters each);
-//   2. classify    Jev decides for each line: a goal, a task, or neither
-//                  (rules decide when Jev is off: goal words and headings are
+//   2. classify    the decision model decides for each line: a goal, a task, or neither
+//                  (rules decide when it is off: goal words and headings are
 //                  goals, list items are tasks); tasks belong to the goal above;
 //   3. create      only what the person ticked: projects for the goals in the
 //                  chosen team, issues under them — through the normal
@@ -17,11 +17,11 @@
 // second run does not repeat them.
 
 import { sql, tx } from "../store";
-import { ask, choice, type Question } from "../decide/jev";
+import { ask, choice, type Question } from "../decide/smart";
 import { AccessResolver, levelOf } from "../notes/access";
 import { inlineText } from "../notes/model";
 import { pullNotesById } from "../notes/server-store";
-import { jevOn } from "./assist-jev";
+import { smartOn } from "./assist-smart";
 import { bad, needs, notFound, type Ctx } from "./core";
 import { createIssue } from "./issues";
 import { createProject } from "./planning";
@@ -53,7 +53,7 @@ export interface DocLine {
 export interface DocPlan {
   note: { id: string; title: string };
   lines: DocLine[];
-  source: "jev" | "rules";
+  source: "model" | "rules";
 }
 
 interface Block {
@@ -106,7 +106,7 @@ export async function planFromDoc(ctx: Ctx, noteId: unknown): Promise<DocPlan> {
 
   let source: DocPlan["source"] = "rules";
   let kinds: { kind: DocLineKind; confidence?: number }[] = raw.map((l) => ({ kind: byRules(l) }));
-  if (raw.length && jevOn(ctx.wsId)) {
+  if (raw.length && smartOn(ctx.wsId)) {
     const criteria = {
       goal: "An outcome to reach: a goal, objective, target, key result or milestone.",
       task: "A concrete piece of work one person can do.",
@@ -118,7 +118,7 @@ export async function planFromDoc(ctx: Ctx, noteId: unknown): Promise<DocPlan> {
     });
     const out = await ask(ctx.wsId, { document: note.title.slice(0, 120), lines: raw.map((l) => l.text) }, questions);
     if (out) {
-      source = "jev";
+      source = "model";
       const answers = out.answers as Record<string, { choice: string; probabilities: Record<string, number>; confidence: number }>;
       kinds = raw.map((l, i) => {
         const a = answers[`l${i}`];

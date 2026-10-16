@@ -4,7 +4,10 @@
 # free disk and the age of the last backup. Mails ALERT_EMAIL when the state
 # changes (problem / recovered) — through Resend's API when RESEND_API_KEY is
 # set, else through the SMTP server from the settings — and logs one line per
-# run without personal data.
+# run without personal data. The new state is saved only once its alert went
+# out, so a failed alert is tried again on the next run. Secrets reach curl
+# through a config on a file descriptor, never on the command line (which any
+# local user can read in /proc).
 #   */5 * * * * root /opt/zvena/src/deploy/scripts/monitor.sh >> /var/log/zvena-monitor.log 2>&1
 . "$(dirname "$0")/common.sh"
 load_env
@@ -29,8 +32,13 @@ age_h=$(( ($(date -u +%s) - last) / 3600 ))
 now="ok"
 [ ${#problems[@]} -eq 0 ] || now="fail"
 was=$(cat "$state_dir/monitor.state" 2>/dev/null || echo ok)
-echo "$now" > "$state_dir/monitor.state"
 log "monitor $now ${problems[*]:-}"
+
+# A value for a curl config line: quoted, with \ and " escaped.
+curl_quote() {
+  local v=${1//\\/\\\\}
+  printf '"%s"' "${v//\"/\\\"}"
+}
 
 # Resend's API: the JSON body is built by python3 (subject and text come in
 # through the environment, so no quoting can break it).
@@ -40,7 +48,8 @@ send_resend() {
 import json, os
 print(json.dumps({"from": os.environ["MAIL_SENDER"], "to": [os.environ["MAIL_TO"]], "subject": os.environ["MAIL_SUBJECT"], "text": os.environ["MAIL_BODY"]}))' |
     curl -sS -f -m 30 https://api.resend.com/emails \
-      -H "Authorization: Bearer $RESEND_API_KEY" -H 'Content-Type: application/json' --data-binary @- >/dev/null
+      -K <(printf 'header = %s\n' "$(curl_quote "Authorization: Bearer $RESEND_API_KEY")") \
+      -H 'Content-Type: application/json' --data-binary @- >/dev/null
 }
 
 send_smtp() {
@@ -50,23 +59,29 @@ send_smtp() {
   [ "${SMTP_SECURE:-0}" = 1 ] && proto=smtps
   printf 'From: %s\r\nTo: %s\r\nSubject: =?UTF-8?B?%s?=\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n%s\r\n' \
     "$from" "$ALERT_EMAIL" "$(printf '%s' "$subject" | base64 -w0)" "$body" |
-    curl -sS -m 30 --ssl-reqd --url "$proto://$SMTP_HOST:${SMTP_PORT:-587}" \
-      --user "$SMTP_USER:$SMTP_PASS" --mail-from "$addr" --mail-rcpt "$ALERT_EMAIL" --upload-file - >/dev/null
+    curl -sS -f -m 30 --ssl-reqd --url "$proto://$SMTP_HOST:${SMTP_PORT:-587}" \
+      -K <(printf 'user = %s\n' "$(curl_quote "${SMTP_USER:-}:${SMTP_PASS:-}")") \
+      --mail-from "$addr" --mail-rcpt "$ALERT_EMAIL" --upload-file - >/dev/null
 }
 
+# 0: sent, or there is nowhere to send it; 1: it did not go out (retry next run).
 send_mail() {
   [ -n "${ALERT_EMAIL:-}" ] || return 0
   if [ -n "${RESEND_API_KEY:-}" ]; then
-    send_resend "$1" "$2" || log "monitor: the alert e-mail was not sent (Resend)"
+    send_resend "$1" "$2" || { log "monitor: the alert e-mail was not sent (Resend), trying again next run"; return 1; }
   elif [ -n "${SMTP_HOST:-}" ]; then
-    send_smtp "$1" "$2" || log "monitor: the alert e-mail was not sent (SMTP)"
+    send_smtp "$1" "$2" || { log "monitor: the alert e-mail was not sent (SMTP), trying again next run"; return 1; }
   fi
+  return 0
 }
-if [ "$now" != "$was" ]; then
-  if [ "$now" = fail ]; then
-    send_mail "zvena: outage" "$(printf '%s\n' "${problems[@]}")"
-  else
-    send_mail "zvena: back to normal" "All checks passed."
-  fi
+sent=0
+if [ "$now" = "$was" ]; then
+  sent=1
+elif [ "$now" = fail ]; then
+  send_mail "zvena: outage" "$(printf '%s\n' "${problems[@]}")" && sent=1
+else
+  send_mail "zvena: back to normal" "All checks passed." && sent=1
 fi
+# The state moves on only once its alert went out.
+[ "$sent" = 1 ] && echo "$now" > "$state_dir/monitor.state"
 [ "$now" = ok ]

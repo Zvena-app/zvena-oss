@@ -38,7 +38,8 @@ export function record(ctx: Ctx, issueId: string, kind: string, from: unknown, t
   sql("INSERT INTO pj_activity (ws_id, issue_id, actor_id, kind, from_value, to_value, created_at, via) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
     ctx.wsId,
     issueId,
-    ctx.userId,
+    // No person: zvena's own upkeep (a cycle that ended rolls its issues over).
+    ctx.userId || null,
     kind,
     from === undefined ? null : JSON.stringify(from),
     to === undefined ? null : JSON.stringify(to),

@@ -78,6 +78,12 @@ export class NotesSync {
     if (target) {
       const key = target.key;
       this.ws = target.ws;
+      // Another account's or workspace's copy (or none yet) is replaced and pulled
+      // from the start: those reads go out now, alongside the local reset.
+      if (owner !== key) {
+        this.earlyPull = this.get(`/api/notes/sync?ws=${encodeURIComponent(target.ws)}&since=0`);
+        this.earlyFavorites = this.get(`/api/notes/favorites?ws=${encodeURIComponent(target.ws)}`);
+      }
       // A guest's documents never go into a shared workspace (an invite link
       // opens one first): they wait aside for the personal one instead of
       // being cleared with the store.
@@ -96,8 +102,8 @@ export class NotesSync {
       const live = pulse();
       this.leavePulse = live ? [live.on("notes", () => this.pullSoon()), live.on("hello", () => this.pullSoon()), live.join(target.ws)] : [];
       this.store.onFavorite = (id, on) => this.sendFavorite(id, on);
-      await this.loadFavorites();
-      await this.pull();
+      // Favorites and the pull are independent: one round trip, not two.
+      await Promise.all([this.loadFavorites(), this.pull()]);
       await this.push();
       this.pullTimer = setInterval(() => {
         if (!live.live() || Date.now() - this.lastPull > SAFETY_PULL) void this.pull();
@@ -293,12 +299,25 @@ export class NotesSync {
     }
   }
 
+  /** Reads started before the store was ready for them (start): the first pull's page and the favorites. */
+  private earlyPull: Promise<Response> | null = null;
+  private earlyFavorites: Promise<Response> | null = null;
+
+  private get(url: string): Promise<Response> {
+    const p = fetch(url, { credentials: "same-origin", cache: "no-store" });
+    // Read (or dropped) later; a failure then is handled where it is read.
+    p.catch(() => {});
+    return p;
+  }
+
   /** The person's own favorites in this workspace (stars set offline are sent after). */
   private favQueue = new Map<string, boolean>();
 
   private async loadFavorites(): Promise<void> {
     try {
-      const r = await fetch(`/api/notes/favorites?ws=${encodeURIComponent(this.ws)}`, { credentials: "same-origin", cache: "no-store" });
+      const pre = this.earlyFavorites;
+      this.earlyFavorites = null;
+      const r = await (pre ?? fetch(`/api/notes/favorites?ws=${encodeURIComponent(this.ws)}`, { credentials: "same-origin", cache: "no-store" }));
       if (!r.ok) return;
       const j = (await r.json()) as { ids?: string[] };
       const ids = new Set(j.ids ?? []);
@@ -396,7 +415,10 @@ export class NotesSync {
     this.lastPull = Date.now();
     try {
       for (let page = 0; page < 200; page++) {
-        const res = await fetch(`/api/notes/sync?ws=${encodeURIComponent(this.ws)}&since=${this.store.meta.cursor}`, { credentials: "same-origin", cache: "no-store" });
+        // The first pull of a replaced store may already be on its way (start).
+        const pre = page === 0 && this.store.meta.cursor === 0 ? this.earlyPull : null;
+        this.earlyPull = null;
+        const res = await (pre ?? fetch(`/api/notes/sync?ws=${encodeURIComponent(this.ws)}&since=${this.store.meta.cursor}`, { credentials: "same-origin", cache: "no-store" }));
         if (res.status === 401 || res.status === 403) {
           this.stop();
           this.set({ user: null });

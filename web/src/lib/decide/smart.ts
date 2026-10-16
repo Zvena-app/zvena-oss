@@ -1,27 +1,29 @@
-// Jev (TypeSafe AI's "System One" decision model): typed questions about a
-// small piece of state, answered with calibrated probabilities instead of
-// text. Server-only; the browser never talks to it (CSP connect-src 'self').
+// The optional decision model (an RLHF architecture and model) behind smart
+// suggestions and automations: typed questions about a small piece of state,
+// answered with calibrated probabilities instead of text. Server-only; the
+// browser never talks to it (CSP connect-src 'self').
 //
-//   POST https://api.typesafe.ai/v1/systemone   Authorization: Bearer TYPESAFE_API_KEY
-//   { model, state, questions: { <id>: noul | choice | score } }
+//   POST $ZVENA_AI_URL   Authorization: Bearer $ZVENA_AI_KEY
+//   { model?, state, questions: { <id>: noul | choice | score } }
 //   → { model, answers: { <id>: … }, usage }
 //
-// Works wherever TYPESAFE_API_KEY is set, in every workspace whose owner has not
-// turned it off (engine.ts settingsOf). Every call names its workspace and that
-// switch is checked here, before the request and again when the answer arrives,
-// so no caller can send a workspace's text while Jev is off there. Without a
-// registered switch (setWorkspaceGate) nothing is sent at all. Built for speed and for failing safe:
-// a time budget (default 1.5 s; Jev answers in 70–500 ms), one retry on 429/529
-// while the budget lasts, a short cache of identical questions, and a breaker
-// that stops calling for a minute after repeated failures. Every failure
-// returns null and the caller carries on without a decision; nothing
-// waits on Jev or breaks because of it.
+// Off unless both ZVENA_AI_URL and ZVENA_AI_KEY are set (no endpoint is built
+// in). Then it works in every workspace whose owner has not turned it off
+// (engine.ts settingsOf). Every call names its workspace and that switch is
+// checked here, before the request and again when the answer arrives, so no
+// caller can send a workspace's text while it is off there. Without a
+// registered switch (setWorkspaceGate) nothing is sent at all. Built for speed
+// and for failing safe: a time budget (default 1.5 s; answers take 70–500 ms),
+// one retry on 429/529 while the budget lasts, a short cache of identical
+// questions, and a breaker that stops calling for a minute after repeated
+// failures. Every failure returns null and the caller carries on without a
+// decision; nothing waits on the model or breaks because of it.
 //
 // No SDK on purpose: one fetch, no dependency to audit or update.
 
 import { createHash } from "node:crypto";
 
-/** Instructions and criteria may be text or structured (TypeSafe "advanced primitives"). */
+/** Instructions and criteria may be text or structured. */
 export type Instr = string | Record<string, unknown> | unknown[] | null;
 
 export type NoulQ = { type: "noul"; instructions: Instr; criteria?: { true?: Instr; false?: Instr } };
@@ -42,9 +44,9 @@ export const choice = <O extends string>(instructions: Instr, criteria: Record<O
 /** A level on an ordered scale, low to high (2–10 levels). */
 export const score = (instructions: Instr, criteria: Instr[]): ScoreQ => ({ type: "score", instructions, criteria });
 
-export interface JevResult<Qs extends Record<string, Question>> {
+export interface SmartResult<Qs extends Record<string, Question>> {
   answers: { [K in keyof Qs]: AnswerOf<Qs[K]> };
-  /** The versioned model that answered (jev-1.13.0…). */
+  /** The versioned model that answered (server-side only; never sent to a browser). */
   model: string;
   usage: { input_tokens: number; output_tokens: number };
   ms: number;
@@ -58,50 +60,51 @@ export interface AskOptions {
   cacheMs?: number;
 }
 
-const ENDPOINT = "https://api.typesafe.ai/v1/systemone";
 const CACHE_MAX = 500;
 
-interface JevState {
-  cache: Map<string, { at: number; value: Omit<JevResult<Record<string, Question>>, "ms" | "cached"> }>;
+interface SmartState {
+  cache: Map<string, { at: number; value: Omit<SmartResult<Record<string, Question>>, "ms" | "cached"> }>;
   failures: number;
   openUntil: number;
   calls: number;
   errors: number;
   totalMs: number;
 }
-const KEY = Symbol.for("zvena.jev");
-const g = globalThis as unknown as Record<symbol, JevState | undefined>;
-const st: JevState = (g[KEY] ??= { cache: new Map(), failures: 0, openUntil: 0, calls: 0, errors: 0, totalMs: 0 });
+const KEY = Symbol.for("zvena.decide.smart");
+const g = globalThis as unknown as Record<symbol, SmartState | undefined>;
+const st: SmartState = (g[KEY] ??= { cache: new Map(), failures: 0, openUntil: 0, calls: 0, errors: 0, totalMs: 0 });
 
 function settings() {
   return {
-    key: process.env.TYPESAFE_API_KEY?.trim() || "",
-    model: process.env.ZVENA_JEV_MODEL?.trim() || "jev-latest",
-    timeoutMs: Number(process.env.ZVENA_JEV_TIMEOUT_MS) || 1500,
-    endpoint: process.env.ZVENA_JEV_URL?.trim() || ENDPOINT,
+    // Both the endpoint and the key, or nothing is ever sent.
+    key: (process.env.ZVENA_AI_URL?.trim() && process.env.ZVENA_AI_KEY?.trim()) || "",
+    // Unset: the request names no model and the provider's default answers.
+    model: process.env.ZVENA_AI_MODEL?.trim() || "",
+    timeoutMs: Number(process.env.ZVENA_AI_TIMEOUT_MS) || 1500,
+    endpoint: process.env.ZVENA_AI_URL?.trim() || "",
   };
 }
 
-/** Whether Jev can be asked at all (a key is configured and the breaker is closed). */
-export function jevAvailable(now = Date.now()): boolean {
+/** Whether the model can be asked at all (it is configured and the breaker is closed). */
+export function smartAvailable(now = Date.now()): boolean {
   return Boolean(settings().key) && now >= st.openUntil;
 }
 
-export function jevConfigured(): boolean {
+export function smartConfigured(): boolean {
   return Boolean(settings().key);
 }
 
 /** Counters for /status and the decisions page. */
-export function jevStats() {
-  return { configured: jevConfigured(), calls: st.calls, errors: st.errors, avgMs: st.calls ? Math.round(st.totalMs / st.calls) : 0, breakerOpen: Date.now() < st.openUntil };
+export function smartStats() {
+  return { configured: smartConfigured(), calls: st.calls, errors: st.errors, avgMs: st.calls ? Math.round(st.totalMs / st.calls) : 0, breakerOpen: Date.now() < st.openUntil };
 }
 
-/** Jev's state in a workspace whose owner has not chosen: on unless ZVENA_JEV_DEFAULT=off (opt-in). */
-export function jevDefault(): boolean {
-  return process.env.ZVENA_JEV_DEFAULT?.trim().toLowerCase() !== "off";
+/** The switch in a workspace whose owner has not chosen: on unless ZVENA_AI_DEFAULT=off (opt-in). */
+export function smartDefault(): boolean {
+  return process.env.ZVENA_AI_DEFAULT?.trim().toLowerCase() !== "off";
 }
 
-/** Whether a workspace allows Jev; engine.ts registers it (its owner's switch). Absent: Jev is off everywhere. */
+/** Whether a workspace allows the model; engine.ts registers it (its owner's switch). Absent: off everywhere. */
 let workspaceGate: ((ws: string) => boolean) | null = null;
 export function setWorkspaceGate(fn: ((ws: string) => boolean) | null): void {
   workspaceGate = fn;
@@ -117,21 +120,68 @@ function allowed(ws: string): boolean {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// The spending budget: every question costs money, so the server asks at most
+// ZVENA_AI_DAILY_QUESTIONS questions a day in all and ZVENA_AI_WS_DAILY_QUESTIONS
+// for one workspace (UTC days), and never sends a state bigger than
+// ZVENA_AI_MAX_BYTES. Over budget, ask() answers null like any other failure:
+// callers already carry on without a decision. Answers from the cache are free.
+interface Budget {
+  day: string;
+  total: number;
+  byWs: Map<string, number>;
+}
+const BUDGET_KEY = Symbol.for("zvena.smart.budget");
+const gb = globalThis as unknown as Record<symbol, Budget | undefined>;
+const budget: Budget = (gb[BUDGET_KEY] ??= { day: "", total: 0, byWs: new Map() });
+
+function limits() {
+  const n = (name: string, def: number) => {
+    const v = Number(process.env[name]);
+    return Number.isFinite(v) && v >= 0 && process.env[name]?.trim() ? Math.floor(v) : def;
+  };
+  return { total: n("ZVENA_AI_DAILY_QUESTIONS", 20_000), perWs: n("ZVENA_AI_WS_DAILY_QUESTIONS", 1_000), maxBytes: n("ZVENA_AI_MAX_BYTES", 32_768) };
+}
+
+/** Takes `n` questions from today's budget for `ws`; false (and nothing taken) when it would go over. */
+function spend(ws: string, n: number, now: number): boolean {
+  const day = new Date(now).toISOString().slice(0, 10);
+  if (budget.day !== day) {
+    budget.day = day;
+    budget.total = 0;
+    budget.byWs.clear();
+  }
+  const lim = limits();
+  const used = budget.byWs.get(ws) ?? 0;
+  if (budget.total + n > lim.total || used + n > lim.perWs) return false;
+  budget.total += n;
+  budget.byWs.set(ws, used + n);
+  return true;
+}
+
+/** Today's spending, for /status and tests. */
+export function smartBudget(now = Date.now()) {
+  const day = new Date(now).toISOString().slice(0, 10);
+  const lim = limits();
+  return { day, used: budget.day === day ? budget.total : 0, limit: lim.total, perWorkspace: lim.perWs };
+}
+
 /**
- * Asks Jev the questions about `state`, on behalf of workspace `ws`. Returns
- * null when Jev is off (no key, or the workspace's owner turned it off), slow,
+ * Asks the model the questions about `state`, on behalf of workspace `ws`. Returns
+ * null when it is off (not configured, or the workspace's owner turned it off), slow,
  * down, or the answer is malformed; the caller decides what that means
  * (usually: no automatic action).
  */
-export async function ask<Qs extends Record<string, Question>>(ws: string, state: unknown, questions: Qs, opts: AskOptions = {}): Promise<JevResult<Qs> | null> {
+export async function ask<Qs extends Record<string, Question>>(ws: string, state: unknown, questions: Qs, opts: AskOptions = {}): Promise<SmartResult<Qs> | null> {
   const cfg = settings();
   const t0 = Date.now();
   if (!cfg.key || t0 < st.openUntil || !allowed(ws)) return null;
-  const body = JSON.stringify({ model: cfg.model, state, questions });
+  const body = JSON.stringify({ ...(cfg.model ? { model: cfg.model } : {}), state, questions });
   const cacheMs = opts.cacheMs ?? 10 * 60_000;
   const hash = createHash("sha256").update(body).digest("base64url");
   const hit = cacheMs > 0 ? st.cache.get(hash) : undefined;
-  if (hit && t0 - hit.at < cacheMs) return { ...(hit.value as Omit<JevResult<Qs>, "ms" | "cached">), ms: 0, cached: true };
+  if (hit && t0 - hit.at < cacheMs) return { ...(hit.value as Omit<SmartResult<Qs>, "ms" | "cached">), ms: 0, cached: true };
+  if (Buffer.byteLength(body) > limits().maxBytes) return null;
+  if (!spend(ws, Math.max(1, Object.keys(questions).length), t0)) return null;
 
   const deadline = t0 + (opts.timeoutMs ?? cfg.timeoutMs);
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -154,8 +204,8 @@ export async function ask<Qs extends Record<string, Question>>(ws: string, state
       const answers = validAnswers(out.answers, questions);
       if (!answers) break;
       const value = {
-        answers: answers as JevResult<Qs>["answers"],
-        model: typeof out.model === "string" ? out.model.slice(0, 60) : cfg.model,
+        answers: answers as SmartResult<Qs>["answers"],
+        model: typeof out.model === "string" ? out.model.slice(0, 60) : cfg.model || "default",
         usage: validUsage(out.usage),
       };
       const ms = Date.now() - t0;
@@ -166,7 +216,7 @@ export async function ask<Qs extends Record<string, Question>>(ws: string, state
       if (!allowed(ws)) return null;
       if (cacheMs > 0) {
         if (st.cache.size >= CACHE_MAX) st.cache.delete(st.cache.keys().next().value as string);
-        st.cache.set(hash, { at: Date.now(), value: value as Omit<JevResult<Record<string, Question>>, "ms" | "cached"> });
+        st.cache.set(hash, { at: Date.now(), value: value as Omit<SmartResult<Record<string, Question>>, "ms" | "cached"> });
       }
       return { ...value, ms, cached: false };
     } catch {
@@ -236,11 +286,14 @@ function validUsage(u: unknown): { input_tokens: number; output_tokens: number }
 }
 
 /** Test hook: forget the cache, the counters and the breaker. */
-export function resetJev(): void {
+export function resetSmart(): void {
   st.cache.clear();
   st.failures = 0;
   st.openUntil = 0;
   st.calls = 0;
   st.errors = 0;
   st.totalMs = 0;
+  budget.day = "";
+  budget.total = 0;
+  budget.byWs.clear();
 }

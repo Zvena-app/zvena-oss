@@ -8,7 +8,8 @@ import { sql, tx } from "../store";
 import { inlineType, NOTE_FILE_TYPES } from "../notes/files";
 import { bad, bump, emit, forbidden, needs, notFound, PjError, pid, str, type Ctx } from "./core";
 import { commentAdded, commentEdited, notify, record, subscribe } from "./effects";
-import { aliasesOf, fieldValues, getIssueBrief, issueRefs, issueState, subIssues } from "./issues";
+import { aliasesOf, fieldValues, getIssueBrief, issueRefs, issueState, subIssues, updateIssue } from "./issues";
+import { duplicateStatusOf } from "./teams";
 import type { Activity, Attachment, Comment, IssueDetail, Relation, RelationType } from "./types";
 
 // --- Detail --------------------------------------------------------------------
@@ -55,7 +56,7 @@ export function activityOf(ctx: Ctx, issueId: string, limit = 500): Activity[] {
     .map((r) => ({
       id: Number(r.id),
       actorId: r.actor_id,
-      ...(r.via === "jev" ? { via: "jev" as const } : {}),
+      ...(r.via === "auto" ? { via: "auto" as const } : {}),
       kind: r.kind,
       from: r.from_value ? (JSON.parse(r.from_value) as unknown) : null,
       to: r.to_value ? (JSON.parse(r.to_value) as unknown) : null,
@@ -278,6 +279,13 @@ export function addRelation(ctx: Ctx, issueId: string, input: { type?: unknown; 
       if (blocked.assignee_id) notify(ctx, blocked.assignee_id, "blocked", { issueId: blocked.id, teamId: blocked.team_id });
     }
     bump(ctx.wsId);
+    // Marking as a duplicate closes the duplicate (Linear): its team's Duplicate status, unless it is closed already.
+    if (stored === "duplicate") {
+      const dupe = from === a.id ? a : b;
+      const closed = (sql("SELECT category FROM pj_statuses WHERE id = ?").get(dupe.status_id) as { category: string } | undefined)?.category;
+      const target = closed === "completed" || closed === "canceled" ? null : duplicateStatusOf(dupe.team_id);
+      if (target && target !== dupe.status_id) updateIssue(ctx, dupe.id, { statusId: target });
+    }
   });
   emit(ctx, "issue", a.id);
   emit(ctx, "issue", b.id);

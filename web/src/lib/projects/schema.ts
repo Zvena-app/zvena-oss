@@ -395,8 +395,8 @@ CREATE INDEX IF NOT EXISTS pj_notifications_project ON pj_notifications(project_
 CREATE INDEX IF NOT EXISTS pj_issues_milestone ON pj_issues(milestone_id);
 `;
 
-// V3: Jev's autopilot. History rows say who acted through whom (`via`
-// 'jev': Jev changed it on the person's behalf); suggestions Jev made on an
+// V3: the autopilot. History rows say who acted through whom (`via`
+// 'auto': changed automatically on the person's behalf); suggestions made on an
 // issue, open or resolved, with the value before an automatic change (Undo).
 const V3 = `
 ALTER TABLE pj_activity ADD COLUMN via TEXT;
@@ -405,7 +405,7 @@ CREATE TABLE IF NOT EXISTS pj_suggestions (
   ws_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
   issue_id TEXT NOT NULL REFERENCES pj_issues(id) ON DELETE CASCADE,
   kind TEXT NOT NULL,                      -- priority | label | project | assignee | duplicate | done
-  value TEXT NOT NULL,                     -- JSON: what Jev proposes
+  value TEXT NOT NULL,                     -- JSON: what is proposed
   prev TEXT,                               -- JSON: the value before an automatic change
   confidence REAL NOT NULL,
   model TEXT NOT NULL,
@@ -450,7 +450,18 @@ CREATE TABLE IF NOT EXISTS pj_doc_conversions (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [V1, V2, V3, V4, V5, V6];
+// V7: Linear's "Duplicate" status. An issue marked as a duplicate of another
+// moves to its team's duplicate status (a canceled one). Teams made with the
+// seeded workflow have two canceled statuses, Canceled and Duplicate (the
+// last): that one is chosen; a team with one canceled status uses it for both.
+const V7 = `
+ALTER TABLE pj_teams ADD COLUMN duplicate_status_id TEXT REFERENCES pj_statuses(id) ON DELETE SET NULL;
+UPDATE pj_teams SET duplicate_status_id = (
+  SELECT s.id FROM pj_statuses s WHERE s.team_id = pj_teams.id AND s.category = 'canceled' ORDER BY s.position DESC LIMIT 1
+) WHERE (SELECT COUNT(*) FROM pj_statuses s WHERE s.team_id = pj_teams.id AND s.category = 'canceled') >= 2;
+`;
+
+const MIGRATIONS: readonly string[] = [V1, V2, V3, V4, V5, V6, V7];
 
 /** Brings the Projects tables up to date (called once when the store opens). */
 export function migrateProjects(d: DatabaseSync): void {

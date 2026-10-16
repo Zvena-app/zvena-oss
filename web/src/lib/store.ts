@@ -10,6 +10,7 @@ import type { DatabaseSync as DatabaseSyncT, StatementSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { migrateProjects } from "./projects/schema";
+import { renameLegacyValues } from "./legacy-migrate";
 
 // getBuiltinModule keeps the bundler away from a builtin it may not know.
 const { DatabaseSync } = process.getBuiltinModule("node:sqlite") as typeof import("node:sqlite");
@@ -200,10 +201,23 @@ CREATE TABLE IF NOT EXISTS guests (
   last_seen_at INTEGER NOT NULL,
   warned_at INTEGER
 );
--- Reports about public pages, forms and designs (the "Report" button).
+-- Guest uploads (no account) per day, for the server-wide daily cap: bytes
+-- and time only, no owner or address.
+CREATE TABLE IF NOT EXISTS guest_uploads (
+  at INTEGER NOT NULL,
+  bytes INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS guest_uploads_at ON guest_uploads(at);
+-- Uploaded files a moderator took down (by content hash): never served or stored again.
+CREATE TABLE IF NOT EXISTS removed_files (
+  hash TEXT PRIMARY KEY,
+  removed_at INTEGER NOT NULL,
+  removed_by TEXT
+);
+-- Reports about public pages, forms, designs and uploaded files (the "Report" button).
 CREATE TABLE IF NOT EXISTS reports (
   id TEXT PRIMARY KEY,
-  kind TEXT NOT NULL CHECK (kind IN ('page', 'form', 'design')),
+  kind TEXT NOT NULL CHECK (kind IN ('page', 'form', 'design', 'file')),
   target TEXT NOT NULL,
   reason TEXT NOT NULL,
   details TEXT NOT NULL DEFAULT '',
@@ -434,6 +448,22 @@ function migrate(d: DatabaseSyncT): void {
   // The interface language rides with a Design sign-in code (older code rows simply have none).
   const oidc = new Set((d.prepare("PRAGMA table_info(oidc_codes)").all() as { name: string }[]).map((c) => c.name));
   if (!oidc.has("locale")) d.exec("ALTER TABLE oidc_codes ADD COLUMN locale TEXT");
+  // Reports may name an uploaded file: the kind CHECK is widened by rebuilding the table once.
+  const reports = d.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'reports'").get() as { sql: string } | undefined;
+  if (reports && !reports.sql.includes("'file'")) {
+    d.exec("BEGIN IMMEDIATE");
+    try {
+      d.exec("ALTER TABLE reports RENAME TO reports_old");
+      d.exec(reports.sql.replace("'design')", "'design', 'file')"));
+      d.exec("INSERT INTO reports SELECT * FROM reports_old");
+      d.exec("DROP TABLE reports_old");
+      d.exec("CREATE INDEX IF NOT EXISTS reports_status ON reports(status, created_at)");
+      d.exec("COMMIT");
+    } catch (e) {
+      d.exec("ROLLBACK");
+      throw e;
+    }
+  }
 }
 
 let db: DatabaseSyncT | null = null;
@@ -458,6 +488,7 @@ export function store(): DatabaseSyncT {
   d.exec(SCHEMA);
   migrate(d);
   migrateProjects(d);
+  renameLegacyValues(d);
   db = d;
   openedPath = path;
   return d;

@@ -32,14 +32,14 @@ export interface Subject {
   rowId?: string;
   /** The issue that fired (for "$subject" in actions). */
   issueId?: string;
-  /** Facts that name or reach a person (assignee, person, e-mail, phone columns): rules may compare them, Jev never gets them. */
+  /** Facts that name or reach a person (assignee, person, e-mail, phone columns): rules may compare them, the model never gets them. */
   personal?: string[];
 }
 
 /** Column types whose values name or reach a person. */
 const PERSONAL_TYPES = new Set(["person", "created_by", "last_edited_by", "email", "phone"]);
 
-/** The names of a database's columns that name or reach a person (never sent to Jev). */
+/** The names of a database's columns that name or reach a person (never sent to the model). */
 export function personalColumns(props: DbProperty[]): string[] {
   return props.filter((p) => PERSONAL_TYPES.has(p.type)).map((p) => p.name);
 }
@@ -63,7 +63,7 @@ export function subjectsFor(ws: string, when: When, e: PulseEvent, ruleId?: stri
     const db = loadNote(ws, when.db);
     if (!db?.db) return [];
     // Columns hidden from the author (column permissions) are no facts of theirs: not in a
-    // title, not in a comparison, never sent to Jev.
+    // title, not in a comparison, never sent to the model.
     const hidden = deniedColumns(db.db, { id: reader.userId, groups: reader.groups, full: reader.level(when.db) === "full" });
     const props = db.db.properties.filter((p) => hidden.get(p.id) !== "view");
     const personal = personalColumns(props);
@@ -175,9 +175,9 @@ const CATEGORIES: readonly StatusCategory[] = ["backlog", "unstarted", "started"
 
 function issueAction(ws: string, a: Extract<Action, { do: "issue.done" | "issue.set" }>, subject: Subject, by: string): boolean {
   const id = a.issue === "$subject" ? subject.issueId : a.issue;
-  // The issue's history says Jev did it (with the author's rights), as for the autopilot.
+  // The issue's history says it was done automatically (with the author's rights), as for the autopilot.
   const base = id ? ruleCtx(ws, by) : null;
-  const ctx: Ctx | null = base ? { ...base, via: "jev" } : null;
+  const ctx: Ctx | null = base ? { ...base, via: "auto" } : null;
   if (!id || !ctx) return false;
   let issue;
   try {

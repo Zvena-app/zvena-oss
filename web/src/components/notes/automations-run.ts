@@ -51,8 +51,8 @@ export function runAutomations(store: NotesStore, onRun?: (name: string) => void
     const db = store.get(next.parentId);
     const schema = db?.kind === "database" ? db.db : undefined;
     if (!schema?.automations?.length) return;
-    // "Only if Jev agrees" needs the server (and an account): a local workspace skips those.
-    const todo = schema.automations.filter((a) => !a.jev && fires(a, prev, next, schema));
+    // "Run only if …" needs the server (and an account): a local workspace skips those.
+    const todo = schema.automations.filter((a) => !a.onlyIf && fires(a, prev, next, schema));
     if (!todo.length) return;
     running = true;
     try {

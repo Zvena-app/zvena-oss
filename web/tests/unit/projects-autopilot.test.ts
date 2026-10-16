@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { signInWith } from "@/lib/auth";
-import { setJev } from "@/lib/decide/engine";
-import { resetJev } from "@/lib/decide/jev";
+import { setSmart } from "@/lib/decide/engine";
+import { resetSmart } from "@/lib/decide/smart";
 import { sanitizeNote } from "@/lib/notes/model";
 import { pushNotes } from "@/lib/notes/server-store";
 import type { Note } from "@/lib/notes/types";
@@ -16,7 +16,7 @@ import { createIssue, getIssueBrief, updateIssue } from "@/lib/projects/issues";
 import { createProject } from "@/lib/projects/planning";
 import { addComment, issueDetail, relationsOf } from "@/lib/projects/social";
 import { startProjects } from "@/lib/projects/start";
-import { createTeam, listLabels, listStatuses, setTeamMember } from "@/lib/projects/teams";
+import { createTeam, getTeam, listLabels, listStatuses, setTeamMember } from "@/lib/projects/teams";
 import { inbox } from "@/lib/projects/workspace";
 import { acceptInvite, createInvite, createWorkspace } from "@/lib/workspaces";
 
@@ -59,7 +59,7 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const b = JSON.parse(raw) as Body;
     bodies.push(b);
     res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ model: "jev-test", answers: reply(b), usage: { input_tokens: 1, output_tokens: 1 } }));
+    res.end(JSON.stringify({ model: "model-test", answers: reply(b), usage: { input_tokens: 1, output_tokens: 1 } }));
   });
 });
 
@@ -70,12 +70,12 @@ const pickA = (q: { criteria?: unknown }, pick: string, p: number) => {
 };
 const keyOf = (q: { criteria?: unknown }, includes: string) => Object.entries(q.criteria as Record<string, string>).find(([, v]) => String(v).includes(includes))?.[0] ?? "none";
 
-test("autopilot: fills empty fields when sure, suggests the rest, marks it Jev, and undo / accept / dismiss work with people's rights", async () => {
+test("autopilot: fills empty fields when sure, suggests the rest, marks it as automatic, and undo / accept / dismiss work with people's rights", async () => {
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
-  Object.assign(process.env, { TYPESAFE_API_KEY: "test-key", ZVENA_JEV_URL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1/systemone`, ZVENA_JEV_TIMEOUT_MS: "800" });
-  resetJev();
+  Object.assign(process.env, { ZVENA_AI_KEY: "test-key", ZVENA_AI_URL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1/systemone`, ZVENA_AI_TIMEOUT_MS: "800" });
+  resetSmart();
   startAutopilot();
-  setJev(ws, true, owner);
+  setSmart(ws, true, owner);
   try {
     const original = createIssue(as(mate), { teamId: team.id, title: "Checkout payment fails for large carts", priority: 2, assigneeId: mate });
     await autopilotIdle();
@@ -92,7 +92,7 @@ test("autopilot: fills empty fields when sure, suggests the rest, marks it Jev, 
     };
     const issue = createIssue(as(owner), { teamId: team.id, title: "Payment fails at checkout for big carts", description: "Customers with 50+ items get **error 500**." });
     await autopilotIdle();
-    assert.equal(bodies.length, 1, "one Jev call per new issue");
+    assert.equal(bodies.length, 1, "one model call per new issue");
     assert.deepEqual(Object.keys(bodies[0].questions).sort(), ["assignee", "duplicate", "label", "priority", "project"]);
     assert.deepEqual(Object.keys(bodies[0].state).sort(), ["description", "title"]);
     assert.ok(!JSON.stringify(bodies[0]).includes(owner) && !JSON.stringify(bodies[0]).includes(mate), "no user ids leave");
@@ -113,7 +113,7 @@ test("autopilot: fills empty fields when sure, suggests the rest, marks it Jev, 
     assert.equal(by("assignee")?.value.userId, mate);
     assert.equal(by("duplicate")?.value.identifier, original.identifier);
     const detail = issueDetail(as(owner), issue.id);
-    assert.ok(detail.activity.some((a) => a.kind === "priority" && a.via === "jev" && a.actorId === owner), "the history says Jev, on the author's behalf");
+    assert.ok(detail.activity.some((a) => a.kind === "priority" && a.via === "auto" && a.actorId === owner), "the history says Automation, on the author's behalf");
     const note = inbox(as(owner), {}).items.find((n) => n.kind === "duplicate");
     assert.equal(note?.data.of, original.identifier, "the author hears about the possible duplicate");
 
@@ -132,8 +132,9 @@ test("autopilot: fills empty fields when sure, suggests the rest, marks it Jev, 
     assert.equal(code(() => resolveSuggestion(as(owner), by("project")!.id, "accept")), "400", "a dismissed suggestion stays dismissed");
     resolveSuggestion(as(owner), by("duplicate")!.id, "accept");
     assert.ok(relationsOf(as(owner), issue.id).some((r) => r.type === "duplicate" && r.issue.id === original.id));
-    const canceled = listStatuses(as(owner)).find((s) => s.teamId === team.id && s.category === "canceled");
-    assert.equal(getIssueBrief(as(owner), issue.id).statusId, canceled?.id, "a duplicate is closed as canceled");
+    const duplicate = listStatuses(as(owner)).find((s) => s.teamId === team.id && s.id === getTeam(as(owner), team.id).duplicateStatusId);
+    assert.ok(duplicate && duplicate.category === "canceled");
+    assert.equal(getIssueBrief(as(owner), issue.id).statusId, duplicate?.id, "a duplicate is closed in the team's Duplicate status");
     assert.equal(suggestionsOf(as(owner), issue.id).filter((s) => s.state === "open").length, 0);
 
     // A comment that says the work is done → a suggestion to close, never an automatic close.
@@ -155,30 +156,30 @@ test("autopilot: fills empty fields when sure, suggests the rest, marks it Jev, 
     await autopilotIdle();
     assert.equal(bodies.length, 0);
 
-    // The first-run examples are left alone; a workspace that turned Jev off is never asked.
+    // The first-run examples are left alone; a workspace that turned it off is never asked.
     const fresh = createWorkspace(owner, "Fresh").id;
     bodies = [];
     startProjects(ctxFor(owner, fresh, "edit"), "en");
     await autopilotIdle();
     assert.equal(bodies.length, 0, "examples are quiet");
-    setJev(ws, false, owner);
+    setSmart(ws, false, owner);
     createIssue(as(owner), { teamId: team.id, title: "Checkout totals are wrong" });
     await autopilotIdle();
     assert.equal(bodies.length, 0, "off means off");
-    setJev(ws, true, owner);
+    setSmart(ws, true, owner);
 
-    // While typing a new issue: similar ones, with Jev's verdict.
+    // While typing a new issue: similar ones, with the model's verdict.
     reply = (b) => ({ same: pickA(b.questions.same, keyOf(b.questions.same, "Checkout payment fails"), 0.9) });
     const sim = await similarIssues(as(owner), { title: "Checkout payment fails with many items" });
-    assert.equal(sim.source, "jev");
+    assert.equal(sim.source, "model");
     assert.equal(sim.issues[0]?.id, original.id);
   } finally {
-    resetJev();
-    delete process.env.TYPESAFE_API_KEY;
+    resetSmart();
+    delete process.env.ZVENA_AI_KEY;
   }
 });
 
-test("goals from a document: lines a person may read become proposed projects and issues; Jev or rules decide; only ticked ones are made", async () => {
+test("goals from a document: lines a person may read become proposed projects and issues; the model or rules decide; only ticked ones are made", async () => {
   const now = Date.now();
   const id = "pjadoc000000000000000000000000q4";
   const line = (type: string, text: string, props: Record<string, unknown> = {}) => ({ id: Math.random().toString(36).slice(2, 10), type, props, content: [{ type: "text", text, styles: {} }], children: [] });
@@ -204,8 +205,8 @@ test("goals from a document: lines a person may read become proposed projects an
   }) as Note;
   pushNotes(ws, [{ id, note }], { by: owner, quotaLeft: Infinity });
 
-  resetJev();
-  delete process.env.TYPESAFE_API_KEY;
+  resetSmart();
+  delete process.env.ZVENA_AI_KEY;
   const rules = await planFromDoc(as(owner), id);
   assert.equal(rules.source, "rules");
   const kinds = rules.lines.map((l) => `${l.kind}:${l.text}`);
@@ -215,13 +216,13 @@ test("goals from a document: lines a person may read become proposed projects an
   assert.equal(code(() => void planFromDoc(ctxFor(stranger, createWorkspace(stranger, "S2").id, "read"), id).catch(() => undefined)), "ok");
   await assert.rejects(() => planFromDoc(ctxFor(stranger, createWorkspace(stranger, "S3").id, "read"), id), (e: unknown) => e instanceof PjError && e.status === 404);
 
-  // With Jev: its verdict per line.
-  Object.assign(process.env, { TYPESAFE_API_KEY: "test-key" });
-  setJev(ws, true, owner);
+  // With the model: its verdict per line.
+  Object.assign(process.env, { ZVENA_AI_KEY: "test-key" });
+  setSmart(ws, true, owner);
   bodies = [];
   reply = (b) => !Array.isArray(b.state.lines) ? {} : Object.fromEntries(Object.entries(b.questions).map(([k, q]) => [k, pickA(q, String((b.state.lines as string[])[Number(k.slice(1))]).startsWith("We met") ? "none" : String((b.state.lines as string[])[Number(k.slice(1))]).startsWith("Reach") ? "goal" : "task", 0.8)]));
   const plan = await planFromDoc(as(owner), id);
-  assert.equal(plan.source, "jev");
+  assert.equal(plan.source, "model");
   assert.equal(plan.lines.find((l) => l.text === "We met on Monday.")?.kind, "none");
   assert.deepEqual(Object.keys(bodies[0].state).sort(), ["document", "lines"]);
 
@@ -240,12 +241,12 @@ test("goals from a document: lines a person may read become proposed projects an
   const again = await planFromDoc(as(owner), id);
   assert.ok(again.lines.find((l) => l.text === "Ship Apple Pay")?.exists, "a second run marks what already exists");
   assert.equal(code(() => createFromDoc(as(viewer, "read"), { teamId: team.id, goals: [{ text: "x" }] })), "403");
-  resetJev();
-  delete process.env.TYPESAFE_API_KEY;
+  resetSmart();
+  delete process.env.ZVENA_AI_KEY;
   await new Promise<void>((r) => server.close(() => r()));
 });
 
-test("Jev's suggestions are kept 90 days", async () => {
+test("autopilot suggestions are kept 90 days", async () => {
   const { pruneSuggestions } = await import("@/lib/projects/autopilot");
   const { sql } = await import("@/lib/store");
   const n = Number((sql("SELECT COUNT(*) AS n FROM pj_suggestions").get() as { n: number }).n);

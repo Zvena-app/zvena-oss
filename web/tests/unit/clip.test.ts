@@ -361,3 +361,37 @@ test("clipper routes: authorize needs our signed-in page; token exchange; me and
   assert.equal(del.status, 200);
   assert.equal((await meRoute.GET(get("/api/clipper/me"))).status, 401);
 });
+
+test("clip: downloads stay within the clipping person's daily budget and the quota left", async () => {
+  const { bytesLeft, spendBytes } = await import("@/lib/byte-budget");
+  const t = team();
+  const asked: number[] = [];
+  const deps: ClipDeps = {
+    async fetchImage(_url, maxBytes) {
+      asked.push(maxBytes);
+      return { body: PNG, contentType: "image/png" };
+    },
+    async storeImage() {
+      return `/api/notes/file/${randomBytes(20).toString("hex")}.png`;
+    },
+  };
+  const html = `<p>x</p><img src="https://cdn.example/a.png"><img src="https://cdn.example/b.png">`;
+  const r = await saveClip(req({ ws: t.ws, target: { type: "private" }, html }), { id: t.anna, name: "Anna" }, deps);
+  assert.ok(r.ok);
+  assert.equal(asked.length, 2);
+  assert.ok(asked.every((m) => m <= CLIP_LIMITS.imageBytes));
+  // What was not downloaded of a reservation is given back: only the real bytes count.
+  assert.equal(500 * 1024 * 1024 - bytesLeft("clip", t.anna, 500 * 1024 * 1024), 2 * PNG.byteLength);
+  // The day's budget used up: nothing is fetched, the pictures stay links.
+  spendBytes("clip", t.anna, 600 * 1024 * 1024);
+  asked.length = 0;
+  const r2 = await saveClip(req({ ws: t.ws, target: { type: "private" }, html }), { id: t.anna, name: "Anna" }, deps);
+  assert.ok(r2.ok);
+  assert.equal(asked.length, 0);
+  const imgs = ((stored(t.ws, r2.ok ? r2.id : "") as Note).content as { type: string; props: { url: string } }[]).filter((b) => b.type === "image").map((b) => b.props.url);
+  assert.deepEqual(imgs, ["https://cdn.example/a.png", "https://cdn.example/b.png"]);
+  // Someone else still clips with pictures.
+  const r3 = await saveClip(req({ ws: t.ws, target: { type: "private" }, html }), { id: t.olga, name: "Olga" }, deps);
+  assert.ok(r3.ok);
+  assert.equal(asked.length, 2);
+});

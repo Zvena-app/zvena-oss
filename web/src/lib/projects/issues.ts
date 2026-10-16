@@ -8,7 +8,7 @@ import { bad, bump, emit, isMember, needs, notFound, PjError, between, pid, str,
 import { issueChanged, issueCreated, record, notify, triageArrived, type IssueState } from "./effects";
 import { announceGoals, goalSnapshot, mergeSnapshots, settleGoals, type GoalEvent } from "./goals";
 import { parseIdentifier } from "./ident";
-import { cleanFieldValue, defaultStatus, fieldRow, statusRow, validLabels } from "./teams";
+import { cleanFieldValue, defaultStatus, fieldRow, statusOfCategory, statusRow, validLabels } from "./teams";
 import {
   DEFAULT_DISPLAY,
   ESTIMATE_SCALES,
@@ -26,6 +26,7 @@ import {
   type IssueRef,
   type Ordering,
   type StatusCategory,
+  statusTimes,
 } from "./types";
 
 // --- Reading -------------------------------------------------------------------
@@ -550,14 +551,6 @@ function checkDue(v: unknown): string | null {
   return v;
 }
 
-function statusTimes(category: StatusCategory, now: number): { started_at?: number; completed_at: number | null; canceled_at: number | null } {
-  return {
-    ...(category === "started" ? { started_at: now } : {}),
-    completed_at: category === "completed" ? now : null,
-    canceled_at: category === "canceled" ? now : null,
-  };
-}
-
 function setFieldValues(ctx: Ctx, issueId: string, teamId: string, raw: unknown): void {
   if (raw === undefined) return;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw bad("bad fields");
@@ -627,8 +620,8 @@ export function createIssue(ctx: Ctx, input: IssueInput): Issue {
       now,
       now,
       times.started_at ?? null,
-      times.completed_at,
-      times.canceled_at,
+      times.completed_at ?? null,
+      times.canceled_at ?? null,
       triage ? now : null
     );
     for (const l of labels) sql("INSERT INTO pj_issue_labels (issue_id, label_id) VALUES (?, ?)").run(id, l);
@@ -697,8 +690,7 @@ function applyUpdate(ctx: Ctx, id: string, input: IssueInput): GoalEvent[] {
     after.team_id = team.id;
     // Same kind of status in the new team; team-only things are dropped.
     const cat = statusRow(ctx, before.status_id).category;
-    const mapped =
-      (sql("SELECT id FROM pj_statuses WHERE team_id = ? AND category = ? ORDER BY position LIMIT 1").get(team.id, cat) as { id: string } | undefined)?.id ?? defaultStatus(team.id);
+    const mapped = statusOfCategory(team.id, cat) ?? defaultStatus(team.id);
     after.status_id = mapped;
     after.cycle_id = null;
     after.labels = after.labels.filter((l) => {
@@ -760,10 +752,13 @@ function applyUpdate(ctx: Ctx, id: string, input: IssueInput): GoalEvent[] {
     const prev = statusRow(ctx, before.status_id);
     set("status_id", after.status_id);
     set("status_changed_at", now);
-    if (s.category === "started" && prev.category !== "started") set("started_at", now);
-    if (s.category !== prev.category) {
-      set("completed_at", s.category === "completed" ? now : null);
-      set("canceled_at", s.category === "canceled" ? now : null);
+    const times = statusTimes(s.category, now, prev.category);
+    if (times.completed_at !== undefined) set("completed_at", times.completed_at);
+    if (times.canceled_at !== undefined) set("canceled_at", times.canceled_at);
+    if (times.started_at !== undefined) set("started_at", times.started_at);
+    if (times.startedIfUnset !== undefined) {
+      sets.push("started_at = IFNULL(started_at, ?)");
+      vals.push(times.startedIfUnset);
     }
     // A status change without an explicit place puts the issue on top of its new column.
     if (input.position === undefined) {
@@ -808,9 +803,9 @@ export function updateIssues(ctx: Ctx, ids: unknown, input: IssueInput, goals: G
       if (typeof input.statusId === "string" && input.statusId.startsWith("category:")) {
         const cat = input.statusId.slice(9) as StatusCategory;
         const team = issueState(ctx, id).team_id;
-        const s = sql("SELECT id FROM pj_statuses WHERE team_id = ? AND category = ? ORDER BY position LIMIT 1").get(team, cat) as { id: string } | undefined;
+        const s = statusOfCategory(team, cat);
         if (!s) throw bad("no status of that category");
-        own.statusId = s.id;
+        own.statusId = s;
       }
       goals.push(...applyUpdate(ctx, id, own));
     }

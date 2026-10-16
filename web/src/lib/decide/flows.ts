@@ -2,7 +2,7 @@
 //
 //   Design    an issue made from a Design comment (lib/eco/design.ts) is done
 //             when its comment thread is resolved in Design, and opens again
-//             when the thread is reopened — if Jev was the one who closed it
+//             when the thread is reopened — if this rule was the one that closed it
 //             and nobody moved it since. (The other way round, closing the
 //             issue resolves the thread, is lib/eco/design.ts.)
 //   Calendar  an issue made from a meeting (lib/eco/calendar.ts) is due on
@@ -10,9 +10,9 @@
 //             with it — while the issue is open and nobody changed the date
 //             by hand.
 //
-// Exact rules, no AI: they run whatever the Jev switch says, with the rights
+// Exact rules, no AI: they run whatever the smart switch says, with the rights
 // of the person whose change set them off (or who made the issue), and each
-// step lands in Jev's journal with Undo. The workspace's owner turns each of
+// step lands in the journal with Undo. The workspace's owner turns each of
 // them off in the hub's settings (hub.ts).
 
 import { calDb } from "../calendar/db";
@@ -65,9 +65,9 @@ function categoryOf(statusId: string): string | null {
   return (sql("SELECT category FROM pj_statuses WHERE id = ?").get(statusId) as { category: string } | undefined)?.category ?? null;
 }
 
-function jevCtx(userId: string, ws: string): Ctx | null {
+function autoCtx(userId: string, ws: string): Ctx | null {
   try {
-    return { ...ctxFor(userId, ws, "edit"), via: "jev" };
+    return { ...ctxFor(userId, ws, "edit"), via: "auto" };
   } catch {
     return null;
   }
@@ -81,7 +81,7 @@ const personOf = (by: string | null | undefined): string | null => (by && by !==
 /** The first of these people who may edit the issue: their context and the issue as they see it. */
 function editorOf(ws: string, issueId: string, people: (string | null)[]): { ctx: Ctx; issue: ReturnType<typeof getIssueBrief>; who: string } | null {
   for (const who of [...new Set(people.filter((p): p is string => Boolean(p)))]) {
-    const ctx = jevCtx(who, ws);
+    const ctx = autoCtx(who, ws);
     if (!ctx) continue;
     try {
       return { ctx, issue: getIssueBrief(ctx, issueId), who };
@@ -133,7 +133,7 @@ export async function followThreads(ws: string, file: string, by: string | null,
       recordHub(ws, { subject: `issue:${issue.id}`, source: "rule", mode: "auto", status: "applied", payload: { kind: "issue", issue: issue.id, field: "status", prev: issue.statusId, next: done, why: "thread_resolved", from: `design:${file}` }, by: who });
       moved++;
     } else if (!t.isResolved && cat === "completed") {
-      // Only an issue Jev closed for its thread, still where Jev put it.
+      // Only an issue this rule closed for its thread, still where it was put.
       const last = lastApplied(ws, issue.id, "issue");
       if (!last || last.payload.kind !== "issue" || last.payload.why !== "thread_resolved" || last.payload.next !== issue.statusId || !last.payload.prev) continue;
       try {

@@ -19,9 +19,10 @@ function readCtx(v: Viewer): Ctx | null {
 }
 
 const OPEN: StatusCategory[] = ["started", "unstarted", "backlog"];
-const ALL: StatusCategory[] = ["started", "unstarted", "backlog", "completed"];
+// "Show done" shows closed work as Linear's "completed issues" do: done and canceled (duplicates too).
+const ALL: StatusCategory[] = ["started", "unstarted", "backlog", "completed", "canceled"];
 
-/** A project's issues, or the person's own; open ones, or done too. In progress first, then by priority. */
+/** A project's issues, or the person's own; open ones, or closed too. In progress first, then by priority. */
 export async function issueList(v: Viewer, opts: { project?: string | null; mine?: boolean; done?: boolean; limit?: number; dueFrom?: string; dueTo?: string }): Promise<Card[]> {
   const ctx = readCtx(v);
   if (!ctx || (!opts.project && !opts.mine)) return [];

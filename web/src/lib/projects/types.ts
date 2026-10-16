@@ -7,6 +7,46 @@ export const STATUS_CATEGORIES: readonly StatusCategory[] = ["backlog", "unstart
 export const CATEGORY_RANK: Record<StatusCategory, number> = { started: 0, unstarted: 1, backlog: 2, completed: 3, canceled: 4 };
 export const isClosed = (c: StatusCategory) => c === "completed" || c === "canceled";
 
+/**
+ * How full a status icon is drawn (Linear's partial circle): 0 for backlog and
+ * todo, 1 for done and canceled, and for "started" statuses their place among
+ * the team's started statuses (In progress about half, In review fuller).
+ */
+export function statusFraction(statuses: readonly Pick<Status, "id" | "teamId" | "category" | "position">[], statusId: string): number {
+  const s = statuses.find((x) => x.id === statusId);
+  if (!s) return 0;
+  if (s.category === "completed" || s.category === "canceled") return 1;
+  if (s.category !== "started") return 0;
+  const started = statuses.filter((x) => x.teamId === s.teamId && x.category === "started").sort((a, b) => a.position - b.position);
+  const i = started.findIndex((x) => x.id === statusId);
+  return Math.min(0.75, Math.max(0.25, (i + 1) / (started.length + 1)));
+}
+
+/**
+ * The times a status change sets, as Linear keeps them: `started_at` when work
+ * starts (kept through review, done and canceled; cleared when the issue goes
+ * back to the backlog or todo; a reopened issue keeps its first start),
+ * `completed_at` / `canceled_at` while it is so. `prev`: the category before
+ * (undefined: a new issue). Nothing changes within a category.
+ */
+export function statusTimes(
+  category: StatusCategory,
+  now: number,
+  prev?: StatusCategory
+): { started_at?: number | null; startedIfUnset?: number; completed_at?: number | null; canceled_at?: number | null } {
+  if (prev === category) return {};
+  const out: { started_at?: number | null; startedIfUnset?: number; completed_at: number | null; canceled_at: number | null } = {
+    completed_at: category === "completed" ? now : null,
+    canceled_at: category === "canceled" ? now : null,
+  };
+  if (category === "backlog" || category === "unstarted") out.started_at = null;
+  else if (category === "started") {
+    if (prev === "completed" || prev === "canceled") out.startedIfUnset = now;
+    else out.started_at = now;
+  }
+  return out;
+}
+
 /** 0 none, 1 urgent, 2 high, 3 medium, 4 low (the order of the picker). */
 export type Priority = 0 | 1 | 2 | 3 | 4;
 export const PRIORITIES: readonly Priority[] = [0, 1, 2, 3, 4];
@@ -57,6 +97,8 @@ export interface Team {
   triage: boolean;
   /** Issues waiting in triage that the viewer sees (snoozed ones not counted). */
   triageCount: number;
+  /** The canceled status an issue marked as a duplicate moves to (Linear's "Duplicate"); null: the first canceled one. */
+  duplicateStatusId: string | null;
   members: { userId: string; role: "lead" | "member" }[];
   isMember: boolean;
   archivedAt: number | null;
@@ -228,8 +270,8 @@ export interface Comment {
 export interface Activity {
   id: number;
   actorId: string | null;
-  /** Jev changed it on the person's behalf (autopilot). */
-  via?: "jev";
+  /** Changed automatically on the person's behalf (autopilot, automations). */
+  via?: "auto";
   kind: string;
   from: unknown;
   to: unknown;
@@ -271,13 +313,13 @@ export interface IssueDetail extends Issue {
   subscriberIds: string[];
   fields: Record<string, string>;
   aliases: string[];
-  /** Jev's suggestions and its recent automatic changes (with Undo). */
+  /** Suggestions and recent automatic changes (with Undo). */
   suggestions?: Suggestion[];
 }
 
 export type NotificationKind = "assigned" | "unassigned" | "mentioned" | "comment" | "reply" | "status" | "priority" | "due_soon" | "overdue" | "project_update" | "blocked" | "unblocked" | "subscribed" | "duplicate" | "goal_met" | "triage" | "triaged";
 
-// --- Jev's suggestions (autopilot) ---
+// --- Suggestions (autopilot) ---
 
 export type SuggestionKind = "priority" | "label" | "project" | "assignee" | "duplicate" | "done";
 
@@ -288,8 +330,7 @@ export interface Suggestion {
   /** priority: {priority}; label: {labelId}; project: {projectId}; assignee: {userId}; done: {statusId}; duplicate: {issueId, identifier, title}. */
   value: { priority?: Priority; labelId?: string; projectId?: string; userId?: string; statusId?: string; issueId?: string; identifier?: string; title?: string };
   confidence: number;
-  model: string;
-  /** open: waits for a person; applied: Jev filled an empty field (Undo possible). */
+  /** open: waits for a person; applied: an empty field was filled automatically (Undo possible). */
   state: "open" | "applied" | "accepted" | "dismissed" | "undone";
   createdAt: number;
 }
@@ -350,8 +391,8 @@ export interface Bootstrap {
   unread: number;
   seq: number;
   today: string;
-  /** Jev for the assistant's triage: not set up on the server, off in this workspace, or on. */
-  jev?: "unconfigured" | "off" | "on";
+  /** Smart suggestions for the assistant's triage: not set up on the server, off in this workspace, or on. */
+  smart?: "unconfigured" | "off" | "on";
 }
 
 // --- Filters and display (shared by the URL, saved views and the server) ---

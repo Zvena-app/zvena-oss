@@ -4,13 +4,14 @@ import { audit, sql, tx } from "../store";
 import { bad, bump, emit, forbidden, isMember, needs, notFound, PjError, pid, str, type Ctx } from "./core";
 import { announceGoals, goalSnapshot, settleGoals, type GoalEvent } from "./goals";
 import { isTeamKey, suggestKey } from "./ident";
-import { LABEL_COLORS, seedFor, STATUS_SHAPE } from "./seed";
+import { DUPLICATE_SEAT, LABEL_COLORS, seedFor, STATUS_SHAPE } from "./seed";
 import {
   COLOR_RE,
   ESTIMATE_SCALES,
   FIELD_TYPES,
   PALETTE,
   STATUS_CATEGORIES,
+  statusTimes,
   type CustomField,
   type EstimateScale,
   type FieldType,
@@ -34,10 +35,11 @@ interface TeamRow {
   cycles_enabled: number;
   cycle_weeks: number;
   triage: number;
+  duplicate_status_id: string | null;
   archived_at: number | null;
 }
 
-const TEAM_COLS = "id, key, name, description, color, icon, private, estimates, cycles_enabled, cycle_weeks, triage, archived_at";
+const TEAM_COLS = "id, key, name, description, color, icon, private, estimates, cycles_enabled, cycle_weeks, triage, duplicate_status_id, archived_at";
 
 /** Issues waiting (not snoozed) in the triage of each of these teams. */
 function triageCounts(teamIds: string[]): Map<string, number> {
@@ -76,6 +78,7 @@ function toTeam(r: TeamRow, members: { userId: string; role: "lead" | "member" }
     cycleWeeks: r.cycle_weeks,
     triage: r.triage === 1,
     triageCount: r.triage === 1 ? triage : 0,
+    duplicateStatusId: r.duplicate_status_id,
     members,
     isMember: members.some((m) => m.userId === viewer),
     archivedAt: r.archived_at,
@@ -110,6 +113,8 @@ export interface TeamInput {
   cyclesEnabled?: unknown;
   cycleWeeks?: unknown;
   triage?: unknown;
+  /** A canceled status of the team (null: the first canceled one). */
+  duplicateStatusId?: unknown;
 }
 
 function cleanIcon(v: unknown): string | null {
@@ -153,10 +158,13 @@ export function createTeam(ctx: Ctx, input: TeamInput, locale: string = "en"): T
     sql("INSERT INTO pj_team_members (team_id, user_id, role, created_at) VALUES (?, ?, 'lead', ?)").run(id, ctx.userId, now);
     // The workflow and labels are written in the language of the person who made the team.
     const seed = seedFor(locale);
-    STATUS_SHAPE.forEach(([cat, color], i) => {
-      const n = seed.statuses[i];
-      sql("INSERT INTO pj_statuses (id, ws_id, team_id, name, category, color, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(pid(), ctx.wsId, id, n, cat, color, i, now);
+    const ids = STATUS_SHAPE.map(([cat, color], i) => {
+      const sid = pid();
+      sql("INSERT INTO pj_statuses (id, ws_id, team_id, name, category, color, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(sid, ctx.wsId, id, seed.statuses[i], cat, color, i, now);
+      return sid;
     });
+    // The seeded workflow's last status is "Duplicate" (canceled): where marked duplicates go.
+    sql("UPDATE pj_teams SET duplicate_status_id = ? WHERE id = ?").run(ids[DUPLICATE_SEAT], id);
     // The workspace's first team brings a few common labels.
     if (Number(count.n) === 0 && !sql("SELECT 1 FROM pj_labels WHERE ws_id = ? LIMIT 1").get(ctx.wsId)) {
       for (const [i, n] of seed.labels.entries()) sql("INSERT INTO pj_labels (id, ws_id, name, color, created_at) VALUES (?, ?, ?, ?, ?)").run(pid(), ctx.wsId, n, LABEL_COLORS[i], now);
@@ -215,6 +223,14 @@ export function updateTeam(ctx: Ctx, teamId: string, input: TeamInput): Team {
     set("estimates", input.estimates);
   }
   if (input.cyclesEnabled !== undefined) set("cycles_enabled", input.cyclesEnabled === true ? 1 : 0);
+  if (input.duplicateStatusId !== undefined) {
+    if (input.duplicateStatusId === null) set("duplicate_status_id", null);
+    else {
+      const d = statusRow(ctx, String(input.duplicateStatusId));
+      if (d.team_id !== teamId || d.category !== "canceled") throw bad("not a canceled status of the team");
+      set("duplicate_status_id", d.id);
+    }
+  }
   // Turning triage off lets everything waiting in it into the team's workflow.
   const triageOff = input.triage === false;
   if (input.triage !== undefined) set("triage", input.triage === true ? 1 : 0);
@@ -365,10 +381,23 @@ export function defaultStatus(teamId: string): string {
   return r.id;
 }
 
-/** The first status of a category in a team (null if it has none). */
+/**
+ * The first status of a category in a team (null if it has none). For
+ * "canceled" that is a canceled status other than the team's duplicate one
+ * when there is such (declining is not marking as a duplicate).
+ */
 export function statusOfCategory(teamId: string, category: StatusCategory): string | null {
-  const r = sql("SELECT id FROM pj_statuses WHERE team_id = ? AND category = ? ORDER BY position LIMIT 1").get(teamId, category) as { id: string } | undefined;
+  const r = sql(
+    `SELECT s.id FROM pj_statuses s JOIN pj_teams t ON t.id = s.team_id WHERE s.team_id = ? AND s.category = ?
+     ORDER BY CASE WHEN s.id = t.duplicate_status_id THEN 1 ELSE 0 END, s.position LIMIT 1`
+  ).get(teamId, category) as { id: string } | undefined;
   return r?.id ?? null;
+}
+
+/** Where an issue marked as a duplicate goes: the team's duplicate status, else its first canceled one (null: none). */
+export function duplicateStatusOf(teamId: string): string | null {
+  const r = sql("SELECT s.id FROM pj_teams t JOIN pj_statuses s ON s.id = t.duplicate_status_id WHERE t.id = ? AND s.team_id = t.id AND s.category = 'canceled'").get(teamId) as { id: string } | undefined;
+  return r?.id ?? statusOfCategory(teamId, "canceled");
 }
 
 function isCategory(v: unknown): v is StatusCategory {
@@ -464,15 +493,21 @@ export function deleteStatus(ctx: Ctx, statusId: string, moveTo: string): void {
           movedRows.map((r) => r.milestone_id)
         )
       : null;
-    if (across)
-      sql(
-        `UPDATE pj_issues SET status_id = ?, updated_at = ?, status_changed_at = ?,
-           started_at = CASE WHEN ? = 'started' THEN ? ELSE started_at END,
-           completed_at = CASE WHEN ? = 'completed' THEN ? ELSE NULL END,
-           canceled_at = CASE WHEN ? = 'canceled' THEN ? ELSE NULL END
-         WHERE status_id = ?`
-      ).run(target.id, now, now, target.category, now, target.category, now, target.category, now, cur.id);
-    else sql("UPDATE pj_issues SET status_id = ?, updated_at = ?, status_changed_at = ? WHERE status_id = ?").run(target.id, now, now, cur.id);
+    if (across) {
+      // The same times as a status change from this category (issues.ts statusTimes).
+      const times = statusTimes(target.category, now, cur.category);
+      const started = times.started_at !== undefined ? "?" : times.startedIfUnset !== undefined ? "IFNULL(started_at, ?)" : "started_at";
+      const startedVal = times.started_at !== undefined ? [times.started_at] : times.startedIfUnset !== undefined ? [times.startedIfUnset] : [];
+      sql(`UPDATE pj_issues SET status_id = ?, updated_at = ?, status_changed_at = ?, started_at = ${started}, completed_at = ?, canceled_at = ? WHERE status_id = ?`).run(
+        target.id,
+        now,
+        now,
+        ...startedVal,
+        times.completed_at ?? null,
+        times.canceled_at ?? null,
+        cur.id
+      );
+    } else sql("UPDATE pj_issues SET status_id = ?, updated_at = ?, status_changed_at = ? WHERE status_id = ?").run(target.id, now, now, cur.id);
     sql("DELETE FROM pj_statuses WHERE id = ? AND ws_id = ?").run(cur.id, ctx.wsId);
     if (snap) goals = settleGoals(ctx, snap, now);
     bump(ctx.wsId);

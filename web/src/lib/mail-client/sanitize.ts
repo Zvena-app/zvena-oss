@@ -120,13 +120,51 @@ function imageUrl(raw: string, c: Ctx): string | null {
   return null;
 }
 
+/** Longest CSS read from one style attribute / one <style> block (longer is dropped, not cut). */
+export const MAX_STYLE_ATTR = 8_000;
+export const MAX_STYLE_BLOCK = 100_000;
+
+/** CSS comments out, in one pass (a lazy regex rescans the rest after every unclosed "/*"). */
+function stripComments(css: string): string {
+  let out = "";
+  let at = 0;
+  for (let i = css.indexOf("/*"); i >= 0; i = css.indexOf("/*", at)) {
+    out += css.slice(at, i) + " ";
+    const end = css.indexOf("*/", i + 2);
+    if (end < 0) return out;
+    at = end + 2;
+  }
+  return out + css.slice(at);
+}
+
+/**
+ * image-set(…) and cross-fade(…) → "none", in one pass (a regex with [^)]*
+ * rescans the rest of the CSS after every unclosed one). Null when one is
+ * not closed.
+ */
+function imageSetsOut(s: string): string | null {
+  const re = /(?:-webkit-)?(?:image-set|cross-fade)\s*\(/gi;
+  let out = "";
+  let at = 0;
+  for (let m = re.exec(s); m; m = re.exec(s)) {
+    const end = s.indexOf(")", re.lastIndex);
+    if (end < 0) return null;
+    out += s.slice(at, m.index) + "none";
+    at = end + 1;
+    re.lastIndex = at;
+  }
+  return out + s.slice(at);
+}
+
 /**
  * CSS from a style attribute or a <style> block: no script-ish features
  * (expression(), behaviors, bindings, javascript:), no @import, and every
  * url() rewritten like an image (or the declaration dropped).
  */
-export function sanitizeCss(css: string, c: Ctx): string {
-  let s = css.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\\([0-9a-f]{1,6}\s?|.)/gi, (m, e: string) => {
+export function sanitizeCss(css: string, c: Ctx, max = MAX_STYLE_BLOCK): string {
+  // Mail from anyone: CSS past the cap is not ours to scan (every pattern below is linear on what is left).
+  if (css.length > max) return "";
+  let s = stripComments(css).replace(/\\([0-9a-f]{1,6}\s?|.)/gi, (m, e: string) => {
     // CSS escapes could spell "expression" or "url" in disguise: decode the plain ones, drop the rest.
     const hex = /^[0-9a-f]{1,6}\s?$/i.test(e) ? parseInt(e, 16) : NaN;
     return Number.isFinite(hex) && hex > 31 && hex < 127 ? String.fromCharCode(hex) : e.length === 1 && /[\w\s-]/.test(e) ? e : "";
@@ -136,7 +174,9 @@ export function sanitizeCss(css: string, c: Ctx): string {
     if (/expression\s*\(|javascript:|vbscript:|behavior\s*:|-moz-binding/i.test(s)) return "";
   }
   // image-set() and cross-fade() take bare strings as images: never a way around url().
-  s = s.replace(/(?:-webkit-)?(?:image-set|cross-fade)\s*\([^)]*\)/gi, "none");
+  const flat = imageSetsOut(s);
+  if (flat === null) return "";
+  s = flat;
   const out = rewriteUrls(s, c);
   // Anything else that names a resource (image(), src(), a url() the scanner could not read): no CSS at all.
   if (out === null || /(?:^|[^\w-])(?:image|src)\s*\(/i.test(out)) return "";
@@ -240,7 +280,7 @@ export function sanitizeHtml(input: string, opts: SanitizeOptions): Sanitized {
             continue;
           }
           if (k === "style") {
-            const css = sanitizeCss(v, c).replace(/[<>]/g, "");
+            const css = sanitizeCss(v, c, MAX_STYLE_ATTR).replace(/[<>]/g, "");
             if (css.trim()) parts.push(`style="${escAttr(css)}"`);
             continue;
           }

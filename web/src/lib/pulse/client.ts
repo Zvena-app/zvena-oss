@@ -18,6 +18,13 @@ export interface PulseMessage {
 
 type Handler = (m: PulseMessage) => void;
 
+/**
+ * How long the stream stays open after its last product left: the rail
+ * switches sections without a page load, and the next section joins the open
+ * stream instead of connecting again (and pulling everything on "hello").
+ */
+const LINGER_MS = 15_000;
+
 /** This tab's id: sent with every write (x-zvena-origin) so its own echo is skipped. */
 export const PULSE_ORIGIN = (() => {
   const a = new Uint8Array(12);
@@ -64,14 +71,26 @@ class PulseClient {
       this.ws = ws;
       this.users = 0;
     }
+    if (this.linger) clearTimeout(this.linger);
+    this.linger = null;
     this.users++;
     if (!this.es) this.open();
     let left = false;
     return () => {
       if (left) return;
       left = true;
-      if (--this.users <= 0) this.close();
+      if (--this.users <= 0) this.closeSoon();
     };
+  }
+
+  private linger: ReturnType<typeof setTimeout> | null = null;
+
+  private closeSoon(): void {
+    if (this.linger) clearTimeout(this.linger);
+    this.linger = setTimeout(() => {
+      this.linger = null;
+      if (this.users <= 0) this.close();
+    }, LINGER_MS);
   }
 
   private watching = false;
@@ -135,6 +154,8 @@ class PulseClient {
   private close(): void {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
+    if (this.linger) clearTimeout(this.linger);
+    this.linger = null;
     this.es?.close();
     this.es = null;
     this.retry = 0;

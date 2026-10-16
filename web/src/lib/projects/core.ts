@@ -42,9 +42,9 @@ export interface Ctx {
   teams(): Set<string>;
   /** Where the request came from (for event buses that skip echoes); optional. */
   origin?: string;
-  /** Acting on the person's behalf: 'jev' — Jev's autopilot (shown in the history). */
-  via?: "jev";
-  /** Background work that Jev's autopilot must not pick up (the first-run examples). */
+  /** Acting on the person's behalf: 'auto' — the autopilot or an automation (shown in the history). */
+  via?: "auto";
+  /** Background work that the autopilot must not pick up (the first-run examples). */
   quiet?: boolean;
 }
 

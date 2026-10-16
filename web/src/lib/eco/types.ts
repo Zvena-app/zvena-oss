@@ -19,8 +19,11 @@ export interface Card {
   color?: string;
   /** Second line: the issue identifier, the page's parent, the design file. */
   sub?: string;
-  /** Issues: their workflow status; projects: their state. */
-  status?: { name: string; color: string; category: StatusCategory };
+  /**
+   * Issues: their workflow status (its id, and how full its icon is drawn:
+   * a started status's place among the team's started ones); projects: their state.
+   */
+  status?: { id?: string; name: string; color: string; category: StatusCategory; fraction?: number };
   assignee?: { id: string; name: string } | null;
   /** Issues: YYYY-MM-DD. */
   due?: string | null;
@@ -31,6 +34,15 @@ export interface Card {
   /** Projects: share of completed issues, 0–1. */
   progress?: number;
   updatedAt?: number;
+}
+
+/** One status of an issue's workflow, as its status menu shows it (board order). */
+export interface StatusOption {
+  id: string;
+  name: string;
+  color: string;
+  category: StatusCategory;
+  fraction: number;
 }
 
 /** One link as the "Related" panel shows it. */

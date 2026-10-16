@@ -2,10 +2,10 @@
 // the reactions whose `when` matches, judges each subject and acts:
 //
 //   compare / always   exact and instant: acts on the edge (false → true)
-//   ask (Jev)          only where the workspace owner turned Jev on; the
-//                      chosen fields go out, nothing else. Confidence ≥ auto:
-//                      act; ≥ suggest: a person confirms (pulse "decision");
-//                      below, or Jev off/slow/down: nothing happens.
+//   ask (the model)    only where the workspace owner left smart suggestions
+//                      on; the chosen fields go out, nothing else. Confidence
+//                      ≥ auto: act; ≥ suggest: a person confirms (pulse
+//                      "decision"); below, or the model off/slow/down: nothing happens.
 //
 // Every judgement that leads somewhere is written to dz_decisions (ids,
 // verdict, confidence, timing; never document content), so "why did this
@@ -18,7 +18,7 @@ import { AccessResolver, atLeast } from "../notes/access";
 import { keyVisible } from "../eco/visibility";
 import { sql, store, tx } from "../store";
 import { runAction, subjectsFor, targetsOf, type Subject } from "./adapters";
-import { ask, jevAvailable, jevDefault, noul, setWorkspaceGate } from "./jev";
+import { ask, noul, setWorkspaceGate, smartAvailable, smartDefault } from "./smart";
 import { cleanAction, cleanReaction, compare, MAX_REACTIONS, type Action, type Reaction } from "./model";
 
 const SCHEMA = `
@@ -43,8 +43,8 @@ CREATE TABLE IF NOT EXISTS dz_decisions (
   ws TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
   reaction_id TEXT,
   subject TEXT NOT NULL,
-  source TEXT NOT NULL,              -- rule | jev
-  confidence REAL,                   -- jev: probability of yes
+  source TEXT NOT NULL,              -- rule | model
+  confidence REAL,                   -- model: probability of yes
   mode TEXT NOT NULL,                -- auto | suggest
   status TEXT NOT NULL,              -- applied | unchanged | pending | accepted | rejected | expired
   model TEXT,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS dz_decisions (
 CREATE INDEX IF NOT EXISTS dz_decisions_ws ON dz_decisions(ws, at);
 CREATE TABLE IF NOT EXISTS dz_settings (
   ws TEXT PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
-  jev INTEGER NOT NULL DEFAULT 0,
+  smart INTEGER NOT NULL DEFAULT 0,
   ingest_hash TEXT UNIQUE,
   updated_by TEXT,
   updated_at INTEGER NOT NULL
@@ -108,27 +108,28 @@ export function ensureSchema(): void {
 // ---------------------------------------------------------------- settings
 
 export interface DecideSettings {
-  jev: boolean;
+  /** Smart suggestions and automations (the decision model) in this workspace. */
+  smart: boolean;
   ingest: boolean;
 }
 
 export function settingsOf(ws: string): DecideSettings {
   ensureSchema();
-  const r = sql("SELECT jev, ingest_hash FROM dz_settings WHERE ws = ?").get(ws) as { jev: number; ingest_hash: string | null } | undefined;
-  // A workspace whose owner never chose follows ZVENA_JEV_DEFAULT: on unless set to "off"
-  // (Jev works everywhere until a workspace owner turns it off; ZVENA_JEV_DEFAULT=off makes it opt-in).
-  return { jev: r ? r.jev === 1 : jevDefault(), ingest: Boolean(r?.ingest_hash) };
+  const r = sql("SELECT smart, ingest_hash FROM dz_settings WHERE ws = ?").get(ws) as { smart: number; ingest_hash: string | null } | undefined;
+  // A workspace whose owner never chose follows ZVENA_AI_DEFAULT: on unless set to "off"
+  // (on everywhere until a workspace owner turns it off; ZVENA_AI_DEFAULT=off makes it opt-in).
+  return { smart: r ? r.smart === 1 : smartDefault(), ingest: Boolean(r?.ingest_hash) };
 }
 
-export { jevDefault };
+export { smartDefault };
 
-// The one switch jev.ts checks before anything leaves the server.
-setWorkspaceGate((ws) => settingsOf(ws).jev);
+// The one switch smart.ts checks before anything leaves the server.
+setWorkspaceGate((ws) => settingsOf(ws).smart);
 
-/** The owner's switch: may this workspace's chosen fields be sent to Jev? On unless turned off. */
-export function setJev(ws: string, on: boolean, by: string): void {
+/** The owner's switch: may this workspace's chosen fields be sent to the decision model? On unless turned off. */
+export function setSmart(ws: string, on: boolean, by: string): void {
   ensureSchema();
-  sql("INSERT INTO dz_settings (ws, jev, updated_by, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(ws) DO UPDATE SET jev = excluded.jev, updated_by = excluded.updated_by, updated_at = excluded.updated_at").run(ws, on ? 1 : 0, by, Date.now());
+  sql("INSERT INTO dz_settings (ws, smart, updated_by, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(ws) DO UPDATE SET smart = excluded.smart, updated_by = excluded.updated_by, updated_at = excluded.updated_at").run(ws, on ? 1 : 0, by, Date.now());
 }
 
 const tokenHash = (t: string) => createHash("sha256").update(`zvena-ingest:${t}`).digest("base64url");
@@ -137,8 +138,8 @@ const tokenHash = (t: string) => createHash("sha256").update(`zvena-ingest:${t}`
 export function newIngestToken(ws: string, by: string): string {
   ensureSchema();
   const token = `zvi_${randomBytes(24).toString("base64url")}`;
-  // A first row keeps Jev's default (on); an existing row keeps the owner's choice.
-  sql("INSERT INTO dz_settings (ws, jev, ingest_hash, updated_by, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(ws) DO UPDATE SET ingest_hash = excluded.ingest_hash, updated_by = excluded.updated_by, updated_at = excluded.updated_at").run(ws, jevDefault() ? 1 : 0, tokenHash(token), by, Date.now());
+  // A first row keeps the default (on); an existing row keeps the owner's choice.
+  sql("INSERT INTO dz_settings (ws, smart, ingest_hash, updated_by, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(ws) DO UPDATE SET ingest_hash = excluded.ingest_hash, updated_by = excluded.updated_by, updated_at = excluded.updated_at").run(ws, smartDefault() ? 1 : 0, tokenHash(token), by, Date.now());
   return token;
 }
 
@@ -240,19 +241,19 @@ export function deleteReaction(ws: string, id: string): boolean {
 
 export interface Verdict {
   hit: boolean;
-  source: "rule" | "jev";
+  source: "rule" | "model";
   mode: "auto" | "suggest" | "none";
   confidence?: number;
   model?: string;
   ms?: number;
 }
 
-/** Judges one subject. `null`: no verdict (Jev off, slow or unsure) — nothing happens, the edge is kept. */
+/** Judges one subject. `null`: no verdict (the model off, slow or unsure) — nothing happens, the edge is kept. */
 export async function judge(ws: string, r: Reaction, s: Subject): Promise<Verdict | null> {
   const c = r.if;
   if (c.kind === "always") return { hit: true, source: "rule", mode: "auto" };
   if (c.kind === "compare") return { hit: compare(s.facts[c.field], c.op, c.value), source: "rule", mode: "auto" };
-  if (!settingsOf(ws).jev || !jevAvailable()) return null;
+  if (!settingsOf(ws).smart || !smartAvailable()) return null;
   // Only the chosen fields leave the server, and never one that names a person (an assignee,
   // a person, e-mail or phone column): a question about those has no answer, nothing happens.
   const state: Record<string, unknown> = {};
@@ -262,7 +263,7 @@ export async function judge(ws: string, r: Reaction, s: Subject): Promise<Verdic
   if (!out) return null;
   const p = out.answers.yes.noul;
   const mode = p >= c.auto ? "auto" : p >= c.suggest ? "suggest" : "none";
-  return { hit: mode !== "none", source: "jev", mode, confidence: p, model: out.model, ms: out.ms };
+  return { hit: mode !== "none", source: "model", mode, confidence: p, model: out.model, ms: out.ms };
 }
 
 function edge(reactionId: string, subject: string, hit: boolean): boolean {
@@ -326,7 +327,7 @@ function record(ws: string, r: Reaction, s: Subject, v: Verdict, status: string)
 export async function fire(ws: string, r: Reaction, s: Subject, depth: number): Promise<"applied" | "unchanged" | "pending" | "skip"> {
   const v = await judge(ws, r, s);
   if (!v) return "skip";
-  // The reaction may have been switched off or removed while Jev was thinking.
+  // The reaction may have been switched off or removed while the question was out.
   if (!reactionsOf(ws).some((x) => x.id === r.id && x.on)) return "skip";
   if (!edge(r.id, s.key, v.hit)) return "skip";
   if (v.mode === "suggest") {

@@ -2,7 +2,7 @@
 
 // An issue inside a document: not a copy, the issue itself. Its status,
 // title and assignee are live (change them in Projects and the page shows
-// it at once); its checkbox moves the issue through its team's workflow.
+// it at once); its status icon opens the team's workflow (Linear's status menu).
 //
 // The block keeps only ids. "/issue" inserts an empty one that asks for a
 // title (or links an existing issue); "Turn into issue" on any line makes the
@@ -25,19 +25,7 @@ const ID_RE = /^[A-Za-z0-9_-]{6,64}$/;
 
 function LiveIssue({ ws, issueId, editable }: { ws: string; issueId: string; editable: boolean }) {
   const card = useCard(ws, `issue:${issueId}`);
-  const [busy, setBusy] = useState(false);
-  const toggle = async (done: boolean) => {
-    setBusy(true);
-    try {
-      const { card: next } = await eco.issueDone(ws, issueId, done);
-      cardStore(ws).seed([next]);
-    } catch {
-      // Not allowed or offline: the card shows the issue as it is.
-    } finally {
-      setBusy(false);
-    }
-  };
-  return <CardView card={card} variant="block" onToggle={editable ? (d) => void toggle(d) : undefined} busy={busy} />;
+  return <CardView card={card} variant="block" statusWs={editable ? ws : undefined} />;
 }
 
 function NewIssue({ ws, pageId, onDone }: { ws: string; pageId: string | null; onDone: (c: Card) => void }) {

@@ -47,7 +47,7 @@ export const idpFetch: FetchLike = (url, init) => {
       u,
       {
         method: init.method,
-        headers: { ...init.headers, ...(payload ? { "content-length": String(payload.length) } : {}), "user-agent": "zvena-sso (+https://zvena.app)" },
+        headers: { ...init.headers, ...(payload ? { "content-length": String(payload.length) } : {}), "user-agent": `zvena-sso (+${config.appUrl})` },
         ...(local ? {} : { lookup: safeLookup }),
         timeout: 10_000,
       },

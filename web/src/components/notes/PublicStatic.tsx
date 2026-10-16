@@ -586,7 +586,7 @@ export function PublicStatic({ notes, rootId, options, updatedAt, locale, base, 
           <span>{t("public.updated", { when: new Date(updatedAt).toLocaleDateString(intlOf(locale), { dateStyle: "medium" }) })}</span>
           <Link href={`${app}/`}>{t("public.by")}</Link>
           <a href={`${app}/report?url=${encodeURIComponent(`${base}/n/${shareId}`)}`} rel="nofollow">
-            {t("public.report")}
+            {t("public.reportAbuse")}
           </a>
         </footer>
       </div>

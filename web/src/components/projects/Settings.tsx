@@ -8,7 +8,7 @@
 // rows of a title and hint with the control beside them.
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Bot, GripVertical, Inbox as InboxIcon, ListChecks, Plus, Settings as SettingsIcon, Tag, Trash2, Users } from "lucide-react";
+import { GripVertical, Inbox as InboxIcon, ListChecks, Plus, Settings as SettingsIcon, Tag, Trash2, Users, Wand2 } from "lucide-react";
 import { Row, Section } from "@/app/settings/parts";
 import "@/app/settings/settings.css";
 import { Switch } from "@/components/zvena/ds";
@@ -53,7 +53,7 @@ export function SettingsScreen({ tab, teamKey }: { tab?: string; teamKey?: strin
     ["labels", t("st.labels"), <Tag key="i" />],
     ["fields", t("st.fields"), <ListChecks key="i" />],
     ["members", t("st.members"), <Users key="i" />],
-    ["assistant", t("as.title"), <Bot key="i" />],
+    ["assistant", t("as.settingsTab"), <Wand2 key="i" />],
   ];
   const mine = L.b.teams.filter((tm) => tm.members.some((m) => m.userId === L.b.me.id));
   const others = L.b.teams.filter((tm) => !mine.includes(tm));
@@ -451,7 +451,35 @@ function Workflow({ teamId }: { teamId: string }) {
         );
       })}
       </div>
+      <DuplicateStatus teamId={teamId} />
     </Section>
+  );
+}
+
+/** Where an issue marked as a duplicate goes (Linear's "Duplicate" status): one of the team's canceled statuses. */
+function DuplicateStatus({ teamId }: { teamId: string }) {
+  const { t } = useT();
+  const L = useLookups();
+  const team = L.team.get(teamId);
+  const canceled = L.statusesOf(teamId).filter((s) => s.category === "canceled");
+  if (!team || !canceled.length) return null;
+  const value = team.duplicateStatusId && canceled.some((s) => s.id === team.duplicateStatusId) ? team.duplicateStatusId : canceled[0].id;
+  return (
+    <Row title={t("st.duplicateStatus")} hint={t("st.duplicateStatusHint")}>
+      <select
+        className="pj-select"
+        value={value}
+        disabled={!L.canEdit}
+        aria-label={t("st.duplicateStatus")}
+        onChange={(e) => void call(`teams/${teamId}`, "PATCH", { duplicateStatusId: e.target.value }, t).then((ok) => ok && toast(t("st.saved"), "success"))}
+      >
+        {canceled.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+    </Row>
   );
 }
 
@@ -744,17 +772,17 @@ function FieldsSettings() {
   );
 }
 
-/** Jev for the assistant: zvena's workspace-wide switch (the same one reactions use), shown and turned here by the owner. */
+/** Smart suggestions and automations: the workspace-wide switch (the same one reactions use), shown and turned here by the owner. */
 function AssistantSettings() {
   const { t } = useT();
   const L = useLookups();
   const [busy, setBusy] = useState(false);
-  const state = L.b.jev ?? "unconfigured";
+  const state = L.b.smart ?? "unconfigured";
   const owner = L.b.ws.role === "owner";
   const set = async (on: boolean) => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/decide?ws=${encodeURIComponent(L.b.ws.id)}`, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: "jev", on }) });
+      const res = await fetch(`/api/decide?ws=${encodeURIComponent(L.b.ws.id)}`, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: "smart", on }) });
       if (!res.ok) throw new Error(String(res.status));
       await loadBoot();
     } catch {
@@ -765,13 +793,13 @@ function AssistantSettings() {
   };
   return (
     <>
-      <PageTitle title={t("as.title")} />
-      <Section title={t("as.jevTitle")}>
+      <PageTitle title={t("as.smartTitle")} />
+      <Section title={t("as.smartTitle")}>
         {state === "unconfigured" ? (
-          <p className="zst-note">{t("as.jevUnconfigured")}</p>
+          <p className="zst-note">{t("as.smartUnconfigured")}</p>
         ) : (
-          <Row title={t("as.jevTitle")} hint={(state === "on" ? t("as.jevOn") : t("as.jevOff")) + (owner ? "" : ` ${t("as.jevOwnerOnly")}`)}>
-            <Switch checked={state === "on"} onChange={(on) => void set(on)} label={t("as.jevTitle")} disabled={!owner || busy} />
+          <Row title={t("as.smartTitle")} hint={(state === "on" ? t("as.smartOn") : t("as.smartOff")) + (owner ? "" : ` ${t("as.smartOwnerOnly")}`)}>
+            <Switch checked={state === "on"} onChange={(on) => void set(on)} label={t("as.smartTitle")} disabled={!owner || busy} />
           </Row>
         )}
       </Section>

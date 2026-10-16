@@ -23,6 +23,8 @@ export const STATUS_SHAPE: [StatusCategory, string][] = [
   ["canceled", "#95a2b3"],
   ["canceled", "#95a2b3"],
 ];
+/** The seeded "Duplicate" status (STATUS_SHAPE's place): a team's duplicate status from the start. */
+export const DUPLICATE_SEAT = 6;
 export const LABEL_COLORS = ["#d44c47", "#337ea9", "#9065b0"];
 
 const S: Record<string, Seed> = {

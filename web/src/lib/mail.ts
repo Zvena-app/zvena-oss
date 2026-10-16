@@ -7,6 +7,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { config } from "./config";
+import { sql } from "./store";
 
 export interface Letter {
   to: string;
@@ -16,6 +17,49 @@ export interface Letter {
   html?: string;
   /** Files sent along (Calendar's .ics invitations): small text files only. */
   attachments?: { filename: string; content: string; contentType: string }[];
+  /** "signin": a sign-in letter, which may use the reserve of the server's mail budget. */
+  kind?: "signin";
+}
+
+// --- The server's mail budget --------------------------------------------------
+// One ceiling for everything zvena mails, per hour and per day
+// (ZVENA_MAIL_PER_HOUR, ZVENA_MAIL_PER_DAY): however many accounts someone
+// makes, the server cannot become a mailer that gets its sender suspended.
+// Everything but sign-in letters stops at 80% of either, so people can
+// still sign in when invitations have used up the rest.
+
+const RESERVE = 0.2;
+
+function budget(name: string, fallback: number): number {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+
+let budgetReady = false;
+const warned = new Map<string, number>();
+
+/** Takes one letter from the budget; false when this kind of letter is over it. */
+export function takeMailBudget(kind: Letter["kind"], now = Date.now()): boolean {
+  if (!budgetReady) {
+    sql("CREATE TABLE IF NOT EXISTS mail_sent (at INTEGER NOT NULL)").run();
+    sql("CREATE INDEX IF NOT EXISTS mail_sent_at ON mail_sent(at)").run();
+    budgetReady = true;
+  }
+  sql("DELETE FROM mail_sent WHERE at < ?").run(now - 86_400_000);
+  const c = sql("SELECT COUNT(*) AS day, SUM(at > ?) AS hour FROM mail_sent").get(now - 3600_000) as { day: number; hour: number | null };
+  const share = kind === "signin" ? 1 : 1 - RESERVE;
+  for (const [name, used, cap] of [["ZVENA_MAIL_PER_HOUR", Number(c.hour ?? 0), budget("ZVENA_MAIL_PER_HOUR", 500)], ["ZVENA_MAIL_PER_DAY", Number(c.day), budget("ZVENA_MAIL_PER_DAY", 3000)]] as const) {
+    if (used >= Math.floor(cap * share)) {
+      // Once an hour in the log (never the address): the operator raises the cap or looks for abuse.
+      if (now - (warned.get(name) ?? 0) > 3600_000) {
+        warned.set(name, now);
+        console.error(`[mail] the server's mail budget is used up (${name}=${cap}); ${kind === "signin" ? "sign-in letters" : "letters other than sign-in"} are not sent`);
+      }
+      return false;
+    }
+  }
+  sql("INSERT INTO mail_sent (at) VALUES (?)").run(now);
+  return true;
 }
 
 export function smtpConfigured(): boolean {
@@ -109,7 +153,10 @@ async function viaSmtp(letter: Letter): Promise<"sent" | "failed"> {
   }
 }
 
+/** The one function every letter goes through (the budget above is enforced here). */
 export async function sendMail(letter: Letter): Promise<"sent" | "outbox" | "skipped" | "failed"> {
+  if (!lettersLeave()) return "skipped";
+  if (!takeMailBudget(letter.kind)) return "failed";
   if (config.resend.enabled) return viaResend(letter);
   if (smtpConfigured()) return viaSmtp(letter);
   return toOutbox(letter);

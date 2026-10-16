@@ -11,7 +11,7 @@ A free, open-source workspace for teams — design, docs, projects, calendar and
 
 No ads and no third-party analytics. People sign in with Google, GitHub, single sign-on or a one-time e-mail link — no passwords.
 
-**AI.** The only AI is Jev, an optional assistant in Projects and in workspace automations. It runs on TypeSafe AI's hosted model, only when the server has `TYPESAFE_API_KEY`; a workspace owner can turn it off (`ZVENA_JEV_DEFAULT=off` makes it opt-in). What it sends is enforced in one place, `web/src/lib/decide/jev.ts`. `npm run check:no-ai` fails the build if any other AI provider, SDK or key appears.
+**AI.** The only AI is an optional decision model — an RLHF architecture and model — for suggestions in Projects and in workspace automations. It is called from the server only, is off unless the server has `ZVENA_AI_URL` and `ZVENA_AI_KEY`, and then works in every workspace whose owner has not turned it off (`ZVENA_AI_DEFAULT=off` makes it opt-in). Its spending is capped per day (`ZVENA_AI_DAILY_QUESTIONS`). What it sends is enforced in one place, `web/src/lib/decide/smart.ts`. `npm run check:no-ai` fails the build if any other AI provider, SDK or key appears.
 
 ## License
 
@@ -46,7 +46,7 @@ Open http://localhost:3100, choose **Sign in as a test user** and type any name.
 
 - `ZVENA_STAND=test` marks the server as a test server: a banner on every page and nothing indexed by search engines. The test sign-in works only together with it, so never set either one on a real server.
 - Design is a separate server (the Penpot fork). It is not part of `npm run dev`, so its links stay off. To get Design too, run the full stack with Docker, as described below.
-- Every other setting, such as Google or GitHub sign-in, e-mail and Jev, is in [`deploy/.env.example`](deploy/.env.example).
+- Every other setting, such as Google or GitHub sign-in, e-mail and smart suggestions, is in [`deploy/.env.example`](deploy/.env.example).
 
 ## Running your own server
 
@@ -83,7 +83,7 @@ cd web && npm ci
 npm run dev                # http://localhost:3100 (env variables: deploy/.env.example)
 npm run typecheck && npm run lint
 npm test                   # unit and API tests: a temporary database in a temporary folder
-npm run check:no-ai        # the AI provider is called only from lib/decide/jev.ts
+npm run check:no-ai        # the decision model is called only from lib/decide/smart.ts
 node scripts/i18n.mjs check
 ```
 

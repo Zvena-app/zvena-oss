@@ -74,6 +74,7 @@ export function PublicFooter(_props: { locale?: Locale }) {
           <Link href="/developers">Docs API</Link>
           <Link href="/status">Status</Link>
           <Link href="/source">Source code</Link>
+          <a href="https://github.com/Zvena-app/zvena-oss">GitHub</a>
           <Link href="/report">Report abuse</Link>
         </nav>
         <nav className="zs-footer-col" aria-label="About">

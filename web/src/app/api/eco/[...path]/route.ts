@@ -1,5 +1,5 @@
 import { config } from "@/lib/config";
-import { EcoError, designFor, designForIssue, docFor, docForIssue, issueFromDoc, link, setIssueDone, unlink, type Actor } from "@/lib/eco/actions";
+import { EcoError, designFor, designForIssue, docFor, docForIssue, issueFromDoc, issueStatuses, link, setIssueDone, setIssueStatus, unlink, type Actor } from "@/lib/eco/actions";
 import { issueList, projectOptions } from "@/lib/eco/lists";
 import { cardsFor } from "@/lib/eco/cards";
 import { issueFromComment, wsOfTeam } from "@/lib/eco/design";
@@ -24,7 +24,9 @@ export const dynamic = "force-dynamic";
 //   POST   /api/eco/link?ws         {src, dst}      a link by hand
 //   DELETE /api/eco/link?ws&src&dst                  …removed
 //   POST   /api/eco/issue-from-doc?ws {note, title, teamId?, projectId?, assigneeId?, dueDate?}
-//   POST   /api/eco/issue-done?ws   {issue, done}   an issue's checkbox, wherever it shows
+//   GET    /api/eco/issue-statuses?ws&issue=<id>    the statuses an issue can move to (its team's workflow)
+//   POST   /api/eco/issue-status?ws {issue, statusId} an issue's status, wherever it shows
+//   POST   /api/eco/issue-done?ws   {issue, done}   a checked line that became an issue: done / not done
 //   POST   /api/eco/doc-for-issue?ws {issue}        a document that starts with the issue
 //   POST   /api/eco/doc-for?ws      {ref}           …for an issue or a project (issue:<id> | project:<id>)
 //   POST   /api/eco/design-for?ws   {ref}           a design file for an issue or a project
@@ -134,6 +136,7 @@ export async function GET(req: Request, { params }: Params) {
     if (route === "inbox") return json(await inboxOf(a, { archived: url.searchParams.get("archived") === "1" }));
     if (route === "issues") return json({ cards: await issueList(a, { project: url.searchParams.get("project"), mine: url.searchParams.get("mine") === "1", done: url.searchParams.get("done") === "1" }) });
     if (route === "projects") return json({ projects: projectOptions(a) });
+    if (route === "issue-statuses") return json(issueStatuses(a, url.searchParams.get("issue")));
     if (route === "unread") return cors(req, json({ unread: unreadOf(a) }));
     return fail(404, "not found");
   } catch (e) {
@@ -143,7 +146,7 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const [route] = (await params).path;
-  // Card loads have their own budget: a page full of live cards never blocks ticking a checkbox.
+  // Card loads have their own budget: a page full of live cards never blocks changing a status.
   const rl = route === "cards" || route === "inbox" ? rateLimited(req, "eco-read", 900) : rateLimited(req, "eco-write", 120);
   if (rl) return rl;
   const bad = crossSite(req);
@@ -166,6 +169,8 @@ export async function POST(req: Request, { params }: Params) {
         return json({ card: await issueFromDoc(a, b) });
       case "issue-done":
         return json({ card: await setIssueDone(a, b.issue, b.done === true) });
+      case "issue-status":
+        return json({ card: await setIssueStatus(a, b.issue, b.statusId) });
       case "doc-for-issue":
         return json(await docForIssue(a, b.issue));
       case "design-for-issue":

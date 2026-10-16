@@ -115,6 +115,7 @@ test("the server-rendered public page: escaped text, safe links only, no comment
   assert.ok(html.includes(`href="#${sub.id}"`));
   assert.ok(html.includes("<h4"));
   assert.ok(html.includes("Главный экран"));
+  assert.ok(html.includes("Сообщить о нарушении"), "the footer links Report abuse");
   assert.ok(!html.includes("thread1"));
   assert.ok(!html.includes("secretuser1"));
   assert.ok(html.includes("Подстраница"));

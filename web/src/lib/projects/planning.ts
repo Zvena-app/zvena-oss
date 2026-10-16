@@ -457,7 +457,7 @@ export interface CycleLoad {
   points: number;
 }
 
-export function getCycle(ctx: Ctx, id: string): Cycle & { summary: CycleSummary | null; burnup: { day: string; scope: number; completed: number }[]; load: CycleLoad[] } {
+export function getCycle(ctx: Ctx, id: string): Cycle & { summary: CycleSummary | null; burnup: BurnupDay[]; load: CycleLoad[] } {
   const r = cycleRow(ctx, id);
   // Who carries what in the cycle (canceled issues left out).
   const load = (
@@ -469,29 +469,43 @@ export function getCycle(ctx: Ctx, id: string): Cycle & { summary: CycleSummary 
   return { ...toCycle(ctx, r), summary: r.summary ? (JSON.parse(r.summary) as CycleSummary) : null, burnup: burnup(r), load };
 }
 
+/** One day of a cycle's graph: its scope, the issues started by then (done ones too) and completed. */
+export interface BurnupDay {
+  day: string;
+  scope: number;
+  started: number;
+  completed: number;
+}
+
 /**
- * Scope and completed issues per day of the cycle: an issue counts from the
- * day it entered the cycle (its history, else its creation) and as completed
- * from its completion day.
+ * Scope, started and completed issues per day of the cycle (Linear's cycle
+ * graph): an issue counts from the day it entered the cycle (its history,
+ * else its creation), as started from the day work on it started (or it was
+ * completed), and as completed from its completion day.
  */
-function burnup(c: CycleRow): { day: string; scope: number; completed: number }[] {
+function burnup(c: CycleRow): BurnupDay[] {
   const issues = sql(
-    `SELECT i.id, i.created_at, i.completed_at, s.category,
+    `SELECT i.id, i.created_at, i.started_at, i.completed_at, s.category,
        (SELECT MAX(a.created_at) FROM pj_activity a WHERE a.issue_id = i.id AND a.kind = 'cycle' AND a.to_value = json_quote(i.cycle_id)) AS added_at
      FROM pj_issues i JOIN pj_statuses s ON s.id = i.status_id WHERE i.cycle_id = ? AND i.archived_at IS NULL AND s.category <> 'canceled'`
-  ).all(c.id) as { id: string; created_at: number; completed_at: number | null; category: string; added_at: number | null }[];
+  ).all(c.id) as { id: string; created_at: number; started_at: number | null; completed_at: number | null; category: string; added_at: number | null }[];
   const today = dayOf(Date.now());
   const last = c.completed_at ? dayOf(c.completed_at) : today < c.ends_on ? today : c.ends_on;
-  const out: { day: string; scope: number; completed: number }[] = [];
+  const out: BurnupDay[] = [];
   for (let day = c.starts_on; day <= last && out.length < 120; day = addDays(day, 1)) {
     let scope = 0;
+    let started = 0;
     let completed = 0;
     for (const i of issues) {
       const added = dayOf(i.added_at ?? i.created_at);
-      if (added <= day) scope++;
-      if (i.category === "completed" && i.completed_at && dayOf(i.completed_at) <= day && added <= day) completed++;
+      if (added > day) continue;
+      scope++;
+      const done = i.category === "completed" && i.completed_at !== null && dayOf(i.completed_at) <= day;
+      if (done) completed++;
+      // Started and not moved back to todo since (a reset start is null), or already done.
+      if (done || (i.started_at !== null && (i.category === "started" || i.category === "completed") && dayOf(i.started_at) <= day)) started++;
     }
-    out.push({ day, scope, completed });
+    out.push({ day, scope, started, completed });
   }
   return out;
 }
@@ -578,42 +592,103 @@ export function completeCycle(ctx: Ctx, id: string, moveTo: string | null): Cycl
     const t = cycleRow(ctx, moveTo);
     if (t.team_id !== c.team_id || t.id === c.id || t.completed_at) throw bad("bad target cycle");
   }
-  const now = Date.now();
-  const moved: string[] = [];
-  tx(() => {
-    const rows = sql(
-      "SELECT i.id, i.assignee_id, i.estimate, s.category FROM pj_issues i JOIN pj_statuses s ON s.id = i.status_id WHERE i.cycle_id = ? AND i.archived_at IS NULL"
-    ).all(id) as { id: string; assignee_id: string | null; estimate: number | null; category: string }[];
-    const open = rows.filter((r) => r.category !== "completed" && r.category !== "canceled");
-    const by = new Map<string | null, { total: number; completed: number }>();
-    for (const r of rows) {
-      if (r.category === "canceled") continue;
-      const e = by.get(r.assignee_id) ?? { total: 0, completed: 0 };
-      e.total++;
-      if (r.category === "completed") e.completed++;
-      by.set(r.assignee_id, e);
-    }
-    const summary: CycleSummary = {
-      scope: rows.filter((r) => r.category !== "canceled").length,
-      completed: rows.filter((r) => r.category === "completed").length,
-      canceled: rows.filter((r) => r.category === "canceled").length,
-      carriedOver: open.length,
-      carriedTo: moveTo,
-      points: rows.filter((r) => r.category !== "canceled").reduce((a, r) => a + (r.estimate ?? 0), 0),
-      pointsDone: rows.filter((r) => r.category === "completed").reduce((a, r) => a + (r.estimate ?? 0), 0),
-      byAssignee: [...by.entries()].map(([userId, v]) => ({ userId, ...v })),
-    };
-    for (const r of open) {
-      sql("UPDATE pj_issues SET cycle_id = ?, updated_at = ? WHERE id = ?").run(moveTo, now, r.id);
-      record(ctx, r.id, "cycle", id, moveTo, now);
-    }
-    sql("UPDATE pj_cycles SET completed_at = ?, summary = ?, updated_at = ? WHERE id = ?").run(now, JSON.stringify(summary), now, id);
-    bump(ctx.wsId);
-    for (const r of open) moved.push(r.id);
-  });
+  const moved = tx(() => closeCycle(ctx, c, moveTo, Date.now()));
   emit(ctx, "cycle", id);
   for (const m of moved) emit(ctx, "issue", m);
   return getCycle(ctx, id);
+}
+
+/** Writes a cycle's completion (inside a transaction); returns the issues carried over. */
+function closeCycle(ctx: Ctx, c: CycleRow, moveTo: string | null, now: number): string[] {
+  const rows = sql(
+    "SELECT i.id, i.assignee_id, i.estimate, s.category FROM pj_issues i JOIN pj_statuses s ON s.id = i.status_id WHERE i.cycle_id = ? AND i.archived_at IS NULL AND i.triage_at IS NULL"
+  ).all(c.id) as { id: string; assignee_id: string | null; estimate: number | null; category: string }[];
+  // Unfinished work rolls over; completed and canceled issues stay with the cycle they closed in.
+  const open = rows.filter((r) => r.category !== "completed" && r.category !== "canceled");
+  const by = new Map<string | null, { total: number; completed: number }>();
+  for (const r of rows) {
+    if (r.category === "canceled") continue;
+    const e = by.get(r.assignee_id) ?? { total: 0, completed: 0 };
+    e.total++;
+    if (r.category === "completed") e.completed++;
+    by.set(r.assignee_id, e);
+  }
+  const summary: CycleSummary = {
+    scope: rows.filter((r) => r.category !== "canceled").length,
+    completed: rows.filter((r) => r.category === "completed").length,
+    canceled: rows.filter((r) => r.category === "canceled").length,
+    carriedOver: open.length,
+    carriedTo: moveTo,
+    points: rows.filter((r) => r.category !== "canceled").reduce((a, r) => a + (r.estimate ?? 0), 0),
+    pointsDone: rows.filter((r) => r.category === "completed").reduce((a, r) => a + (r.estimate ?? 0), 0),
+    byAssignee: [...by.entries()].map(([userId, v]) => ({ userId, ...v })),
+  };
+  for (const r of open) {
+    sql("UPDATE pj_issues SET cycle_id = ?, updated_at = ? WHERE id = ?").run(moveTo, now, r.id);
+    record(ctx, r.id, "cycle", c.id, moveTo, now);
+  }
+  sql("UPDATE pj_cycles SET completed_at = ?, summary = ?, updated_at = ? WHERE id = ?").run(now, JSON.stringify(summary), now, c.id);
+  bump(ctx.wsId);
+  return open.map((r) => r.id);
+}
+
+/**
+ * Cycles end by themselves (Linear): the hourly job completes every cycle of
+ * a team with cycles on whose last day is past, and its unfinished issues roll
+ * over to the team's next cycle, made when there is none yet (as long as the
+ * team's cycle length, placed so that it runs today). Completed and canceled
+ * issues stay. The history names no person ("zvena"). Returns the cycles completed.
+ */
+export function rollOverCycles(now = Date.now()): number {
+  const today = dayOf(now);
+  const due = sql(
+    `SELECT c.${CYCLE_COLS.split(", ").join(", c.")}, c.ws_id, t.cycle_weeks FROM pj_cycles c JOIN pj_teams t ON t.id = c.team_id
+     WHERE c.completed_at IS NULL AND c.ends_on < ? AND t.cycles_enabled = 1 AND t.archived_at IS NULL ORDER BY c.team_id, c.ends_on LIMIT 500`
+  ).all(today) as unknown as (CycleRow & { ws_id: string; cycle_weeks: number })[];
+  let done = 0;
+  for (const c of due) {
+    const ctx: Ctx = { userId: "", wsId: c.ws_id, role: "owner", teams: () => new Set([c.team_id]) };
+    let made: string | null = null;
+    let moved: string[] = [];
+    try {
+      tx(() => {
+        // Still open (another process may have completed it meanwhile).
+        if (!sql("SELECT 1 FROM pj_cycles WHERE id = ? AND completed_at IS NULL").get(c.id)) return;
+        let next = (sql("SELECT id FROM pj_cycles WHERE team_id = ? AND completed_at IS NULL AND starts_on > ? ORDER BY starts_on LIMIT 1").get(c.team_id, c.ends_on) as { id: string } | undefined)?.id ?? null;
+        if (!next) {
+          const len = c.cycle_weeks * 7;
+          let start = addDays(c.ends_on, 1);
+          // Days the server was away: the new cycle is the one that runs today.
+          while (addDays(start, len - 1) < today) start = addDays(start, len);
+          const end = addDays(start, len - 1);
+          if (!sql("SELECT 1 FROM pj_cycles WHERE team_id = ? AND starts_on <= ? AND ends_on >= ?").get(c.team_id, end, start)) {
+            const n = sql("SELECT IFNULL(MAX(number), 0) AS n FROM pj_cycles WHERE team_id = ?").get(c.team_id) as { n: number };
+            next = pid();
+            sql("INSERT INTO pj_cycles (id, ws_id, team_id, number, name, description, starts_on, ends_on, created_at, updated_at) VALUES (?, ?, ?, ?, '', '', ?, ?, ?, ?)").run(
+              next,
+              c.ws_id,
+              c.team_id,
+              Number(n.n) + 1,
+              start,
+              end,
+              now,
+              now
+            );
+            made = next;
+          }
+        }
+        moved = closeCycle(ctx, c, next, now);
+        done++;
+      });
+    } catch (e) {
+      console.error(`[projects] cycle rollover failed (${e instanceof Error ? e.name : "error"})`);
+      continue;
+    }
+    if (made) emit(ctx, "cycle", made, { created: true });
+    emit(ctx, "cycle", c.id);
+    for (const m of moved) emit(ctx, "issue", m);
+  }
+  return done;
 }
 
 /** The team's active cycle on `today`, if any. */

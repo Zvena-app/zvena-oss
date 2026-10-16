@@ -5,6 +5,7 @@ import { consumeCode, consumeLink } from "@/lib/email-signin";
 import { crossSite, guestId } from "@/lib/http";
 import { parseAcceptLanguage, resolveLocale, translate, UI_LANG_COOKIE } from "@/lib/i18n";
 import { rateLimited } from "@/lib/rate-limit";
+import { readFormCapped } from "@/lib/safe-json";
 import { finishSignIn, signInError } from "@/lib/signin";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   if (rl) return rl;
   const bad = crossSite(req);
   if (bad) return bad;
-  const form = await req.formData().catch(() => null);
+  const form = await readFormCapped(req);
   const token = form?.get("token");
   const ref = String(form?.get("ref") ?? "");
   const r = typeof token === "string" && token ? consumeLink(token) : consumeCode(ref, form?.get("code"));

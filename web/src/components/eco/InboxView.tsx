@@ -38,7 +38,7 @@ const WHAT: Record<string, EcoKey> = {
   suggestion_accepted: "what_suggestion_accepted",
   suggestion_rejected: "what_suggestion_rejected",
   page_update: "what_page_update",
-  jev: "what_jev",
+  proposal: "what_proposal",
 };
 
 /** Kinds that read as something a person did ("… assigned you"), not a state ("Overdue"). */
@@ -77,7 +77,10 @@ function Row({ item, locale, archived, onOpen, onArchive }: { item: InboxItem; l
         {item.text && <span className="eco-inbox-text">{item.text}</span>}
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-        <span className="eco-inbox-when">{when(item.at, locale)}</span>
+        {/* Relative to now (and in the browser's zone): the page's copy may read a minute apart. */}
+        <span className="eco-inbox-when" suppressHydrationWarning>
+          {when(item.at, locale)}
+        </span>
         <button
           type="button"
           className="eco-icon-btn"
@@ -96,9 +99,9 @@ function Row({ item, locale, archived, onOpen, onArchive }: { item: InboxItem; l
   );
 }
 
-export function InboxView({ ws, me, limit }: { ws: string; me: string; limit?: number }) {
+export function InboxView({ ws, me, limit, initial }: { ws: string; me: string; limit?: number; initial?: { items: InboxItem[]; unread: number } | null }) {
   const [archived, setArchived] = useState(false);
-  const { items, unread, reload, setItems } = useInbox(ws, me, archived);
+  const { items, unread, reload, setItems } = useInbox(ws, me, archived, initial);
   const t = useEt();
   const { locale } = useI18n();
   const shown = items && limit ? items.slice(0, limit) : items;

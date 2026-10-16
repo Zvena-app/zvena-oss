@@ -26,7 +26,8 @@ try {
     const text = await p.locator("body").innerText();
     check(`${path} answers 200`, res?.status() === 200, String(res?.status()));
     check(`${path} has no Cyrillic`, !/[А-Яа-яЁё]/.test(text), (text.match(/.{0,30}[А-Яа-яЁё]+.{0,30}/) || [""])[0]);
-    // zvena has Jev (TypeSafe AI) now: no page may still promise "no AI".
+    // zvena has an optional decision model now: no page may still promise "no AI".
+    check(`${path} names no model or provider`, !/j[e]v|t[y]pe-?s[a]fe/i.test(text), (text.match(/.{0,30}(j[e]v|t[y]pe-?s[a]fe).{0,30}/i) || [""])[0]);
     check(`${path} makes no "no AI" claim`, !/\b(no|without) AI\b|AI-free|none, by design/i.test(text), (text.match(/.{0,30}\b(no|without) AI\b.{0,30}/i) || [""])[0]);
     check(`${path} has one h1`, (await p.locator("h1").count()) === 1);
     check(`${path} has a link preview picture`, (await p.locator('meta[property="og:image"]').count()) > 0 && (await p.locator('meta[name="twitter:image"]').count()) > 0);

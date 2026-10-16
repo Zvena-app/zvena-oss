@@ -20,7 +20,7 @@ import type { InboxItem } from "./types";
 
 export type { InboxItem };
 
-export type InboxKind = "mention" | "comment" | "reply" | "assigned" | "reminder" | "invite" | "automation" | "mail" | "suggestion" | "suggestion_accepted" | "suggestion_rejected" | "page_update" | "jev";
+export type InboxKind = "mention" | "comment" | "reply" | "assigned" | "reminder" | "invite" | "automation" | "mail" | "suggestion" | "suggestion_accepted" | "suggestion_rejected" | "page_update" | "proposal";
 
 /** One notification as a product sends it. */
 export interface InboxNote {
@@ -35,7 +35,7 @@ export interface InboxNote {
   /** A short plain-text excerpt (≤ 280 characters). */
   text?: string;
 }
-const KINDS: readonly string[] = ["mention", "comment", "reply", "assigned", "reminder", "invite", "automation", "mail", "suggestion", "suggestion_accepted", "suggestion_rejected", "page_update", "jev"];
+const KINDS: readonly string[] = ["mention", "comment", "reply", "assigned", "reminder", "invite", "automation", "mail", "suggestion", "suggestion_accepted", "suggestion_rejected", "page_update", "proposal"];
 
 const PART_RE = /^[A-Za-z0-9_:-]{1,80}$/;
 

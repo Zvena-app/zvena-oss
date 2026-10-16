@@ -1,6 +1,6 @@
-// Jev's hub joined to the rest of zvena: numbers from Calendar and Mail,
+// The automations hub joined to the rest of zvena: numbers from Calendar and Mail,
 // issues that follow Design comments and meetings, and Documents' database
-// automations in Jev's journal (with Undo) and under "only if Jev agrees".
+// automations in the journal (with Undo) and under "run only if …".
 import "./env";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -14,10 +14,10 @@ import { createEvent, updateEvent } from "@/lib/calendar/events";
 import { atMinute, addDays, dayOf } from "@/lib/calendar/tz";
 import { issueFromEvent } from "@/lib/eco/calendar";
 import { ecoDb } from "@/lib/eco/schema";
-import { metricsOf, setJev } from "@/lib/decide/engine";
+import { metricsOf, setSmart } from "@/lib/decide/engine";
 import { followThreads } from "@/lib/decide/flows";
-import { hubSettings, setHubSettings, startJev } from "@/lib/decide/hub";
-import { resetJev } from "@/lib/decide/jev";
+import { hubSettings, setHubSettings, startHub } from "@/lib/decide/hub";
+import { resetSmart } from "@/lib/decide/smart";
 import { activityOf, settle } from "@/lib/decide/journal";
 import { forgetSeen, saveSource, visibleMetrics } from "@/lib/decide/sources";
 import { sanitizeNote } from "@/lib/notes/model";
@@ -51,8 +51,8 @@ const team = createTeam(as(owner), { name: "Ops", key: "OPS" }, "en");
 const cat = (id: string) => listStatuses(as(owner, "read")).find((s) => s.id === getIssueBrief(as(owner, "read"), id).statusId)?.category;
 const cal = (u: string) => new CalAccess(u, ws);
 
-delete process.env.TYPESAFE_API_KEY;
-startJev();
+delete process.env.ZVENA_AI_KEY;
+startHub();
 
 test("a calendar is a live number: meetings in a window, by title, only for people who can read the calendar", async () => {
   const mine = ensureDefault(cal(owner), "Ada", NY)!;
@@ -192,13 +192,13 @@ const tickets = (automations: unknown[]) =>
 const ticket = (id: string, title: string, extra: Record<string, unknown> = {}) => note({ id, kind: "page", title, parentId: DB, props: { who: [mate], body: "The page crashes on save", ...extra } as Note["props"] });
 const kindOf = (id: string) => (JSON.parse((sql("SELECT json FROM notes WHERE ws = ? AND id = ?").get(ws, id) as { json: string }).json) as Note).props?.kind;
 
-test("a database automation's runs are in Jev's journal, and Undo puts back what it set", async () => {
+test("a database automation's runs are in the journal, and Undo puts back what it set", async () => {
   pushNotes(ws, [{ id: DB, note: tickets([{ id: "a1", name: "Triage new tickets", on: true, trigger: { type: "added" }, actions: [{ type: "set", prop: "kind", value: "ask" }] }]) }], { by: owner, quotaLeft: Infinity, access: { userId: owner } });
   const row = "jcrow00000000000000000000000000001";
   pushNotes(ws, [{ id: row, note: ticket(row, "How do I export?") }], { by: owner, quotaLeft: Infinity, access: { userId: owner } });
   assert.equal(kindOf(row), "ask");
   const item = activityOf(ws, owner).find((a) => a.kind === "automation" && a.subject === `note:${row}`);
-  assert.ok(item, "the run is on Jev's list");
+  assert.ok(item, "the run is on the list");
   assert.equal(item.detail.automation, "Triage new tickets");
   assert.equal(item.source, "rule");
   assert.ok(item.canUndo);
@@ -206,7 +206,7 @@ test("a database automation's runs are in Jev's journal, and Undo puts back what
   assert.equal(kindOf(row) ?? null, null, "Undo put the value back");
 });
 
-test("“only if Jev agrees”: sure runs it, less sure waits for a yes; only the named properties go out, never a person", async () => {
+test("“run only if …”: sure runs it, less sure waits for a yes; only the named properties go out, never a person", async () => {
   type Body = { state: Record<string, unknown>; questions: Record<string, { type: string }> };
   const bodies: Body[] = [];
   let p = 0.97;
@@ -216,24 +216,24 @@ test("“only if Jev agrees”: sure runs it, less sure waits for a yes; only th
     req.on("end", () => {
       bodies.push(JSON.parse(raw) as Body);
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ model: "jev-test", answers: { yes: { type: "noul", noul: p } }, usage: { input_tokens: 1, output_tokens: 1 } }));
+      res.end(JSON.stringify({ model: "model-test", answers: { yes: { type: "noul", noul: p } }, usage: { input_tokens: 1, output_tokens: 1 } }));
     });
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
-  Object.assign(process.env, { TYPESAFE_API_KEY: "test-key", ZVENA_JEV_URL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1/systemone`, ZVENA_JEV_TIMEOUT_MS: "800" });
-  resetJev();
-  setJev(ws, true, owner);
+  Object.assign(process.env, { ZVENA_AI_KEY: "test-key", ZVENA_AI_URL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1/systemone`, ZVENA_AI_TIMEOUT_MS: "800" });
+  resetSmart();
+  setSmart(ws, true, owner);
   try {
-    const jev = { question: "Is this a bug report?", fields: ["title", "body", "who"] };
-    pushNotes(ws, [{ id: DB, note: tickets([{ id: "a2", name: "Mark bugs", on: true, trigger: { type: "added" }, jev, actions: [{ type: "set", prop: "kind", value: "bug" }] }]) }], { by: owner, quotaLeft: Infinity, access: { userId: owner } });
+    const onlyIf = { question: "Is this a bug report?", fields: ["title", "body", "who"] };
+    pushNotes(ws, [{ id: DB, note: tickets([{ id: "a2", name: "Mark bugs", on: true, trigger: { type: "added" }, onlyIf, actions: [{ type: "set", prop: "kind", value: "bug" }] }]) }], { by: owner, quotaLeft: Infinity, access: { userId: owner } });
     const sure = "jcrow00000000000000000000000000002";
     pushNotes(ws, [{ id: sure, note: ticket(sure, "Crash on save") }], { by: owner, quotaLeft: Infinity, access: { userId: owner } });
     await until(() => kindOf(sure) === "bug");
-    assert.equal(kindOf(sure), "bug", "Jev was sure: it ran");
+    assert.equal(kindOf(sure), "bug", "the model was sure: it ran");
     const sent = bodies[0];
     assert.deepEqual(Object.keys(sent.state).sort(), ["Details", "Ticket"], "the person column never goes out");
     const ran = activityOf(ws, owner).find((a) => a.kind === "automation" && a.subject === `note:${sure}`);
-    assert.equal(ran?.source, "jev");
+    assert.equal(ran?.source, "model");
 
     p = 0.7;
     const unsure = "jcrow00000000000000000000000000003";
@@ -260,18 +260,18 @@ test("“only if Jev agrees”: sure runs it, less sure waits for a yes; only th
     pushNotes(ws, [{ id: no, note: ticket(no, "Thanks!") }], { by: owner, quotaLeft: Infinity, access: { userId: owner } });
     await until(() => bodies.length >= 4);
     await new Promise((r) => setTimeout(r, 100));
-    assert.equal(kindOf(no) ?? null, null, "Jev said no: nothing ran");
+    assert.equal(kindOf(no) ?? null, null, "the condition does not hold: nothing ran");
 
-    // Jev off in the workspace: such automations do not run at all.
-    setJev(ws, false, owner);
+    // Smart suggestions off in the workspace: such automations do not run at all.
+    setSmart(ws, false, owner);
     const off = "jcrow00000000000000000000000000005";
     pushNotes(ws, [{ id: off, note: ticket(off, "Crash again") }], { by: owner, quotaLeft: Infinity, access: { userId: owner } });
     await new Promise((r) => setTimeout(r, 100));
     assert.equal(bodies.length, 4, "nothing was sent");
     assert.equal(kindOf(off) ?? null, null);
   } finally {
-    delete process.env.TYPESAFE_API_KEY;
-    resetJev();
+    delete process.env.ZVENA_AI_KEY;
+    resetSmart();
     server.close();
   }
 });

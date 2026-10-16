@@ -15,27 +15,71 @@ import { Shell, type ShellSection } from "@/components/zvena/ds";
 import type { SessionUser } from "@/lib/session";
 import { openCreate, openPalette, typing, ui } from "./app-state";
 import { api, boot, GOALS_EVENT, invalidateAll, loadBoot, online, setWorkspace, toast, useStore, type GoalReached } from "./data";
-import { CommandPalette, ShortcutsHelp } from "./CommandPalette";
-import { CreateIssueDialog } from "./CreateIssue";
-import { InboxScreen } from "./Inbox";
-import { IssueDetailView } from "./IssueDetail";
 import { useT } from "./i18n";
 import { PropPicker, useApply, type PropKind } from "./pickers";
-import { CyclePage, CyclesList, ProjectPage, ProjectsList, Roadmap } from "./Planning";
 import { copyIssueRefs, href, navigate, setParams, stay, syncLoc, useLoc } from "./router";
 import { AllIssues, ArchiveScreen, MyIssues, SearchScreen, TeamIssues, ViewScreen, ViewsList } from "./Screens";
-import { Onboarding, SettingsScreen } from "./Settings";
 import { StaleDialog } from "./Assistant";
 import { ProjectsNav } from "./ProjectsNav";
-import { TriageScreen } from "./Triage";
-import { InsightsScreen } from "./Insights";
 import { ConfirmHost, Empty, ErrorState, LoadingRows, overlays, Popover, type Anchor } from "./ui";
 import { localToday, markStale, useLookups } from "./data";
+import { loadEditor, preloadEditor } from "./Editor";
+import { lazyComponent, lazyPart, preloadWhenIdle, type Part } from "@/lib/lazy-part";
+
+// Screens other than the issue lists, the issue page and the dialogs are
+// chunks of their own: the one the address opens loads alongside the app,
+// the rest once it is idle, so moving around does not wait for them.
+const planning = lazyPart(() => import("./Planning"));
+const settings = lazyPart(() => import("./Settings"));
+const detail = lazyPart(() => import("./IssueDetail"));
+const inbox = lazyPart(() => import("./Inbox"));
+const triage = lazyPart(() => import("./Triage"));
+const insights = lazyPart(() => import("./Insights"));
+const palette = lazyPart(() => import("./CommandPalette"));
+const create = lazyPart(() => import("./CreateIssue"));
+const wait = <LoadingRows rows={10} />;
+const CyclePage = lazyComponent(planning, (m) => m.CyclePage, wait);
+const CyclesList = lazyComponent(planning, (m) => m.CyclesList, wait);
+const ProjectPage = lazyComponent(planning, (m) => m.ProjectPage, wait);
+const ProjectsList = lazyComponent(planning, (m) => m.ProjectsList, wait);
+const Roadmap = lazyComponent(planning, (m) => m.Roadmap, wait);
+const SettingsScreen = lazyComponent(settings, (m) => m.SettingsScreen, wait);
+const Onboarding = lazyComponent(settings, (m) => m.Onboarding, wait);
+const IssueDetailView = lazyComponent(detail, (m) => m.IssueDetailView, <LoadingRows rows={8} />);
+const InboxScreen = lazyComponent(inbox, (m) => m.InboxScreen, wait);
+const TriageScreen = lazyComponent(triage, (m) => m.TriageScreen, wait);
+const InsightsScreen = lazyComponent(insights, (m) => m.InsightsScreen, wait);
+const CommandPalette = lazyComponent(palette, (m) => m.CommandPalette);
+const ShortcutsHelp = lazyComponent(palette, (m) => m.ShortcutsHelp);
+const CreateIssueDialog = lazyComponent(create, (m) => m.CreateIssueDialog);
+
+/** The parts the address needs first (/projects/<screen>…, ?peek=, ?create=). */
+function partsFor(path: string, search: string): Part<unknown>[] {
+  const [a, , c] = path.replace(/^\/projects\/?/, "").split("/");
+  const out: Part<unknown>[] = [];
+  if (a === "issue" || /[?&]peek=/.test(search)) out.push(detail);
+  if (/[?&]create=/.test(search)) out.push(create);
+  if (a === "projects" || a === "project" || a === "roadmap" || (a === "team" && (c === "cycles" || c === "projects"))) out.push(planning);
+  if (a === "settings" || (a === "team" && c === "settings")) out.push(settings);
+  if (a === "inbox") out.push(inbox);
+  if (a === "insights") out.push(insights);
+  if (a === "team" && c === "triage") out.push(triage);
+  return out;
+}
+
+// The text editor is a chunk of its own too: an issue page (or a peek, or "New
+// issue") shows it at once, so it loads alongside the app; elsewhere once idle.
+if (typeof window !== "undefined") {
+  for (const p of partsFor(location.pathname, location.search)) void p.load().catch(() => {});
+  preloadEditor(/^\/projects\/issue\//.test(location.pathname) || /[?&](peek|create)=/.test(location.search) ? "now" : "idle");
+}
 
 export function ProjectsApp({ user, initial, initialAt = 0 }: { user: SessionUser; initial?: Bootstrap | null; initialAt?: number }) {
   const pathname = usePathname();
   const search = useSearchParams().toString();
   useState(() => {
+    // A workspace with no team yet opens on the first-run screen (Settings' Onboarding).
+    if (typeof window !== "undefined" && initial && initial.teams.length === 0) void settings.load().catch(() => {});
     setWorkspace(user.ws.id);
     // Back from another section (a client navigation): the right screen, and what it
     // showed before at once while it is fetched again.
@@ -74,6 +118,8 @@ export function ProjectsApp({ user, initial, initialAt = 0 }: { user: SessionUse
 }
 
 function Loaded() {
+  // Once the first screen is up: the other screens, the issue page and the dialogs.
+  useEffect(() => preloadWhenIdle([detail, create, palette, { load: loadEditor }, planning, inbox, settings, triage, insights]), []);
   const L = useLookups();
   const loc = useLoc();
   const state = useStore(ui);

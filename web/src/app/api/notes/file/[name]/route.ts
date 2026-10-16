@@ -2,13 +2,17 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { Readable } from "node:stream";
-import { inlineType, NOTE_FILE_RE, NOTE_FILE_TYPES, notesFilesDir } from "@/lib/notes/files";
+import { isImageExt, NOTE_FILE_RE, NOTE_FILE_TYPES, notesFilesDir } from "@/lib/notes/files";
+import { isRemovedFile } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/notes/file/<hash>.<ext> — a file placed in a page. Immutable
 // (content-addressed). Served sandboxed: an SVG or HTML-ish file opened
-// directly can never run script on this origin.
+// directly can never run script on this origin. Only pictures open in the
+// browser when the link is followed; everything else downloads (a PDF still
+// shows inside a page's own PDF block, which embeds it from this origin).
+// A file a moderator took down answers 451.
 // Cached by the person's own browser only ("private"): no CDN or proxy copy
 // outlives a deleted account. Errors are never cached anywhere (a file
 // asked for just before its upload finished must not stay a 404).
@@ -21,23 +25,32 @@ export async function GET(req: Request, { params }: { params: Promise<{ name: st
   const ext = name.split(".").pop() as string;
   const type = NOTE_FILE_TYPES[ext];
   if (!type) return notFound();
+  if (isRemovedFile(name)) return new Response("removed by moderator", { status: 451, headers: NO_STORE });
   const file = join(notesFilesDir(), name);
   try {
     const st = await stat(file);
     if (!st.isFile()) return notFound();
+    // A PDF shows in place only inside a page of this site (the PDF block's
+    // frame); a followed link, or a frame elsewhere, downloads it.
+    const pdfEmbed = ext === "pdf" && /^(iframe|embed|object)$/.test(req.headers.get("sec-fetch-dest") ?? "") && req.headers.get("sec-fetch-site") === "same-origin";
     const headers: Record<string, string> = {
       "content-type": type,
       "cache-control": "private, max-age=31536000, immutable",
       "x-content-type-options": "nosniff",
       // Chrome will not show a PDF in a sandboxed document; its viewer
       // isolates PDF scripts by itself.
-      "content-security-policy": ext === "pdf" ? "default-src 'none'; object-src 'self'; frame-ancestors 'self'" : "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'self'; sandbox",
+      "content-security-policy": pdfEmbed ? "default-src 'none'; object-src 'self'; frame-ancestors 'self'" : "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'self'; sandbox",
       "accept-ranges": "bytes",
     };
+    if (ext === "pdf") headers.vary = "sec-fetch-dest, sec-fetch-site";
     const dl = new URL(req.url).searchParams.get("download");
-    if (!inlineType(ext) || dl !== null) {
+    // Pictures may open in place; anything else is an attachment (video and
+    // audio still play in a page: players ignore the disposition).
+    if (!(isImageExt(ext) || pdfEmbed) || dl !== null) {
       // An ASCII fallback plus the real (e.g. Cyrillic) name for browsers that read filename*.
-      const real = (dl || name).replace(/[\u0000-\u001f\u007f"\\/]+/g, "_").slice(0, 120);
+      // The name always ends in the stored type: a picture cannot download as "invoice.exe".
+      let real = (dl || name).replace(/[\u0000-\u001f\u007f"\\/]+/g, "_").slice(0, 120);
+      if (!real.toLowerCase().endsWith(`.${ext}`) && !(ext === "jpg" && /\.jpeg$/i.test(real))) real = `${real.replace(/\.+$/, "")}.${ext}`;
       const fname = real.replace(/[^\w.\- ]+/g, "_");
       headers["content-disposition"] = `attachment; filename="${fname}"; filename*=UTF-8''${encodeURIComponent(real)}`;
     }

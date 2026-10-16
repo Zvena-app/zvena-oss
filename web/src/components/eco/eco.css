@@ -4,7 +4,7 @@
    through the three, so light and dark follow whatever is around them. */
 
 .eco-root,
-.eco-jev,
+.eco-hub,
 .eco-card,
 .eco-related,
 .eco-search,
@@ -430,6 +430,52 @@
   color: var(--eco-text);
   z-index: 1001;
 }
+/* An issue's status menu (StatusMenu.tsx): the team's workflow, Linear's way. */
+.eco-status-menu {
+  transform: none;
+  padding: 4px;
+  outline: none;
+}
+.eco-status-menu-head {
+  padding: 6px 8px 4px;
+  color: var(--eco-text-3);
+  font-size: 12px;
+}
+.eco-status-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.eco-status-opt[data-active] {
+  background: var(--eco-hover);
+}
+.eco-status-opt-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eco-status-opt-check {
+  color: var(--eco-text-2);
+}
+.eco-status-opt .eco-kbd {
+  min-width: 18px;
+  text-align: center;
+}
+@media (pointer: coarse) {
+  .eco-status-opt {
+    min-height: 40px;
+  }
+  .eco-status-opt .eco-kbd {
+    display: none;
+  }
+}
 .eco-search {
   display: flex;
   flex-direction: column;
@@ -783,8 +829,8 @@
   font-size: 12px;
 }
 
-/* Jev on Home (JevPanel.tsx): goals, proposals and what it did. */
-.eco-jev {
+/* Automations on Home (AutomationsPanel.tsx): goals, suggestions and what was done. */
+.eco-hub {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -795,51 +841,37 @@
   background: var(--eco-bg);
   min-height: 48px;
 }
-.eco-jev-head { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
-.eco-jev-head h2 { margin: 0; font-size: 13px; font-weight: 600; }
-.eco-jev-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  color: #fff;
-  background: linear-gradient(135deg, #7b61ff, #2383e2);
-}
-.eco-jev-state { font-size: 12px; color: var(--eco-text-2); }
-.eco-jev-state[data-on]::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #2da44e; vertical-align: 1px; }
-.eco-jev-week { font-size: 12px; color: var(--eco-text-2); margin-left: auto; }
-.eco-jev-head .eco-icon-btn:last-child { margin-left: auto; }
-.eco-jev-week + .eco-icon-btn { margin-left: 4px !important; }
-.eco-jev-settings { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--eco-hover); font-size: 13px; }
-.eco-jev-settings label { display: flex; gap: 8px; align-items: center; }
-.eco-jev-block h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--eco-text-2); text-transform: none; }
-.eco-jev-empty { margin: 0; font-size: 13px; color: var(--eco-text-2); }
-.eco-jev-goals, .eco-jev-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.eco-jev-goals li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 6px 6px; border-radius: 6px; }
-.eco-jev-goals li:hover, .eco-jev-items li:hover { background: var(--eco-hover); }
-.eco-jev-goals li .eco-goal-bar { grid-column: 1 / -1; width: 100%; }
-.eco-jev-goals li[data-met] { color: var(--eco-text-2); }
-.eco-jev-goals li[data-met] svg { color: #2da44e; }
-.eco-jev-goal-title { display: flex; align-items: center; gap: 6px; min-width: 0; color: inherit; text-decoration: none; font-size: 13px; }
-.eco-jev-id { color: var(--eco-text-2); font-variant-numeric: tabular-nums; flex: none; }
-.eco-jev-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; text-decoration: none; font-size: 13px; }
-.eco-jev-goal-num { font-size: 12px; color: var(--eco-text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.eco-jev-chip { flex: none; font-size: 11px; padding: 0 6px; border-radius: 9px; color: #7b61ff; background: rgba(123, 97, 255, 0.14); }
-.eco-jev-items li { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 2px 6px; border-radius: 6px; }
-.eco-jev-items li .eco-jev-text { flex: 1; }
-.eco-jev-items li[data-undone] .eco-jev-text { text-decoration: line-through; color: var(--eco-text-2); }
-.eco-jev-sure, .eco-jev-when { flex: none; font-size: 12px; color: var(--eco-text-2); font-variant-numeric: tabular-nums; }
-.eco-jev-acts { display: inline-flex; gap: 4px; flex: none; }
-.eco-jev-acts .eco-btn { height: 26px; padding: 0 8px; font-size: 12px; }
+.eco-hub-head { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.eco-hub-head h2 { margin: 0; font-size: 13px; font-weight: 600; }
+.eco-hub-head .eco-icon-btn:last-child { margin-left: auto; }
+.eco-hub-settings { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--eco-hover); font-size: 13px; }
+.eco-hub-settings label { display: flex; gap: 8px; align-items: center; }
+.eco-hub-block h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--eco-text-2); text-transform: none; }
+.eco-hub-empty { margin: 0; font-size: 13px; color: var(--eco-text-2); }
+.eco-hub-goals, .eco-hub-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.eco-hub-goals li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 6px 6px; border-radius: 6px; }
+.eco-hub-goals li:hover, .eco-hub-items li:hover { background: var(--eco-hover); }
+.eco-hub-goals li .eco-goal-bar { grid-column: 1 / -1; width: 100%; }
+.eco-hub-goals li[data-met] { color: var(--eco-text-2); }
+.eco-hub-goals li[data-met] svg { color: #2da44e; }
+.eco-hub-goal-title { display: flex; align-items: center; gap: 6px; min-width: 0; color: inherit; text-decoration: none; font-size: 13px; }
+.eco-hub-id { color: var(--eco-text-2); font-variant-numeric: tabular-nums; flex: none; }
+.eco-hub-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; text-decoration: none; font-size: 13px; }
+.eco-hub-goal-num { font-size: 12px; color: var(--eco-text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.eco-hub-items li { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 2px 6px; border-radius: 6px; }
+.eco-hub-items li .eco-hub-text { flex: 1; }
+.eco-hub-items li[data-undone] .eco-hub-text { text-decoration: line-through; color: var(--eco-text-2); }
+.eco-hub-sure, .eco-hub-when { flex: none; font-size: 12px; color: var(--eco-text-2); font-variant-numeric: tabular-nums; }
+.eco-hub-acts { display: inline-flex; gap: 4px; flex: none; }
+.eco-hub-acts .eco-btn { height: 26px; padding: 0 8px; font-size: 12px; }
 @media (max-width: 640px) {
-  .eco-jev { padding: 12px; }
-  .eco-jev-goals li { grid-template-columns: minmax(0, 1fr); }
-  .eco-jev-items li { flex-wrap: wrap; }
-  .eco-jev-items li .eco-jev-text { white-space: normal; flex-basis: 100%; }
+  .eco-hub { padding: 12px; }
+  .eco-hub-goals li { grid-template-columns: minmax(0, 1fr); }
+  .eco-hub-items li { flex-wrap: wrap; }
+  .eco-hub-items li .eco-hub-text { white-space: normal; flex-basis: 100%; }
 }
 
-/* The Goal panel's measure picker, live marker and Jev's proposal (GoalCondition.tsx). */
+/* The Goal panel's measure picker, live marker and suggested goal (GoalCondition.tsx). */
 .eco-goal-from { display: flex; flex-wrap: wrap; gap: 6px; }
 .eco-goal-from label { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--eco-border-2); border-radius: 6px; font-size: 12px; cursor: pointer; }
 .eco-goal-from label[data-on] { border-color: var(--eco-accent); background: var(--eco-accent-soft); }
@@ -867,15 +899,15 @@
   .eco-chart-goal .eco-goal-bar { grid-column: 1 / -1; }
 }
 
-/* Jev's settings: a key for numbers from outside, shown once. */
-.eco-jev-ingest {
+/* Automations settings: a key for numbers from outside, shown once. */
+.eco-hub-ingest {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding-top: 6px;
   border-top: 1px solid var(--eco-border);
 }
-.eco-jev-code {
+.eco-hub-code {
   margin: 0;
   padding: 8px;
   overflow-x: auto;

@@ -1,4 +1,4 @@
-// Jev's hub: one place that starts and steers everything zvena does by itself.
+// The automations hub: one place that starts and steers everything zvena does by itself.
 // Server-only.
 //
 //   reactions   "when → if → then" on every product's pulse (engine.ts):
@@ -12,12 +12,12 @@
 //   flows       an issue follows Design (its comment thread resolved) and
 //               Calendar (its meeting moved) (flows.ts);
 //   docs        Documents' database automations: every run in the journal,
-//               "only if Jev agrees" judged by Jev (docs-jev.ts);
+//               "run only if …" judged by the decision model (docs-smart.ts);
 //   autopilot   a new issue's priority, label, project, assignee and
 //               duplicates; "is it done?" on comments (lib/projects/autopilot.ts);
 //   journal     what all of them did or propose, with Undo (journal.ts).
 //
-// The Jev switch (dz_settings.jev, the owner's) decides whether anything goes
+// The smart switch (dz_settings.smart, the owner's) decides whether anything goes
 // to the model; the hub's own switches decide whether exact rules act by
 // themselves. Both are the workspace owner's.
 
@@ -25,10 +25,9 @@ import { startAutopilot } from "../projects/autopilot";
 import { sql, store } from "../store";
 import { startAutogoal } from "./autogoal";
 import { startCascade } from "./cascade";
-import { startDocsJev } from "./docs-jev";
+import { startDocsSmart } from "./docs-smart";
 import { ensureSchema, settingsOf, startReactions } from "./engine";
 import { startFlows } from "./flows";
-import { jevConfigured, jevStats } from "./jev";
 import { pruneSources, refreshTimed, startSources } from "./sources";
 
 export interface HubSettings {
@@ -113,8 +112,8 @@ const safely = (fn: (ws: string) => boolean) => (ws: string) => {
   }
 };
 
-/** Starts all of Jev's work (once per process; src/instrumentation.ts). */
-export function startJev(): void {
+/** Starts all automatic work (once per process; src/instrumentation.ts). */
+export function startHub(): void {
   if (st.started) return;
   st.started = true;
   startReactions();
@@ -126,7 +125,7 @@ export function startJev(): void {
     safely((ws) => hubSettings(ws).design),
     safely((ws) => hubSettings(ws).calendar)
   );
-  startDocsJev();
+  startDocsSmart();
   // Every five minutes: numbers the clock moves (this week's meetings, snoozed mail);
   // hourly: sources no goal uses any more.
   let ticks = 0;
@@ -141,9 +140,9 @@ export function startJev(): void {
   st.timer.unref?.();
 }
 
-/** What Jev runs in a workspace (the Home panel, settings): the model's state and the owner's switches. */
-export function hubOverview(ws: string): { jev: { configured: boolean; on: boolean; breakerOpen: boolean }; rules: HubSettings; ingest: boolean } {
+/** What runs by itself in a workspace (the Home panel, settings): the owner's switches. */
+export function hubOverview(ws: string): { rules: HubSettings; ingest: boolean } {
   const s = settingsOf(ws);
   // `ingest`: a key for numbers from outside exists (never the key itself).
-  return { jev: { configured: jevConfigured(), on: s.jev, breakerOpen: jevStats().breakerOpen }, rules: hubSettings(ws), ingest: s.ingest };
+  return { rules: hubSettings(ws), ingest: s.ingest };
 }

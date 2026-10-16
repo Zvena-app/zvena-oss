@@ -7,6 +7,7 @@ import { randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import MailComposer from "nodemailer/lib/mail-composer";
+import { config } from "../config";
 import { sql } from "../store";
 import { htmlToPlain, sanitizeHtml } from "./sanitize";
 import { cleanMsgId, replyReferences } from "./threading";
@@ -83,7 +84,8 @@ export function cleanDraft(v: unknown, id: string): Draft {
 
 /** A new Message-ID on the sender's domain. */
 export function newMessageId(email: string): string {
-  const domain = (email.split("@")[1] ?? "zvena.app").replace(/[^a-z0-9.-]/gi, "") || "zvena.app";
+  const own = new URL(config.appUrl).hostname;
+  const domain = (email.split("@")[1] ?? own).replace(/[^a-z0-9.-]/gi, "") || own;
   return `${randomBytes(12).toString("base64url")}.zvena@${domain}`;
 }
 

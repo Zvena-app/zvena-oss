@@ -19,21 +19,23 @@ One live channel per workspace.
 | Part | Options |
 |---|---|
 | **When** | `metric`: a live number arrived (`/api/pulse/ingest` with a secret, or typed in); `notes`: a Docs database row was saved |
-| **If** | `always`; `compare`: exact and instant, no AI; `ask`: a yes/no question to Jev |
+| **If** | `always`; `compare`: exact and instant, no AI; `ask`: a yes/no question to the decision model |
 | **Then** | `notes.done`: status to "Done" (or the checkbox on); `notes.set`: a property by name |
 
 - **On the edge.** A reaction fires when its condition *becomes* true, not on every new number.
 - **Chains.** A chain stops at depth 3; a reaction never fires on its own write.
 - **Log.** Every decision goes to `dz_decisions`: ids, verdict, confidence, model, timing; never content. Kept 90 days.
 
-### Jev (TypeSafe AI)
+### The decision model (optional)
 
-- **On/off.** Works once `TYPESAFE_API_KEY` is set, in every workspace whose owner has not turned it off (`/api/decide {op:"jev", on:false|true}`, Projects → Settings → Assistant). A workspace nobody switched follows `ZVENA_JEV_DEFAULT` (`on` by default; `off` makes Jev opt-in).
-- **One gate.** `ask(ws, …)` checks the workspace's switch itself, before sending and again when the answer arrives (an answer that comes back after the owner turned Jev off is dropped). Without a registered gate (`setWorkspaceGate`, done by `engine.ts`) nothing is sent.
-- **What leaves.** Only the fields listed in the reaction's `fields`, minus any that name a person (an issue's Assignee; person, created/edited-by, e-mail and phone columns). What every Projects call sends is listed in `jev.ts`; operators list it in their Privacy Policy (DEPLOY.md, section 18).
+An optional decision model — an RLHF architecture and model — answers typed questions for suggestions and automations. Server-side only, and off unless configured.
+
+- **On/off.** Works once both `ZVENA_AI_URL` and `ZVENA_AI_KEY` are set, in every workspace whose owner has not turned it off (`/api/decide {op:"smart", on:false|true}`, Projects → Settings → Smart suggestions). A workspace nobody switched follows `ZVENA_AI_DEFAULT` (`on` by default; `off` makes it opt-in).
+- **One gate.** `ask(ws, …)` checks the workspace's switch itself, before sending and again when the answer arrives (an answer that comes back after the owner turned it off is dropped). Without a registered gate (`setWorkspaceGate`, done by `engine.ts`) nothing is sent.
+- **What leaves.** Only the fields listed in the reaction's `fields`, minus any that name a person (an issue's Assignee; person, created/edited-by, e-mail and phone columns). What every Projects call sends is listed in `smart.ts`; operators list it in their Privacy Policy (DEPLOY.md, section 18).
 - **Confidence.** `≥ auto`: acts at once. `≥ suggest`: a suggestion a person confirms (`resolve`; tabs get a `decision` event). Below: nothing happens.
-- **Never slows the product.** A 1.5 s budget, one retry on 429/529, a 10-minute cache of identical questions, a one-minute breaker after 5 failures in a row. Jev down = the reaction does not fire.
-- **For sections.** `jev.ts` has typed `noul` / `choice` / `score` questions (e.g. Projects: an issue's priority as a `score`, its kind as a `choice`).
+- **Never slows the product.** A 1.5 s budget, one retry on 429/529, a 10-minute cache of identical questions, a one-minute breaker after 5 failures in a row. Model down = the reaction does not fire.
+- **For sections.** `smart.ts` has typed `noul` / `choice` / `score` questions (e.g. Projects: an issue's priority as a `score`, its kind as a `choice`).
 
 ### Plugging in a section
 

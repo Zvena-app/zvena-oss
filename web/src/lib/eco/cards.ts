@@ -15,7 +15,7 @@ import { ctxFor, type Ctx } from "../projects/core";
 import { issuesByIds } from "../projects/issues";
 import { listProjects } from "../projects/planning";
 import { listStatuses } from "../projects/teams";
-import type { ProjectState } from "../projects/types";
+import { statusFraction, type ProjectState } from "../projects/types";
 import { designConfigured, fileFrames } from "../penpot";
 import { threadBriefs } from "../mail-client/store";
 import { sql } from "../store";
@@ -191,7 +191,8 @@ function issueCards(v: Viewer, ctx: Ctx, ids: string[]): Map<string, Card> {
   if (!ids.length) return out;
   const issues = issuesByIds(ctx, ids);
   if (!issues.length) return out;
-  const statuses = new Map(listStatuses(ctx).map((s) => [s.id, s]));
+  const all = listStatuses(ctx);
+  const statuses = new Map(all.map((s) => [s.id, s]));
   const names = namesOf(issues.map((i) => i.assigneeId).filter((x): x is string => Boolean(x)));
   for (const i of issues) {
     if (i.archivedAt) continue;
@@ -202,7 +203,7 @@ function issueCards(v: Viewer, ctx: Ctx, ids: string[]): Map<string, Card> {
       title: i.title,
       url: refHref({ kind: "issue", id: i.id }, v.wsId, { ident: i.identifier }),
       sub: i.identifier,
-      status: s ? { name: s.name, color: s.color, category: s.category } : undefined,
+      status: s ? { id: s.id, name: s.name, color: s.color, category: s.category, fraction: statusFraction(all, s.id) } : undefined,
       assignee: i.assigneeId ? { id: i.assigneeId, name: names.get(i.assigneeId) ?? "" } : null,
       due: i.dueDate,
       priority: i.priority,

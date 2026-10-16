@@ -1,7 +1,8 @@
 // Background upkeep of the web app, started once per server process
 // (src/instrumentation.ts) — no separate cron service to forget about:
 //   hourly  expired sessions/codes/presence, retries of Design deletions
-//           left by account deletion, due-date reminders of Projects
+//           left by account deletion, due-date reminders of Projects, cycles
+//           that ended (their unfinished issues roll over to the next one)
 //   daily   guest uploads unused for the TTL (people were warned in the
 //           banner), expired invites, the security journal past a year,
 //           map address lookups past 30 days, page history thinning
@@ -11,9 +12,10 @@
 
 import { retryDesignDeletions } from "./account";
 import { sendDueReminders } from "./projects/issues";
+import { rollOverCycles } from "./projects/planning";
 import { pruneSuggestions } from "./projects/autopilot";
 import { pruneConversions } from "./projects/from-doc";
-import { purgeGeoCache } from "./maps";
+import { purgeGeoCache, warnMapsContact } from "./maps";
 import { verificationUpkeep } from "./notes/verification-server";
 import { pruneHistory } from "./notes/versions";
 import { cleanupGuests } from "./storage";
@@ -37,7 +39,8 @@ export async function runMaintenance(now = Date.now()): Promise<Record<string, n
   sweepExpired(now);
   done.designDeletionsLeft = await retryDesignDeletions();
   done.dueReminders = sendDueReminders(now);
-  done.jevSuggestionsPruned = pruneSuggestions(now);
+  done.cyclesRolledOver = rollOverCycles(now);
+  done.suggestionsPruned = pruneSuggestions(now);
   done.docConversionsPruned = pruneConversions(now);
   if (now - lastRun("daily") >= DAY - 5 * 60_000) {
     const g = await cleanupGuests(now);
@@ -62,6 +65,8 @@ export async function runMaintenance(now = Date.now()): Promise<Record<string, n
 let started = false;
 
 export function startMaintenance(): void {
+  // At start-up: OpenStreetMap needs the operator's contact (ZVENA_MAPS_CONTACT) — a warning in the log when it is missing.
+  warnMapsContact();
   if (started || process.env.ZVENA_MAINTENANCE === "off") return;
   started = true;
   const tick = () =>

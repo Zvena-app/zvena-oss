@@ -11,7 +11,7 @@ import { ui, openCreate } from "./app-state";
 import { api, useLookups } from "./data";
 import { Glyph, PriorityIcon, ProjectGlyph, StatusIcon } from "./icons";
 import { useT } from "./i18n";
-import { copy, deleteIssues, issueUrl, PropPicker, useApply, type PropKind } from "./pickers";
+import { copy, deleteIssues, IssueSearch, issueUrl, markDuplicate, PropPicker, useApply, type PropKind } from "./pickers";
 import { href, navigate } from "./router";
 import { Kbd, Menu, Modal, modKey, type MenuItem } from "./ui";
 
@@ -22,7 +22,7 @@ export function CommandPalette() {
   const state = ui.get();
   const issues = state.palette?.issues ?? state.target;
   const [q, setQ] = useState("");
-  const [sub, setSub] = useState<PropKind | null>(null);
+  const [sub, setSub] = useState<PropKind | "duplicate" | null>(null);
   const [found, setFound] = useState<{ id: string; identifier: string; title: string; statusId: string }[]>([]);
   const close = () => ui.update((s) => ({ ...s, palette: null }));
 
@@ -65,7 +65,8 @@ export function CommandPalette() {
       if (issues.length === 1) {
         list.push(
           { id: "copyId", label: t("i.copyId"), icon: <Copy size={15} />, group, onSelect: () => copy(issues[0].identifier, t) },
-          { id: "copyLink", label: t("i.copyLink"), icon: <Link2 size={15} />, group, onSelect: () => copy(issueUrl(issues[0]), t) }
+          { id: "copyLink", label: t("i.copyLink"), icon: <Link2 size={15} />, group, onSelect: () => copy(issueUrl(issues[0]), t) },
+          { id: "duplicate", label: t("i.markDuplicate"), icon: <Copy size={15} />, group, keepOpen: true, onSelect: () => setSub("duplicate") }
         );
       }
       list.push(
@@ -132,7 +133,18 @@ export function CommandPalette() {
           <div className="pj-menu-group">
             {issues.length === 1 ? issues[0].identifier : t("i.selected", { n: issues.length })} <ArrowRight size={12} />
           </div>
-          <PropPicker kind={sub} issues={issues} onClose={close} />
+          {sub === "duplicate" ? (
+            <IssueSearch
+              exclude={[issues[0].id]}
+              onClose={close}
+              onPick={(of) => {
+                close();
+                markDuplicate(issues[0], of, t);
+              }}
+            />
+          ) : (
+            <PropPicker kind={sub} issues={issues} onClose={close} />
+          )}
         </div>
       ) : (
         <Menu items={items} onClose={close} placeholder={t("cmd.placeholder")} query={q} onQuery={setQ} />

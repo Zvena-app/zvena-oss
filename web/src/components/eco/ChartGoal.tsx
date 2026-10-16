@@ -93,7 +93,7 @@ export function ChartGoals({
       {goals.map((g) => (
         <a key={g.reaction} className="eco-chart-goal" data-met={g.issue.done || undefined} href={refHref({ kind: "issue", id: g.issue.id }, ws, { ident: g.issue.identifier })}>
           {g.issue.done ? <CircleCheck size={14} aria-hidden /> : <Target size={14} aria-hidden />}
-          <span className="eco-jev-id">{g.issue.identifier}</span>
+          <span className="eco-hub-id">{g.issue.identifier}</span>
           <span className="eco-chart-goal-text">
             {barName(g) ? `${barName(g)}: ` : ""}
             {g.value === null ? "—" : format(g.value)} {g.op === "<=" ? "≤" : g.op === "<" ? "<" : g.op === ">" ? ">" : "≥"} {format(g.target)}

@@ -14,7 +14,8 @@ import { sql, sweepExpired } from "./store";
 export type OAuthProvider = "google" | "github";
 
 const STATE_TTL = 10 * 60 * 1000;
-const UA = "zvena (+https://zvena.app)";
+/** Our User-Agent toward the providers: this instance's own address, never someone else's. */
+const ua = () => `zvena (+${config.appUrl})`;
 
 export function isOAuthProvider(v: unknown): v is OAuthProvider {
   return v === "google" || v === "github";
@@ -155,7 +156,7 @@ async function postForm(url: string, body: Record<string, string>): Promise<Reco
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json", "user-agent": UA },
+      headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json", "user-agent": ua() },
       body: new URLSearchParams(body).toString(),
       signal: AbortSignal.timeout(10_000),
     });
@@ -169,7 +170,7 @@ async function postForm(url: string, body: Record<string, string>): Promise<Reco
 async function getJson(url: string, token: string): Promise<unknown> {
   try {
     const res = await fetch(url, {
-      headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28", "user-agent": UA },
+      headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28", "user-agent": ua() },
       signal: AbortSignal.timeout(10_000),
     });
     return res.ok ? await res.json() : null;

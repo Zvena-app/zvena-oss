@@ -26,7 +26,7 @@ export function startProjects(ctx: Ctx, locale: string): { team: Team; created: 
   const words = seedFor(locale).examples;
   for (const [i, shape] of EXAMPLES.entries()) {
     const ex = { ...shape, ...words[i] };
-    // The examples teach the basics; Jev's autopilot leaves them alone.
+    // The examples teach the basics; the autopilot leaves them alone.
     const it = createIssue({ ...ctx, quiet: true }, { teamId: team.id, title: ex.title, description: ex.description, priority: ex.priority, statusId: statusOfCategory(team.id, ex.category) ?? undefined, assigneeId: ctx.userId });
     if (above && ex.category === "unstarted") updateIssue(ctx, it.id, { position: { before: above, after: null } });
     above = ex.category === "unstarted" ? it.id : above;

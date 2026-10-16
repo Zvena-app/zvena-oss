@@ -5,7 +5,7 @@
 // very people triage holds back, cannot let their own issue in:
 //
 //   accept     into the workflow (a status of the team, default: its first);
-//   duplicate  of another issue: the relation, then the team's canceled status;
+//   duplicate  of another issue: the relation, which moves it to the team's Duplicate status;
 //   decline    the canceled status, with an optional comment saying why;
 //   snooze     out of sight until a moment (at most 90 days ahead), then back.
 //
@@ -91,11 +91,10 @@ export function triageIssue(ctx: Ctx, ref: string, input: TriageInput): Issue {
       if (typeof input.duplicateOf !== "string") throw bad("bad issue");
       const of = resolveIssueId(ctx, input.duplicateOf);
       if (of === id) throw bad("an issue cannot duplicate itself");
-      const canceled = statusOfCategory(cur.team_id, "canceled");
       tx(() => {
         goals = leave(ctx, id, "duplicate");
+        // The relation moves it to the team's Duplicate status (lib/projects/social.ts).
         addRelation(ctx, id, { type: "duplicate", relatedId: of });
-        if (canceled) updateIssue(ctx, id, { statusId: canceled });
       });
       break;
     }

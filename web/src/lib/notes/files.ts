@@ -77,7 +77,38 @@ export function inlineType(ext: string): boolean {
   return /^(png|jpg|gif|webp|avif|svg|ico|heic|mp4|webm|mov|mp3|m4a|wav|ogg|oga|flac|pdf|txt|md|csv|json)$/.test(ext);
 }
 
+/** Pictures (shown in place, also when opened directly). */
+export function isImageExt(ext: string): boolean {
+  return /^(png|jpg|gif|webp|avif|svg|ico|heic)$/.test(ext);
+}
+
+/**
+ * What a guest (no account) may upload: raster pictures only. Anything else
+ * (documents, archives, PDFs, SVG, video) needs a signed-in account, so the
+ * server is never anonymous file hosting.
+ */
+export function guestMayUpload(ext: string): boolean {
+  return /^(png|jpg|gif|webp|avif|heic)$/.test(ext);
+}
+
+/** Do the bytes start like a picture of this type (guests' uploads: no archive renamed .png)? */
+export function looksLikeImage(bytes: Uint8Array, ext: string): boolean {
+  const b = Buffer.from(bytes.buffer, bytes.byteOffset, Math.min(bytes.byteLength, 16));
+  const ascii = (from: number, to: number) => b.subarray(from, to).toString("latin1");
+  if (ext === "png") return b.length >= 8 && b.readUInt32BE(0) === 0x89504e47 && b.readUInt32BE(4) === 0x0d0a1a0a;
+  if (ext === "jpg") return b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+  if (ext === "gif") return /^GIF8[79]a$/.test(ascii(0, 6));
+  if (ext === "webp") return ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP";
+  if (ext === "avif" || ext === "heic") return ascii(4, 8) === "ftyp" && /^(avif|avis|heic|heix|hevc|heim|heis|mif1|msf1)$/.test(ascii(8, 12));
+  return false;
+}
+
 export const NOTE_FILE_RE = /^[a-f0-9]{40}\.[a-z0-9]{1,5}$/;
+
+/** The stored name of these bytes (content hash + extension). */
+export function noteFileName(bytes: Uint8Array, ext: string): string {
+  return `${createHash("sha256").update(bytes).digest("hex").slice(0, 40)}.${ext}`;
+}
 
 /** Keeps the disk from filling up: uploads stop below this much free space. */
 function minFreeBytes(): number {
@@ -94,7 +125,7 @@ export async function saveNoteFile(bytes: Uint8Array, ext: string): Promise<{ na
   } catch {
     // statfs unsupported: write anyway.
   }
-  const name = `${createHash("sha256").update(bytes).digest("hex").slice(0, 40)}.${ext}`;
+  const name = noteFileName(bytes, ext);
   const tmp = join(dir, `.${name}.${process.pid}.${Date.now()}`);
   await writeFile(tmp, bytes, { mode: 0o640 });
   await rename(tmp, join(dir, name));

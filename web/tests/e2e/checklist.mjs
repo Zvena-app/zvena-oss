@@ -188,7 +188,7 @@ try {
   await shot(c, "public-page");
 
   // 12. The guest reports it.
-  await c.locator("a", { hasText: "Пожаловаться" }).first().click();
+  await c.locator("a", { hasText: "Сообщить о нарушении" }).first().click();
   await c.waitForURL(/\/report\?url=/);
   await c.selectOption("select", "spam");
   await c.fill("textarea", "Проверка очереди жалоб");

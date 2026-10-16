@@ -34,13 +34,15 @@ import {
 import { estimateLabel, type Activity, type Comment, type CustomField, type Issue, type IssueDetail as Detail, type RelationType } from "@/lib/projects/types";
 import { setTarget } from "./app-state";
 import { api, errorText, invalidateAll, loadBoot, patchCachedIssue, saveIssue, toast, toggleFavorite, useLookups, useQuery, workspaceId, type Lookups } from "./data";
-import { AssistIssue, JevSuggestions } from "./Assistant";
+import { AssistIssue, IssueSuggestions } from "./Assistant";
 import { TriageBar } from "./Triage";
 import { IssueEcosystem } from "@/components/eco/IssueEcosystem";
 import { MarkdownEditor, MarkdownView } from "./Editor";
 import { CycleGlyph, Glyph, PriorityIcon, ProjectGlyph, StatusIcon, uiColor } from "./icons";
 import { useT, type PT } from "./i18n";
-import { copy, deleteIssues, dueWord, issueUrl, personName, PropPicker, PropPill, type PropKind } from "./pickers";
+import { copy, deleteIssues, dueWord, IssueSearch, issueUrl, personName, PropButton, PropPicker, PropPill, type PropKind } from "./pickers";
+
+export { IssueSearch };
 import { Link, navigate, setParams } from "./router";
 import { Avatar, bytes, Empty, ErrorState, IconButton, LoadingRows, Menu, Popover, UnassignedIcon, useFormat, usePopover, type MenuItem } from "./ui";
 import { useKeyboardInset } from "./keyboard";
@@ -155,7 +157,7 @@ function Loaded({ issue, mode, triage, onClose }: { issue: Detail; mode: "page" 
         label={t("c.description")}
       />
       {mode === "peek" && <PropertyStrip issue={issue} canEdit={canEdit} />}
-      <JevSuggestions issue={issue} canEdit={canEdit} />
+      <IssueSuggestions issue={issue} canEdit={canEdit} />
       <SubIssues issue={issue} canEdit={canEdit} />
       <Relations issue={issue} canEdit={canEdit} />
       {/* zvena's ecosystem: the docs and designs of this issue (components/eco). */}
@@ -626,6 +628,7 @@ function SubIssues({ issue, canEdit }: { issue: Detail; canEdit: boolean }) {
     const s = L.status.get(c.statusId);
     return s?.category === "completed" || s?.category === "canceled";
   }).length;
+  const started = issue.children.filter((c) => L.status.get(c.statusId)?.category === "started").length;
   const create = async () => {
     if (!title.trim()) return;
     try {
@@ -658,11 +661,12 @@ function SubIssues({ issue, canEdit }: { issue: Detail; canEdit: boolean }) {
       {issue.children.length > 0 && (
         <div className="pj-mini-progress">
           <span style={{ width: `${(done / issue.children.length) * 100}%` }} />
+          {started > 0 && <span className="pj-progress-started" style={{ width: `${(started / issue.children.length) * 100}%` }} />}
         </div>
       )}
       <div className="pj-sublist">
         {issue.children.map((c) => (
-          <MiniRow key={c.id} issue={c} />
+          <MiniRow key={c.id} issue={c} sub={canEdit ? c : undefined} />
         ))}
       </div>
       {adding && (
@@ -696,13 +700,22 @@ function SubIssues({ issue, canEdit }: { issue: Detail; canEdit: boolean }) {
   );
 }
 
-export function MiniRow({ issue, right }: { issue: { id: string; identifier: string; title: string; statusId: string; assigneeId?: string | null }; right?: ReactNode }) {
+/** A short line for another issue; `sub`: a sub-issue whose status can be changed right there (Linear's sub-issue list). */
+export function MiniRow({ issue, right, sub }: { issue: { id: string; identifier: string; title: string; statusId: string; assigneeId?: string | null }; right?: ReactNode; sub?: Issue }) {
   const L = useLookups();
+  const { t } = useT();
   const s = L.status.get(issue.statusId);
   const p = issue.assigneeId ? L.person.get(issue.assigneeId) : null;
+  const icon = s && <StatusIcon category={s.category} color={s.color} fraction={L.fraction(s.id)} />;
   return (
     <div className="pj-mini-row">
-      {s && <StatusIcon category={s.category} color={s.color} fraction={L.fraction(s.id)} />}
+      {sub && s ? (
+        <PropButton kind="status" issue={sub} label={`${t("f.status")}: ${s.name}`} className="pj-mini-status">
+          {icon}
+        </PropButton>
+      ) : (
+        icon
+      )}
       <span className="pj-row-id">{issue.identifier}</span>
       <Link to={`/issue/${issue.identifier}`} className="pj-mini-title">
         {issue.title}
@@ -799,40 +812,6 @@ function Relations({ issue, canEdit }: { issue: Detail; canEdit: boolean }) {
         </Popover>
       )}
     </section>
-  );
-}
-
-/** Finds an issue by identifier or words (for relations and "set parent"). */
-export function IssueSearch({ exclude, onPick, onClose }: { exclude: string[]; onPick: (i: { id: string; identifier: string; title: string }) => void; onClose: () => void }) {
-  const { t } = useT();
-  const L = useLookups();
-  const [q, setQ] = useState("");
-  const [res, setRes] = useState<{ id: string; identifier: string; title: string; statusId: string }[]>([]);
-  useEffect(() => {
-    const term = q.trim();
-    if (!term) return;
-    const ctl = new AbortController();
-    const timer = setTimeout(() => {
-      void api<{ issues: { id: string; identifier: string; title: string; statusId: string }[] }>("search", { query: { q: term }, signal: ctl.signal })
-        .then((r) => setRes(r.issues.filter((i) => !exclude.includes(i.id))))
-        .catch(() => undefined);
-    }, 180);
-    return () => {
-      clearTimeout(timer);
-      ctl.abort();
-    };
-  }, [q, exclude]);
-  const items: MenuItem[] = (q.trim() ? res : []).map((i) => {
-    const s = L.status.get(i.statusId);
-    return { id: i.id, label: `${i.identifier} ${i.title}`, icon: s ? <StatusIcon category={s.category} color={s.color} fraction={L.fraction(s.id)} /> : undefined, onSelect: () => onPick(i) };
-  });
-  return (
-    <div className="pj-issue-search">
-      <div className="pj-menu-search">
-        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("s.placeholder")} aria-label={t("nav.search")} />
-      </div>
-      {q.trim() ? <Menu items={items} onClose={onClose} search={false} emptyText={t("s.nothing")} /> : <div className="pj-menu-empty">{t("s.hint")}</div>}
-    </div>
   );
 }
 
@@ -1035,9 +1014,9 @@ function ActivityLine({ a }: { a: Activity }) {
     <li className="pj-tl-act">
       <span className="pj-tl-icon">{icon}</span>
       <span>
-        {a.via === "jev" ? (
+        {a.via === "auto" ? (
           <>
-            <b className="pj-jev-name">Jev</b> <span className="pj-muted">{t("act.jevFor", { name: actor })}</span> {text}
+            <b className="pj-auto-name">{t("act.autoName")}</b> <span className="pj-muted">{t("act.autoFor", { name: actor })}</span> {text}
           </>
         ) : (
           <>

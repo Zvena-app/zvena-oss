@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { signInWith } from "@/lib/auth";
-import { setJev } from "@/lib/decide/engine";
-import { resetJev } from "@/lib/decide/jev";
-import { jevState, triageSmart } from "@/lib/projects/assist-jev";
+import { setSmart } from "@/lib/decide/engine";
+import { resetSmart } from "@/lib/decide/smart";
+import { smartState, triageSmart } from "@/lib/projects/assist-smart";
 import { ctxFor } from "@/lib/projects/core";
 import { createIssue, getIssueBrief } from "@/lib/projects/issues";
 import { createLabel, createTeam, listLabels } from "@/lib/projects/teams";
@@ -18,7 +18,7 @@ function person(name: string): string {
   return r.ok ? r.user.id : "";
 }
 const owner = person("Ada");
-const ws = createWorkspace(owner, "Jev").id;
+const ws = createWorkspace(owner, "Smart").id;
 const ctx = ctxFor(owner, ws, "edit");
 const team = createTeam(ctx, { name: "Core", key: "CORE" }, "en");
 const perf = createLabel(ctx, { name: "Performance", teamId: team.id, description: "Slow pages, timeouts" });
@@ -28,7 +28,7 @@ const send = (res: ServerResponse, status: number, body: unknown) => {
   res.end(JSON.stringify(body));
 };
 
-test("triage asks Jev unless the owner turned it off (on by default); low confidence or nonsense falls back to the rules; nothing changes", async () => {
+test("triage asks the decision model unless the owner turned it off (on by default); low confidence or nonsense falls back to the rules; nothing changes", async () => {
   const bodies: Record<string, unknown>[] = [];
   let reply: (body: Record<string, unknown>, res: ServerResponse) => void = () => {};
   const srv = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -45,18 +45,18 @@ test("triage asks Jev unless the owner turned it off (on by default); low confid
   const input = { title: "Search page times out for big teams", description: "Since Monday the **search** takes 30 s. @[Ada]", teamId: team.id };
   const issue = createIssue(ctx, { teamId: team.id, title: input.title, description: input.description });
   try {
-    resetJev();
-    delete process.env.TYPESAFE_API_KEY;
-    assert.equal(jevState(ws), "unconfigured");
+    resetSmart();
+    delete process.env.ZVENA_AI_KEY;
+    assert.equal(smartState(ws), "unconfigured");
     assert.equal((await triageSmart(ctx, input)).source, "rules");
 
-    Object.assign(process.env, { TYPESAFE_API_KEY: "test-key", ZVENA_JEV_URL: url, ZVENA_JEV_TIMEOUT_MS: "800" });
-    assert.equal(jevState(ws), "on", "on by default once Jev is configured");
-    setJev(ws, false, owner);
-    assert.equal(jevState(ws), "off");
+    Object.assign(process.env, { ZVENA_AI_KEY: "test-key", ZVENA_AI_URL: url, ZVENA_AI_TIMEOUT_MS: "800" });
+    assert.equal(smartState(ws), "on", "on by default once the model is configured");
+    setSmart(ws, false, owner);
+    assert.equal(smartState(ws), "off");
     const off = await triageSmart(ctx, input);
     assert.equal(off.source, "rules");
-    assert.equal(bodies.length, 0, "Jev is not asked while the owner has it off");
+    assert.equal(bodies.length, 0, "the model is not asked while the owner has it off");
     assert.equal(off.priority, 2, "the rules read a timeout as high");
     const bug = listLabels(ctx).find((l) => l.name === "Bug");
     assert.ok(bug && off.labels.some((l) => l.id === bug.id), "…and as a bug");
@@ -64,13 +64,13 @@ test("triage asks Jev unless the owner turned it off (on by default); low confid
     const feature = listLabels(ctx).find((l) => l.name === "Feature");
     assert.ok(feature && add.labels.some((l) => l.id === feature.id), "“Add …” reads as a feature");
 
-    setJev(ws, true, owner);
-    assert.equal(jevState(ws), "on");
+    setSmart(ws, true, owner);
+    assert.equal(smartState(ws), "on");
     reply = (body, res) => {
       const qs = body.questions as Record<string, { type: string; criteria: unknown }>;
       assert.deepEqual(Object.keys(qs).sort(), ["label", "priority"]);
       send(res, 200, {
-        model: "jev-1.13.0",
+        model: "model-1.13.0",
         answers: {
           priority: { type: "score", score: 2, legend: {}, probabilities: { "0": 0.02, "1": 0.08, "2": 0.82, "3": 0.08 }, confidence: 0.82 },
           label: { type: "choice", choice: perf.id, probabilities: { none: 0.1, [perf.id]: 0.9 }, confidence: 0.9 },
@@ -79,10 +79,10 @@ test("triage asks Jev unless the owner turned it off (on by default); low confid
       });
     };
     const on = await triageSmart(ctx, input);
-    assert.equal(on.source, "jev");
+    assert.equal(on.source, "model");
     assert.equal(on.priority, 2, "score level 2 of low→urgent is High");
     assert.equal(on.labels[0]?.id, perf.id);
-    assert.equal(on.model, "jev-1.13.0");
+    assert.ok(!("model" in on), "which model answered stays on the server");
     assert.ok((on.confidence ?? 0) >= 0.8);
     const sent = bodies[0];
     const state = sent.state as Record<string, unknown>;
@@ -92,14 +92,14 @@ test("triage asks Jev unless the owner turned it off (on by default); low confid
 
     reply = (_b, res) =>
       send(res, 200, {
-        model: "jev-1.13.0",
+        model: "model-1.13.0",
         answers: {
           priority: { type: "score", score: 1, legend: {}, probabilities: { "0": 0.3, "1": 0.35, "2": 0.2, "3": 0.15 }, confidence: 0.35 },
           label: { type: "choice", choice: "none", probabilities: { none: 0.5, [perf.id]: 0.5 }, confidence: 0.5 },
         },
       });
     const unsure = await triageSmart(ctx, { ...input, title: `${input.title}!` });
-    assert.equal(unsure.source, "rules", "an unsure Jev is not presented as an answer");
+    assert.equal(unsure.source, "rules", "an unsure answer is not presented as one");
 
     reply = (_b, res) => send(res, 200, { answers: { priority: { type: "score", score: "high" } } });
     assert.equal((await triageSmart(ctx, { ...input, title: `${input.title}?` })).source, "rules", "a malformed answer is refused");
@@ -108,8 +108,8 @@ test("triage asks Jev unless the owner turned it off (on by default); low confid
     assert.equal(after.priority, issue.priority, "triage proposes; it never writes");
     assert.deepEqual(after.labelIds, issue.labelIds);
   } finally {
-    resetJev();
-    delete process.env.TYPESAFE_API_KEY;
+    resetSmart();
+    delete process.env.ZVENA_AI_KEY;
     await new Promise<void>((r) => srv.close(() => r()));
   }
 });

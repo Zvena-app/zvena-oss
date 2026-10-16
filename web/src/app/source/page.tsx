@@ -30,7 +30,7 @@ function manifest(): Manifest | null {
 
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(n < 10 * 1024 * 1024 ? 1 : 0)} MB`;
 
-// The MPL 2.0 source offer of Design (bin/publish-source.sh fills public/source/).
+// The source offer: the repository (AGPL 3.0) and Design's MPL 2.0 archives (bin/publish-source.sh fills public/source/).
 export default async function SourcePage() {
   const m = manifest();
   const support = config.company.email;
@@ -45,7 +45,7 @@ export default async function SourcePage() {
       <h2>What is open</h2>
       <ul>
         <li>
-          <b>zvena</b> &mdash; Docs, Projects, Calendar, Mail, Teams, the Jev integration and the desktop, mobile and browser apps &mdash; under the{" "}
+          <b>zvena</b> &mdash; Docs, Projects, Calendar, Mail, Teams, the server and the desktop, mobile and browser apps &mdash; under the{" "}
           <a href="https://www.gnu.org/licenses/agpl-3.0.html">GNU Affero General Public License 3.0</a>. Repository: <a href={repo}>{repo}</a>. If this server
           runs a modified version, its operator must offer that version&apos;s source here as well.
         </li>

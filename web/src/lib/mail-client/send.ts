@@ -9,6 +9,7 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import nodemailer from "nodemailer";
 import type SMTPTransport from "nodemailer/lib/smtp-transport";
+import { config } from "../config";
 import { refsInNote, refsInMarkdown } from "../eco/extract";
 import { origins, resolveTargets } from "../eco/indexer";
 import { setDerived } from "../eco/links";
@@ -44,7 +45,8 @@ export async function smtpTransport(acct: Pick<AccountRow, "id" | "user_id" | "a
     ...(at.servername ? { servername: at.servername } : {}),
     auth: smtp,
     tls: tlsOptions(at.servername),
-    name: "zvena.app",
+    // The EHLO name: this instance's host (APP_URL), not one shared by every install.
+    name: new URL(config.appUrl).hostname,
     connectionTimeout: 20_000,
     greetingTimeout: 15_000,
     socketTimeout: 60_000,

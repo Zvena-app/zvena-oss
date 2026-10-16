@@ -6,10 +6,10 @@ import type { AddressInfo } from "node:net";
 import { signInWith } from "@/lib/auth";
 import { autogoalIdle, fallsTo, proposeGoal, targetsIn } from "@/lib/decide/autogoal";
 import { followParent } from "@/lib/decide/cascade";
-import { metricsOf, putMetric, reactionsOf, setJev } from "@/lib/decide/engine";
+import { metricsOf, putMetric, reactionsOf, setSmart } from "@/lib/decide/engine";
 import { chartGoal, goalsOf, setGoal } from "@/lib/decide/goals";
-import { hubSettings, setHubSettings, startJev } from "@/lib/decide/hub";
-import { resetJev } from "@/lib/decide/jev";
+import { hubSettings, setHubSettings, startHub } from "@/lib/decide/hub";
+import { resetSmart } from "@/lib/decide/smart";
 import { activityOf, settle } from "@/lib/decide/journal";
 import { databasesFor, forgetSeen, saveSource, sourceKey, visibleMetrics } from "@/lib/decide/sources";
 import { setRestricted } from "@/lib/notes/access";
@@ -43,9 +43,9 @@ setTeamMember(as(owner), team.id, mate, "member");
 const cat = (id: string) => listStatuses(as(owner, "read")).find((s) => s.id === getIssueBrief(as(owner, "read"), id).statusId)?.category;
 const statusOf = (c: string) => listStatuses(as(owner, "read")).find((s) => s.teamId === team.id && s.category === c)!.id;
 
-// The hub hears everything; Jev (the model) stays off until a test turns it on.
-delete process.env.TYPESAFE_API_KEY;
-startJev();
+// The hub hears everything; the decision model stays off until a test turns it on.
+delete process.env.ZVENA_AI_KEY;
+startHub();
 
 let n = 0;
 function note(over: Partial<Note> & { id: string; kind: Note["kind"] }): Note {
@@ -220,7 +220,7 @@ test("a parent issue closes with its last sub-issue, reopens with one, and Undo 
   setHubSettings(ws, { parents: true }, owner);
 });
 
-test("without Jev the rules only propose a goal when exactly one number is named; accepting it makes the issue close by itself", async () => {
+test("without the model the rules only propose a goal when exactly one number is named; accepting it makes the issue close by itself", async () => {
   putMetric(ws, "signups", 120, "Signups", "ingest");
   const issue = createIssue(as(mate), { teamId: team.id, title: "Reach 500 signups" });
   await autogoalIdle();
@@ -238,7 +238,7 @@ test("without Jev the rules only propose a goal when exactly one number is named
   assert.equal((await proposeGoal(ws, other.id, mate)).status, "none");
 });
 
-test("with Jev on, a goal it is sure about is set at once, marked as Jev's, and can be undone", async () => {
+test("with smart suggestions on, a goal the model is sure about is set at once, marked as automatic, and can be undone", async () => {
   type Body = { state: Record<string, unknown>; questions: Record<string, { type: string; criteria?: Record<string, string> }> };
   const bodies: Body[] = [];
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -257,34 +257,34 @@ test("with Jev on, a goal it is sure about is set at once, marked as Jev's, and 
         } else answers[id] = { type: "score", score: 1, legend: {}, probabilities: { "0": 0.1, "1": 0.8, "2": 0.1 }, confidence: 0.8 };
       }
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ model: "jev-test", answers, usage: { input_tokens: 1, output_tokens: 1 } }));
+      res.end(JSON.stringify({ model: "model-test", answers, usage: { input_tokens: 1, output_tokens: 1 } }));
     });
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
-  Object.assign(process.env, { TYPESAFE_API_KEY: "test-key", ZVENA_JEV_URL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1/systemone`, ZVENA_JEV_TIMEOUT_MS: "800" });
-  resetJev();
-  setJev(ws, true, owner);
+  Object.assign(process.env, { ZVENA_AI_KEY: "test-key", ZVENA_AI_URL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1/systemone`, ZVENA_AI_TIMEOUT_MS: "800" });
+  resetSmart();
+  setSmart(ws, true, owner);
   try {
     putMetric(ws, "rev", 30_000, "Revenue", "ingest");
     const issue = createIssue(as(owner), { teamId: team.id, title: "Hit $50k in quarterly sales" });
     await autogoalIdle();
     await until(() => goalsOf(ws, owner).some((g) => g.issue.id === issue.id));
     const g = goalsOf(ws, owner).find((x) => x.issue.id === issue.id);
-    assert.ok(g, "Jev set the goal");
+    assert.ok(g, "the goal was set automatically");
     assert.equal(g.key, "rev");
     assert.equal(g.target, 50_000);
     assert.equal(g.op, ">=");
-    assert.equal(g.byJev, true);
+    assert.equal(g.auto, true);
     const sent = bodies.find((b) => b.questions.number);
     assert.ok(sent);
     assert.deepEqual(Object.keys(sent.state), ["title"], "only the title goes out (and the numbers' names in the options)");
     const item = activityOf(ws, owner).find((a) => a.kind === "goal_linked" && a.subject === `issue:${issue.id}`);
-    assert.ok(item?.canUndo && item.source === "jev");
+    assert.ok(item?.canUndo && item.source === "model");
     assert.equal(settle(ws, item.id, "undo", owner), "undone");
     assert.ok(!goalsOf(ws, owner).some((x) => x.issue.id === issue.id), "undo removes the goal");
   } finally {
-    delete process.env.TYPESAFE_API_KEY;
-    resetJev();
+    delete process.env.ZVENA_AI_KEY;
+    resetSmart();
     server.close();
   }
 });

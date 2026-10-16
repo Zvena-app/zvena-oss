@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { signInWith } from "@/lib/auth";
-import { ask, choice, jevAvailable, jevStats, noul, resetJev, score } from "@/lib/decide/jev";
+import { ask, choice, smartAvailable, smartStats, noul, resetSmart, score } from "@/lib/decide/smart";
 import { cleanReaction, compare, type Reaction } from "@/lib/decide/model";
-import { decisionsOf, fire, metricsOf, newIngestToken, putMetric, resolveDecision, saveReaction, setJev, settingsOf, startReactions, wsOfIngestToken } from "@/lib/decide/engine";
+import { decisionsOf, fire, metricsOf, newIngestToken, putMetric, resolveDecision, saveReaction, setSmart, settingsOf, startReactions, wsOfIngestToken } from "@/lib/decide/engine";
 import { subjectsFor } from "@/lib/decide/adapters";
 import { pushNotes } from "@/lib/notes/server-store";
 import { sanitizeNote } from "@/lib/notes/model";
@@ -212,7 +212,7 @@ test("an ingest secret is shown once, stored hashed, and replaced by the next on
   assert.equal(wsOfIngestToken("zvi_short"), null);
 });
 
-// ---------------------------------------------------------------- Jev
+// ---------------------------------------------------------------- the decision model
 
 interface Mock {
   url: string;
@@ -221,7 +221,7 @@ interface Mock {
   close: () => Promise<void>;
 }
 
-async function jevMock(): Promise<Mock> {
+async function modelMock(): Promise<Mock> {
   const m: Mock = { url: "", bodies: [], reply: () => {}, close: async () => {} };
   const srv = createServer((req: IncomingMessage, res: ServerResponse) => {
     let raw = "";
@@ -245,26 +245,31 @@ const send = (res: ServerResponse, status: number, body: unknown) => {
 };
 
 // No settings row: the default switch (on) applies.
-const JEV_WS = "ws-jev-unit";
+const MODEL_WS = "ws-model-unit";
 
-test("jev: off without a key; typed answers, cache, retry, malformed answers and timeouts fail safe", async () => {
-  resetJev();
-  delete process.env.TYPESAFE_API_KEY;
-  assert.equal(await ask(JEV_WS, { a: 1 }, { q: noul("?") }), null);
-  assert.equal(jevAvailable(), false);
+test("decision model: off without both a URL and a key; typed answers, cache, retry, malformed answers and timeouts fail safe", async () => {
+  resetSmart();
+  delete process.env.ZVENA_AI_KEY;
+  delete process.env.ZVENA_AI_URL;
+  assert.equal(await ask(MODEL_WS, { a: 1 }, { q: noul("?") }), null);
+  assert.equal(smartAvailable(), false);
+  // A key alone is not enough: no endpoint is built in.
+  process.env.ZVENA_AI_KEY = "test-key";
+  assert.equal(smartAvailable(), false, "no URL: off");
+  assert.equal(await ask(MODEL_WS, { a: 1 }, { q: noul("?") }), null);
 
-  const m = await jevMock();
-  Object.assign(process.env, { TYPESAFE_API_KEY: "test-key", ZVENA_JEV_URL: m.url, ZVENA_JEV_TIMEOUT_MS: "800" });
+  const m = await modelMock();
+  Object.assign(process.env, { ZVENA_AI_KEY: "test-key", ZVENA_AI_URL: m.url, ZVENA_AI_TIMEOUT_MS: "800" });
   try {
     let calls = 0;
     m.reply = (body, res) => {
       calls++;
       if (calls === 1) return send(res, 529, { error: "overloaded" });
       const qs = body.questions as Record<string, { type: string }>;
-      assert.equal(body.model, "jev-latest");
+      assert.equal(body.model, undefined, "no ZVENA_AI_MODEL: the request names no model");
       assert.deepEqual(Object.keys(qs), ["done", "kind", "size"]);
       send(res, 200, {
-        model: "jev-1.13.0",
+        model: "model-1.13.0",
         answers: {
           done: { type: "noul", noul: 0.97 },
           kind: { type: "choice", choice: "bug", probabilities: { bug: 0.9, feature: 0.1 }, confidence: 0.88 },
@@ -274,63 +279,63 @@ test("jev: off without a key; typed answers, cache, retry, malformed answers and
       });
     };
     const qs = { done: noul("Is `ticket` done?"), kind: choice("What is `ticket`?", { bug: null, feature: "A new thing" }), size: score("How big?", ["s", "m", "l"]) };
-    const out = await ask(JEV_WS, { ticket: "Fixed the export" }, qs);
+    const out = await ask(MODEL_WS, { ticket: "Fixed the export" }, qs);
     assert.ok(out);
     assert.equal(out.answers.done.noul, 0.97);
     assert.equal(out.answers.kind.choice, "bug");
     assert.equal(out.answers.size.score, 1.8);
-    assert.equal(out.model, "jev-1.13.0");
+    assert.equal(out.model, "model-1.13.0");
     assert.equal(calls, 2, "529 is retried within the time budget");
-    const again = await ask(JEV_WS, { ticket: "Fixed the export" }, qs);
+    const again = await ask(MODEL_WS, { ticket: "Fixed the export" }, qs);
     assert.equal(again?.cached, true);
     assert.equal(calls, 2, "an identical question is answered from the cache");
 
     m.reply = (_b, res) => send(res, 200, { answers: { q: { type: "choice", choice: "rm -rf" } } });
-    assert.equal(await ask(JEV_WS, { x: 1 }, { q: choice("?", { a: null }) }), null, "an option that was not offered is refused");
+    assert.equal(await ask(MODEL_WS, { x: 1 }, { q: choice("?", { a: null }) }), null, "an option that was not offered is refused");
 
     m.reply = () => {};
     const t0 = Date.now();
-    assert.equal(await ask(JEV_WS, { x: 2 }, { q: noul("?") }, { timeoutMs: 200 }), null);
+    assert.equal(await ask(MODEL_WS, { x: 2 }, { q: noul("?") }, { timeoutMs: 200 }), null);
     assert.ok(Date.now() - t0 < 400, "a hung API costs at most the budget");
 
-    resetJev();
+    resetSmart();
     m.reply = (_b, res) => send(res, 500, {});
-    for (let i = 0; i < 5; i++) await ask(JEV_WS, { i }, { q: noul("?") });
-    assert.equal(jevStats().breakerOpen, true, "five failures in a row open the breaker");
+    for (let i = 0; i < 5; i++) await ask(MODEL_WS, { i }, { q: noul("?") });
+    assert.equal(smartStats().breakerOpen, true, "five failures in a row open the breaker");
     const before = m.bodies.length;
-    assert.equal(await ask(JEV_WS, { i: 99 }, { q: noul("?") }), null);
+    assert.equal(await ask(MODEL_WS, { i: 99 }, { q: noul("?") }), null);
     assert.equal(m.bodies.length, before, "an open breaker does not call at all");
   } finally {
-    resetJev();
-    delete process.env.TYPESAFE_API_KEY;
+    resetSmart();
+    delete process.env.ZVENA_AI_KEY;
     await m.close();
   }
 });
 
-test("jev in a reaction: on by default, the owner can turn it off; only the chosen fields; sure → done, unsure → a person confirms", async () => {
-  resetJev();
-  const m = await jevMock();
-  Object.assign(process.env, { TYPESAFE_API_KEY: "test-key", ZVENA_JEV_URL: m.url, ZVENA_JEV_TIMEOUT_MS: "800" });
+test("decision model in a reaction: on by default, the owner can turn it off; only the chosen fields; sure → done, unsure → a person confirms", async () => {
+  resetSmart();
+  const m = await modelMock();
+  Object.assign(process.env, { ZVENA_AI_KEY: "test-key", ZVENA_AI_URL: m.url, ZVENA_AI_TIMEOUT_MS: "800" });
   try {
-    const ws = space("Jev");
+    const ws = space("Smart");
     const { db, row } = goals(ws, "g3");
     const r = saveReaction(
       ws,
-      { id: "react-jev-1", when: { type: "notes", db }, if: { kind: "ask", question: "Does `Заметка` say the goal is reached?", fields: ["Заметка"], auto: 0.9, suggest: 0.6 }, then: [{ do: "notes.done", note: "$row" }] },
+      { id: "react-ask-1", when: { type: "notes", db }, if: { kind: "ask", question: "Does `Заметка` say the goal is reached?", fields: ["Заметка"], auto: 0.9, suggest: 0.6 }, then: [{ do: "notes.done", note: "$row" }] },
       anna
     ) as Reaction;
     let p = 0.7;
-    m.reply = (_b, res) => send(res, 200, { model: "jev-1.13.0", answers: { yes: { type: "noul", noul: p } }, usage: {} });
+    m.reply = (_b, res) => send(res, 200, { model: "model-1.13.0", answers: { yes: { type: "noul", noul: p } }, usage: {} });
     const subject = () => subjectsFor(ws, r.when, { id: 0, ws, type: "notes", ref: row, at: Date.now() }, r.id)[0];
     const base = JSON.parse((sql("SELECT json FROM notes WHERE ws = ? AND id = ?").get(ws, row) as { json: string }).json) as Note;
     pushNotes(ws, [{ id: row, note: { ...base, props: { ...base.props, nt: "Вышли на миллион в сентябре" }, updatedAt: Date.now() } }], { by: anna, quotaLeft: Infinity });
 
-    assert.equal(settingsOf(ws).jev, true, "Jev works in every workspace by default");
-    setJev(ws, false, anna);
-    assert.equal(await fire(ws, r, subject(), 0), "skip", "the owner turned Jev off");
+    assert.equal(settingsOf(ws).smart, true, "on in every workspace by default");
+    setSmart(ws, false, anna);
+    assert.equal(await fire(ws, r, subject(), 0), "skip", "the owner turned it off");
     assert.equal(m.bodies.length, 0, "nothing was sent");
 
-    setJev(ws, true, anna);
+    setSmart(ws, true, anna);
     assert.equal(await fire(ws, r, subject(), 0), "pending");
     assert.deepEqual(m.bodies[0].state, { Заметка: "Вышли на миллион в сентябре" }, "only the chosen field leaves the server");
     assert.equal(rowStatus(ws, row), "doing", "unsure: a person decides");
@@ -348,11 +353,11 @@ test("jev in a reaction: on by default, the owner can turn it off; only the chos
     p = 0.96;
     assert.equal(await fire(ws, r, subject(), 0), "applied");
     assert.equal(rowStatus(ws, row), "done");
-    assert.equal(decisionsOf(ws)[0].source, "jev");
-    assert.equal(decisionsOf(ws)[0].model, "jev-1.13.0");
+    assert.equal(decisionsOf(ws)[0].source, "model");
+    assert.equal(decisionsOf(ws)[0].model, "model-1.13.0");
   } finally {
-    resetJev();
-    delete process.env.TYPESAFE_API_KEY;
+    resetSmart();
+    delete process.env.ZVENA_AI_KEY;
     await m.close();
   }
 });

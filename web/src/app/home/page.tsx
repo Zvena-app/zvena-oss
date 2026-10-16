@@ -5,7 +5,8 @@ import { FileText, Home as HomeIcon, PenTool, Plus } from "lucide-react";
 import { CreateHero } from "@/components/zvena/create/CreateHero";
 import { AppShell } from "@/components/zvena/AppShell";
 import { HomeInbox, LiveCards } from "@/components/eco/HomeParts";
-import { JevPanel } from "@/components/eco/JevPanel";
+import { AutomationsPanel } from "@/components/eco/AutomationsPanel";
+import { initialInbox } from "@/lib/eco/inbox-page";
 import { myDay } from "@/lib/eco/myday";
 import { formatBytes, translate, type Locale } from "@/lib/i18n";
 import { intlTag } from "@/i18n/locales";
@@ -90,7 +91,7 @@ export default async function HomePage({ searchParams }: Props) {
   const ws = user.ws;
   const q = `ws=${encodeURIComponent(ws.id)}`;
   const docs = recentDocs(ws.id, 8, notesT(locale, "page.untitled"), user.id);
-  const [day, usage] = await Promise.all([myDay({ userId: user.id, wsId: ws.id, locale }), usageOf(user.id)]);
+  const [day, usage, inbox] = await Promise.all([myDay({ userId: user.id, wsId: ws.id, locale }), usageOf(user.id), initialInbox(user.id, ws.id, locale)]);
   const pct = usage.quota ? Math.min(100, Math.round((usage.total / usage.quota) * 100)) : 0;
   const canEdit = ws.role === "owner" || ws.role === "editor";
   const today = new Date().toLocaleDateString(intlTag(locale), { weekday: "long", month: "long", day: "numeric" });
@@ -115,8 +116,8 @@ export default async function HomePage({ searchParams }: Props) {
             {sp.welcome && ws.personal && <p className="zv-banner eco-home-banner">{t("ws.personalNote")}</p>}
             {/* One way to create anything, the same here, in the sidebar (C) and in Cmd+K. */}
             <CreateHero ws={ws.id} canEdit={canEdit} />
-            {/* Jev runs the workspace: goals with their numbers, what it proposes, what it did. */}
-            <JevPanel ws={ws.id} canEdit={canEdit} owner={ws.role === "owner"} />
+            {/* What runs by itself: goals with their numbers, suggestions, what was done automatically. */}
+            <AutomationsPanel ws={ws.id} canEdit={canEdit} owner={ws.role === "owner"} />
 
             <section className="eco-home-list" aria-labelledby="eh-issues">
               <div className="eco-home-group">
@@ -192,7 +193,7 @@ export default async function HomePage({ searchParams }: Props) {
                   {t("home.openAll")}
                 </Link>
               </div>
-              <HomeInbox ws={ws.id} me={user.id} />
+              <HomeInbox ws={ws.id} me={user.id} initial={inbox} />
             </section>
 
             {day.projects.length > 0 && (

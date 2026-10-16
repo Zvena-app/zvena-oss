@@ -131,6 +131,7 @@ export default function PublicForm({ form, who = { signedIn: false, member: fals
                     {errors[q.prop] && <div className="nt-ff-error">{errors[q.prop]}</div>}
                   </div>
                 ))}
+                <p className="nt-formpage-warn" data-test="form-no-passwords">{t("form.noPasswords")}</p>
                 <div className="nt-formpage-actions">
                   {failed && <span className="nt-ff-error">{t("form.error")}</span>}
                   <button type="submit" className="nt-btn nt-btn-primary nt-btn-reset" disabled={state === "sending"}>
@@ -144,8 +145,9 @@ export default function PublicForm({ form, who = { signedIn: false, member: fals
         <footer className="nt-formpage-foot">
           <Link href="/">{t("form.madeWith")}</Link>
           {" · "}
-          <a href={`/report?url=${encodeURIComponent(typeof location === "undefined" ? "" : location.href)}`} rel="nofollow">
-            {t("public.report")}
+          {/* The form's own link, the same on the server and in the browser. */}
+          <a href={`/report?url=${encodeURIComponent(form ? `/f/${form.id}` : typeof location === "undefined" ? "" : location.href)}`} rel="nofollow" data-test="form-report">
+            {t("public.reportAbuse")}
           </a>
         </footer>
       </main>

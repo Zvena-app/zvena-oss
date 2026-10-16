@@ -1,7 +1,6 @@
 import { access, crossSite, currentUser, fail, json } from "@/lib/http";
-import { jevConfigured, jevStats } from "@/lib/decide/jev";
 import { ID_RE } from "@/lib/decide/model";
-import { decisionsOf, deleteReaction, metricsOf, newIngestToken, putMetric, reactionsOf, revokeIngestToken, saveReaction, setJev, settingsOf, visibleRules } from "@/lib/decide/engine";
+import { decisionsOf, deleteReaction, metricsOf, newIngestToken, putMetric, reactionsOf, revokeIngestToken, saveReaction, setSmart, settingsOf, visibleRules } from "@/lib/decide/engine";
 import { proposeGoal } from "@/lib/decide/autogoal";
 import { chartGoal, GOAL_OPS, goalsOf, setGoal, type GoalOp } from "@/lib/decide/goals";
 import { hubOverview, setHubSettings } from "@/lib/decide/hub";
@@ -19,9 +18,9 @@ import { audit } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
-// Jev in a workspace: reactions, goals, live numbers, the journal (src/lib/decide).
-// GET  /api/decide?ws=<id> → { jev, settings, reactions, decisions, metrics, proposals } (any member)
-// GET  /api/decide?ws=<id>&view=jev → { overview, goals, activity }                   (any member)
+// Automations in a workspace: reactions, goals, live numbers, the journal (src/lib/decide).
+// GET  /api/decide?ws=<id> → { settings, reactions, decisions, metrics, proposals }     (any member)
+// GET  /api/decide?ws=<id>&view=hub → { overview, goals, activity }                   (any member)
 // GET  /api/decide?ws=<id>&view=goals → { goals }                                     (any member)
 // GET  /api/decide?ws=<id>&view=pickers → { databases, projects, calendars, mail }    (editors)
 // POST /api/decide?ws=<id> { op, … }:
@@ -32,9 +31,9 @@ export const dynamic = "force-dynamic";
 //   source { source } — a live number from a database, a project, a calendar or one's mail (editors)
 //   goal { issue, key | source, cmp, target, docs? } — the issue closes at the target  (editors)
 //   chartGoal { db, view, bar?, cmp, target, title } — a goal on a Documents chart     (editors)
-//   findGoal { issue } — Jev links the issue to the number that measures it           (editors)
-//   hub { parents?, goals?, design?, calendar? } — what Jev's exact rules do by themselves (owner)
-//   jev { on } — may the chosen fields go to Jev (TypeSafe AI, USA)? On by default.    (owner)
+//   findGoal { issue } — links the issue to the number that measures it               (editors)
+//   hub { parents?, goals?, design?, calendar? } — what exact rules do by themselves  (owner)
+//   smart { on } — may the chosen fields go to the decision model? On by default.      (owner)
 //   token — a new secret for /api/pulse/ingest (shown once) · untoken                  (owner)
 
 export async function GET(req: Request) {
@@ -46,16 +45,13 @@ export async function GET(req: Request) {
   if (!access(me.user.id, ws, "read")) return fail(403, "forbidden");
   const id = ws as string;
   const view = new URL(req.url).searchParams.get("view");
-  if (view === "jev") {
+  if (view === "hub") {
     const activity = activityOf(id, me.user.id, 60);
-    const since = Date.now() - 7 * 86_400_000;
     return json({
       overview: hubOverview(id),
       goals: goalsOf(id, me.user.id),
       activity,
       pending: activity.filter((a) => a.canResolve).length,
-      // Done by itself in the last 7 days (what this person may see).
-      week: activity.filter((a) => (a.status === "applied" || a.status === "accepted") && a.at > since).length,
     });
   }
   if (view === "goals") return json({ goals: goalsOf(id, me.user.id) });
@@ -73,12 +69,14 @@ export async function GET(req: Request) {
     return json({ databases: databasesFor(id, me.user.id), projects, calendars, mail });
   }
   const metrics = visibleMetrics(id, me.user.id, metricsOf(id)).map((m) => ({ ...m, source: sourceOf(id, m.key)?.source ?? null }));
+  const rules = visibleRules(id, me.user.id, reactionsOf(id), decisionsOf(id, 50));
   return json({
-    jev: { ...jevStats(), configured: jevConfigured() },
     settings: settingsOf(id),
-    ...visibleRules(id, me.user.id, reactionsOf(id), decisionsOf(id, 50)),
+    reactions: rules.reactions,
+    // Which model version answered stays on the server.
+    decisions: rules.decisions.map((d) => ({ ...d, model: undefined })),
     metrics,
-    // Goals Jev proposes (the issue's Goal panel shows them with Accept / Dismiss).
+    // Goals suggested automatically (the issue's Goal panel shows them with Accept / Dismiss).
     proposals: activityOf(id, me.user.id, 100).filter((a) => a.kind === "goal_linked" && a.canResolve),
   });
 }
@@ -101,7 +99,7 @@ export async function POST(req: Request) {
   if (!parsed.ok) return fail(parsed.status, "bad request");
   const body = (parsed.value ?? {}) as Record<string, unknown>;
   const op = body.op;
-  const owner = op === "jev" || op === "token" || op === "untoken" || op === "hub";
+  const owner = op === "smart" || op === "token" || op === "untoken" || op === "hub";
   if (!access(me.user.id, ws, owner ? "manage" : "edit")) return fail(403, "forbidden");
   const id = ws as string;
   const by = me.user.id;
@@ -173,9 +171,9 @@ export async function POST(req: Request) {
       const label = typeof body.label === "string" ? body.label.slice(0, 120) : null;
       return typeof body.key === "string" && putMetric(id, body.key, value, label, by) ? json({ ok: true }) : fail(400, "bad request");
     }
-    case "jev":
-      setJev(id, body.on === true, by);
-      audit(by, body.on === true ? "decide.jev.on" : "decide.jev.off", id);
+    case "smart":
+      setSmart(id, body.on === true, by);
+      audit(by, body.on === true ? "decide.smart.on" : "decide.smart.off", id);
       return json({ settings: settingsOf(id) });
     case "token": {
       const token = newIngestToken(id, by);

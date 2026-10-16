@@ -11,6 +11,7 @@
 // the person's own access, like an edit from their device.
 
 import { randomUUID } from "node:crypto";
+import { bytesLeft, mbFromEnv, spendBytes } from "../byte-budget";
 import { compressImage } from "../images";
 import { payerOf, quotaLeft, recordFile } from "../storage";
 import { sql } from "../store";
@@ -181,18 +182,24 @@ export function clipBlocks(req: ClipRequest, opts: { sourceLine: boolean }): Blo
   return blocks;
 }
 
+/** Pictures one person may download through clips in a day (ZVENA_CLIP_MB_PER_DAY). */
+const clipDailyBytes = () => mbFromEnv("ZVENA_CLIP_MB_PER_DAY", 500);
+
 /**
  * Downloads the clip's pictures (and its cover) into the owner's storage;
  * each one that cannot be fetched, is not a real picture, or does not fit
- * the quota stays a link. Returns the bytes stored.
+ * the quota stays a link. Downloads never exceed what the quota has left,
+ * the clip's total, or the clipping person's daily download budget.
+ * Returns the bytes stored.
  */
-async function storeImages(blocks: Block[], cover: { url: string } | null, payer: string, left: number, deps: ClipDeps): Promise<number> {
+async function storeImages(blocks: Block[], cover: { url: string } | null, payer: string, left: number, deps: ClipDeps, who: string): Promise<number> {
   const targets = imageBlocks(blocks);
   const urls = [...new Set([...(cover ? [cover.url] : []), ...targets.map((b) => String(b.props.url ?? ""))])].filter(Boolean).slice(0, CLIP_LIMITS.images);
   const stored = new Map<string, string>();
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), CLIP_LIMITS.imagesDeadlineMs);
   let total = 0;
+  let fetched = 0;
   try {
     const queue = [...urls];
     const worker = async () => {
@@ -203,9 +210,15 @@ async function storeImages(blocks: Block[], cover: { url: string } | null, payer
           const inline = /^data:image\/[a-z]+;base64,(.*)$/i.exec(url);
           if (inline) bytes = Buffer.from(inline[1], "base64");
           else {
-            const room = Math.min(CLIP_LIMITS.imageBytes, CLIP_LIMITS.imagesBytes - total);
+            const room = Math.min(CLIP_LIMITS.imageBytes, CLIP_LIMITS.imagesBytes - fetched, left - total, bytesLeft("clip", who, clipDailyBytes()));
             if (room <= 0) return;
+            // Counted before the fetch (four run at once), the unused part given back after.
+            fetched += room;
+            spendBytes("clip", who, room);
             bytes = (await deps.fetchImage(url, room, ac.signal))?.body ?? null;
+            const unused = room - (bytes?.byteLength ?? 0);
+            fetched -= unused;
+            spendBytes("clip", who, -unused);
           }
           if (!bytes || bytes.byteLength > CLIP_LIMITS.imageBytes) continue;
           const kind = sniffImage(bytes);
@@ -277,7 +290,7 @@ export async function saveClip(req: ClipRequest, who: { id: string; name: string
   const left = payer ? await quotaLeft(payer) : 0;
   const cover = req.cover ? { url: req.cover } : null;
   const saveImages = req.images !== "link" && payer !== null && left > 0;
-  const imageBytes = saveImages ? await storeImages(blocks, cover, payer, left, deps) : 0;
+  const imageBytes = saveImages ? await storeImages(blocks, cover, payer, left, deps, who.id) : 0;
 
   const props: Record<string, PropValue> = {};
   if (isRow && parent?.db && req.url) {

@@ -122,7 +122,7 @@ function schemaOf(ws: string, dbId: string, cache: Map<string, DbSchema | null>)
 const FRESH_MS = 15 * 60_000;
 
 /** Kinds by strength: one person hears the strongest reason only. */
-const RANK: Record<InboxKind, number> = { mention: 5, assigned: 4, suggestion_accepted: 3, suggestion_rejected: 3, reply: 3, suggestion: 2, comment: 2, page_update: 1, reminder: 1, invite: 1, automation: 1, jev: 1, mail: 0 };
+const RANK: Record<InboxKind, number> = { mention: 5, assigned: 4, suggestion_accepted: 3, suggestion_rejected: 3, reply: 3, suggestion: 2, comment: 2, page_update: 1, reminder: 1, invite: 1, automation: 1, proposal: 1, mail: 0 };
 
 export function peopleReaction(changes: readonly NoteChange[], ctx: PushContext, now = Date.now()): void {
   const schemas = new Map<string, DbSchema | null>();

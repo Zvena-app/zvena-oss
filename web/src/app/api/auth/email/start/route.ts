@@ -6,6 +6,7 @@ import { ssoStartForEmail } from "@/lib/enterprise/gate";
 import { crossSite, guestId } from "@/lib/http";
 import { safeNext } from "@/lib/oauth";
 import { rateLimited } from "@/lib/rate-limit";
+import { readFormCapped } from "@/lib/safe-json";
 import { signInError } from "@/lib/signin";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   if (rl) return rl;
   const bad = crossSite(req);
   if (bad) return bad;
-  const form = await req.formData().catch(() => null);
+  const form = await readFormCapped(req);
   const next = safeNext(String(form?.get("next") ?? "/home"));
   // An address whose workspace enforces SSO goes to its identity provider, not to its inbox.
   const sso = ssoStartForEmail(normalizeEmail(form?.get("email")), next);

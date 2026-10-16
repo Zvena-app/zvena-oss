@@ -1,5 +1,6 @@
 // zvena Documents formulas: a Notion "Formulas 2.0" subset. Pure: a tokenizer,
 import { intlOf } from "@/i18n/locales";
+import { PatternError, withPattern } from "@/lib/notes/safe-regex";
 // a Pratt parser and an evaluator over one row's values.
 //
 //   prop("Price") * prop("Qty")
@@ -568,19 +569,18 @@ function numbersOf(args: FValue[], fn: string): number[] {
 }
 
 /**
- * A repeated group that itself ends in a repetition — (a+)+, (.*)*, (\w+)* —
- * backtracks exponentially and would hang the tab of everyone who opens the
- * database (a pattern cannot be stopped once running).
+ * The user's pattern through lib/notes/safe-regex.ts: shapes that backtrack
+ * exponentially are refused, the server runs patterns in linear time, text is
+ * capped — a pattern cannot be stopped once running, and formulas also run
+ * on the server for published pages.
  */
-const NESTED_REPEAT = /\((?:\?:)?(?:[^()\\]|\\.)*[+*]\??\)(?:[+*]|\{\d*,\d*\})/;
-
-function regex(src: FValue, fn: string, flags = ""): RegExp {
+function withRegex<T>(src: FValue, flags: string, text: string, fn: string, run: (re: RegExp, text: string) => T): T {
   const s = str(src, fn);
-  if (NESTED_REPEAT.test(s)) throw new FormulaError(`${fn}: pattern too slow (a repeated group of repetitions) "${s}"`);
   try {
-    return new RegExp(s, flags);
-  } catch {
-    throw new FormulaError(`${fn}: invalid pattern "${s}"`);
+    return withPattern(s, flags, text, run);
+  } catch (e) {
+    if (e instanceof PatternError) throw new FormulaError(`${fn}: ${e.message} "${s}"`);
+    throw e;
   }
 }
 
@@ -673,10 +673,10 @@ const FNS: Record<string, Fn> = {
   includes: ([a, b]) => (Array.isArray(a) ? a.some((x) => equal(x, b ?? null)) : str(a ?? null, "includes").includes(str(b ?? null, "includes"))),
   startswith: ([a, b]) => str(a ?? null, "startsWith").startsWith(str(b ?? null, "startsWith")),
   endswith: ([a, b]) => str(a ?? null, "endsWith").endsWith(str(b ?? null, "endsWith")),
-  test: ([a, r]) => regex(r ?? "", "test").test(str(a ?? null, "test")),
-  match: ([a, r]) => str(a ?? null, "match").match(regex(r ?? "", "match", "g")) ?? [],
-  replace: ([a, r, s]) => str(a ?? null, "replace").replace(regex(r ?? "", "replace"), str(s ?? "", "replace")),
-  replaceall: ([a, r, s]) => str(a ?? null, "replaceAll").replace(regex(r ?? "", "replaceAll", "g"), str(s ?? "", "replaceAll")),
+  test: ([a, r]) => withRegex(r ?? "", "", str(a ?? null, "test"), "test", (re, t) => re.test(t)),
+  match: ([a, r]) => withRegex(r ?? "", "g", str(a ?? null, "match"), "match", (re, t) => t.match(re)) ?? [],
+  replace: ([a, r, s]) => withRegex(r ?? "", "", str(a ?? null, "replace"), "replace", (re, t) => t.replace(re, str(s ?? "", "replace"))),
+  replaceall: ([a, r, s]) => withRegex(r ?? "", "g", str(a ?? null, "replaceAll"), "replaceAll", (re, t) => t.replace(re, str(s ?? "", "replaceAll"))),
   split: ([a, sep]) => str(a ?? null, "split").split(str(sep ?? "", "split")),
   link: ([label]) => str(label ?? null, "link"),
   style: ([a]) => a ?? null,

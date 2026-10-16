@@ -127,8 +127,18 @@ const STATE_COLOR: Record<ProjectState, string> = {
 
 export function ProjectStateIcon({ state, size = 14, title }: { state: ProjectState; size?: number; title?: string }) {
   const color = STATE_COLOR[state];
+  if (state === "paused")
+    // Paused is not "in progress": a circle with the pause bars (Linear's paused project).
+    return (
+      <svg width={size} height={size} viewBox="0 0 14 14" fill="none" className="pj-status-icon" style={{ color: uiColor(color) }} {...(title ? { role: "img", "aria-label": title } : { "aria-hidden": true })}>
+        {title && <title>{title}</title>}
+        <rect x="1" y="1" width="12" height="12" rx="6" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="4.75" y="4.25" width="1.5" height="5.5" rx="0.5" fill="currentColor" />
+        <rect x="7.75" y="4.25" width="1.5" height="5.5" rx="0.5" fill="currentColor" />
+      </svg>
+    );
   const cat: StatusCategory = state === "backlog" ? "backlog" : state === "planned" ? "unstarted" : state === "completed" ? "completed" : state === "canceled" ? "canceled" : "started";
-  return <StatusIcon category={cat} color={color} fraction={state === "paused" ? 0.5 : 0.5} size={size} title={title} />;
+  return <StatusIcon category={cat} color={color} fraction={0.5} size={size} title={title} />;
 }
 
 export const HEALTH_COLOR: Record<Health, string> = { on_track: "#4cb782", at_risk: "#f2994a", off_track: "#eb5757" };

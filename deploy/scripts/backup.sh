@@ -8,7 +8,9 @@
 #   manifest.txt  versions, sizes, sha256
 # packed into BACKUP_DIR/zvena-<UTC time>.tar.gpg (AES-256, the passphrase
 # from BACKUP_PASSPHRASE_FILE), copies older than BACKUP_KEEP_DAYS removed,
-# then copied to BACKUP_RSYNC_TARGET and/or BACKUP_RCLONE_REMOTE.
+# then new archives copied (never mirrored) to BACKUP_RSYNC_TARGET and/or
+# BACKUP_RCLONE_REMOTE; off-site copies older than BACKUP_REMOTE_KEEP_DAYS
+# (default 30; 0 = keep forever) are pruned after a good run.
 #   sudo deploy/scripts/backup.sh          (cron: daily, see DEPLOY.md)
 . "$(dirname "$0")/common.sh"
 require_root
@@ -53,13 +55,55 @@ chmod 600 "$out"
 log "backup: $out ($(du -h "$out" | cut -f1))"
 
 find "$dir" -maxdepth 1 -name 'zvena-*.tar.gpg' -mtime +"${BACKUP_KEEP_DAYS:-14}" -print -delete | sed 's/^/removed old backup: /'
+
+# Off-site: new archives are only ever ADDED (never mirrored, never
+# overwritten), so an emptied or encrypted local folder cannot wipe the remote
+# copies. Old remote copies are pruned separately, by the date in their name,
+# and only now that today's backup has been written and copied.
+remote_days=${BACKUP_REMOTE_KEEP_DAYS:-30}
+[[ "$remote_days" =~ ^[0-9]+$ ]] || die "BACKUP_REMOTE_KEEP_DAYS must be a number of days (0 = never prune)"
+cutoff=$(date -u -d "-$remote_days days" +%Y%m%d)
+# Archive names whose date is before the cutoff (never today's archive).
+old_names() {
+  { grep -oE 'zvena-[0-9]{8}-[0-9]{6}\.tar\.gpg' || true; } | sort -u | while read -r name; do
+    [ "$name" = "$(basename "$out")" ] && continue
+    [ "${name:6:8}" -lt "$cutoff" ] && echo "$name"
+  done
+  return 0
+}
 if [ -n "${BACKUP_RSYNC_TARGET:-}" ]; then
   log "copying off-site (rsync)"
-  rsync -a --delete --include 'zvena-*.tar.gpg' --exclude '*' "$dir/" "$BACKUP_RSYNC_TARGET/"
+  rsync -a --ignore-existing --include 'zvena-*.tar.gpg' --exclude '*' "$dir/" "$BACKUP_RSYNC_TARGET/"
+  if [ "$remote_days" -gt 0 ]; then
+    list="$work/rsync-old.txt"
+    rsync --list-only "$BACKUP_RSYNC_TARGET/" | awk '{print $NF}' | old_names > "$list"
+    if [ -s "$list" ]; then
+      # Deletes exactly the listed names: the source is an empty folder and
+      # everything not listed is excluded (protected) from deletion.
+      install -d -m 700 "$work/empty"
+      if rsync -r --delete --include-from="$list" --exclude '*' "$work/empty/" "$BACKUP_RSYNC_TARGET/"; then
+        sed 's/^/removed old off-site backup: /' "$list"
+      else
+        log "warning: old off-site copies were not pruned (rsync)"
+      fi
+    fi
+  fi
 fi
 if [ -n "${BACKUP_RCLONE_REMOTE:-}" ]; then
   log "copying off-site (rclone)"
-  rclone sync --include 'zvena-*.tar.gpg' "$dir" "$BACKUP_RCLONE_REMOTE"
+  rclone copy --immutable --max-depth 1 --include 'zvena-*.tar.gpg' "$dir" "$BACKUP_RCLONE_REMOTE"
+  if [ "$remote_days" -gt 0 ]; then
+    list="$work/rclone-old.txt"
+    rclone lsf --max-depth 1 --files-only --include 'zvena-*.tar.gpg' "$BACKUP_RCLONE_REMOTE" | old_names > "$list"
+    if [ -s "$list" ]; then
+      # A bucket with object lock may refuse: that is fine, it only logs.
+      if rclone delete --max-depth 1 --files-from-raw "$list" "$BACKUP_RCLONE_REMOTE"; then
+        sed 's/^/removed old off-site backup: /' "$list"
+      else
+        log "warning: old off-site copies were not pruned (rclone)"
+      fi
+    fi
+  fi
 fi
 date -u +%s > "$dir/.last-ok"
 log "backup finished"

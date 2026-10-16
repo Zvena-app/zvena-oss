@@ -5,6 +5,7 @@ import { config } from "../config";
 import { sql } from "../store";
 import type { CalRow } from "./access";
 import { calDb } from "./db";
+import { defang, knownMeetingUrl } from "./defang";
 import { attendeesOf, parseJson, type AttRow, type EvRow } from "./events";
 import { buildIcs, type IcsOutEvent, type IcsPerson } from "./ics";
 import type { Reminder, Rsvp } from "./types";
@@ -80,10 +81,29 @@ export function calendarIcs(cal: CalRow, now = Date.now()): string {
 }
 
 /** One series as a CalDAV body or an invitation (with its guests). */
-export function seriesIcs(masterId: string, opts: { method?: "REQUEST" | "CANCEL"; withAlarms?: boolean; includeDeleted?: boolean } = {}): string {
+export function seriesIcs(masterId: string, opts: { method?: "REQUEST" | "CANCEL"; withAlarms?: boolean; includeDeleted?: boolean; outsider?: boolean } = {}): string {
   const rows = seriesRows(masterId, opts.includeDeleted);
   const atts = rows.length ? attendeesOf(rows[0].parent_id ?? rows[0].id) : [];
   const { includeDeleted: _d, ...rest } = opts;
   void _d;
-  return buildIcs({ ...(rest.method ? { method: rest.method } : {}), events: rows.map((r) => outEvent(r, { guests: atts, withAlarms: opts.withAlarms, ...(opts.method === "CANCEL" ? { method: "CANCEL" as const } : {}) })) });
+  const events = rows.map((r) => outEvent(r, { guests: atts, withAlarms: opts.withAlarms, ...(opts.method === "CANCEL" ? { method: "CANCEL" as const } : {}) }));
+  return buildIcs({ ...(rest.method ? { method: rest.method } : {}), events: opts.outsider ? events.map(forOutsider) : events });
+}
+
+/**
+ * An event as mailed to an address someone typed into a public form (a
+ * booking page's visitor): calendar apps show an .ics at once, so it carries
+ * no description and no live links in what people typed — title, place and
+ * names defanged, a call link only on a known video-call host.
+ */
+function forOutsider(e: IcsOutEvent): IcsOutEvent {
+  return {
+    ...e,
+    title: defang(e.title),
+    description: "",
+    ...(e.location ? { location: defang(e.location) } : {}),
+    conference: e.conference && knownMeetingUrl(e.conference) ? e.conference : undefined,
+    ...(e.organizer ? { organizer: { ...e.organizer, ...(e.organizer.name ? { name: defang(e.organizer.name) } : {}) } } : {}),
+    attendees: (e.attendees ?? []).map((a) => ({ ...a, ...(a.name ? { name: defang(a.name) } : {}) })),
+  };
 }

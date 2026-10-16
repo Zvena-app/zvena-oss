@@ -1,4 +1,4 @@
-// Jev's autopilot in Projects: zvena's AI (src/lib/decide/jev.ts) looks at
+// The autopilot in Projects: the decision model (src/lib/decide/smart.ts) looks at
 // every new issue and comment and does what a careful teammate would.
 //
 // On a new issue it decides, in one call:
@@ -10,19 +10,19 @@
 //     full-text index found).
 // On a new comment: does it say the work is finished?
 //
-// What Jev does with an answer depends on its confidence and on the stakes:
+// What happens with an answer depends on its confidence and on the stakes:
 //   - empty priority / label / project, confidence ≥ AUTO: filled in at once,
-//     marked "Jev" in the history (on behalf of the issue's author), with Undo;
+//     marked "Automation" in the history (on behalf of the issue's author), with Undo;
 //   - otherwise, or for anything a person would notice — the assignee, a
 //     duplicate, closing the issue — a suggestion one click accepts;
-//   - Jev never overwrites what a person set, never deletes, never closes.
+//   - it never overwrites what a person set, never deletes, never closes.
 //
-// Jev runs when the server has it and the workspace did not turn it off; when
-// it is slow, down or unsure nothing happens (the issue is already saved).
+// It runs when the server has the model and the workspace did not turn it off; when
+// the model is slow, down or unsure nothing happens (the issue is already saved).
 
 import { sql } from "../store";
-import { ask, choice, noul, score, type ChoiceQ, type Question } from "../decide/jev";
-import { jevOn } from "./assist-jev";
+import { ask, choice, noul, score, type ChoiceQ, type Question } from "../decide/smart";
+import { smartOn } from "./assist-smart";
 import { bad, bump, ctxFor, emit, needs, notFound, pid, visibleIssue, type Ctx } from "./core";
 import { notify } from "./effects";
 import { onChange, type PjChange } from "./events";
@@ -41,13 +41,13 @@ export const SUGGEST = 0.6;
 /** A duplicate is suggested from this confidence. */
 export const DUPLICATE = 0.7;
 
-// Score levels low → urgent (Jev's level index → Projects' priority).
+// Score levels low → urgent (the model's level index → Projects' priority).
 const LEVELS: Priority[] = [4, 3, 2, 1];
 const MAX_OPTIONS = 12;
 
 // --- Wiring ----------------------------------------------------------------------
 
-/** At most this many autopilot calls to Jev per workspace and hour (mass-created issues stop costing). */
+/** At most this many autopilot calls to the model per workspace and hour (mass-created issues stop costing). */
 export const HOURLY_LIMIT = 300;
 
 const BUDGET = Symbol.for("zvena.projects.autopilot.budget");
@@ -95,10 +95,10 @@ export async function autopilotIdle(): Promise<void> {
   while (st && st.running.size) await Promise.all([...st.running]);
 }
 
-/** Jev acting on the person's behalf (their rights; the history says "Jev"). */
-function jevCtx(userId: string, ws: string): Ctx | null {
+/** Acting automatically on the person's behalf (their rights; the history says "Automation"). */
+function autoCtx(userId: string, ws: string): Ctx | null {
   try {
-    return { ...ctxFor(userId, ws, "edit"), via: "jev" };
+    return { ...ctxFor(userId, ws, "edit"), via: "auto" };
   } catch {
     return null;
   }
@@ -141,23 +141,23 @@ function duplicateQuestion(list: Candidate[]): { q: ChoiceQ; keys: Map<string, s
 
 /**
  * Issues that may already describe this one, for the create dialog as one
- * types. The full-text index finds them; Jev (when on) says which one is the
+ * types. The full-text index finds them; the model (when on) says which one is the
  * same and how sure it is.
  */
-export async function similarIssues(ctx: Ctx, input: { title: string; description?: string; excludeId?: string | null }): Promise<{ issues: (Candidate & { confidence?: number })[]; source: "jev" | "rules" }> {
+export async function similarIssues(ctx: Ctx, input: { title: string; description?: string; excludeId?: string | null }): Promise<{ issues: (Candidate & { confidence?: number })[]; source: "model" | "rules" }> {
   const title = input.title.trim().slice(0, 300);
   if ([...title].length < 6) return { issues: [], source: "rules" };
   const list = candidates(ctx, title, input.excludeId ?? null, 5);
-  if (!list.length || !jevOn(ctx.wsId) || !spend(ctx.wsId)) return { issues: list.slice(0, 3), source: "rules" };
+  if (!list.length || !smartOn(ctx.wsId) || !spend(ctx.wsId)) return { issues: list.slice(0, 3), source: "rules" };
   const { q, keys } = duplicateQuestion(list);
   const out = await ask(ctx.wsId, { title, description: plainText(input.description ?? "", 1000) }, { same: q });
   if (!out) return { issues: list.slice(0, 3), source: "rules" };
   const a = out.answers.same;
   const best = keys.get(a.choice);
   const conf = a.probabilities[a.choice] ?? a.confidence;
-  if (!best || conf < DUPLICATE) return { issues: [], source: "jev" };
+  if (!best || conf < DUPLICATE) return { issues: [], source: "model" };
   const hit = list.find((c) => c.id === best) as Candidate;
-  return { issues: [{ ...hit, confidence: conf }], source: "jev" };
+  return { issues: [{ ...hit, confidence: conf }], source: "model" };
 }
 
 // --- A new issue ----------------------------------------------------------------------
@@ -168,7 +168,7 @@ function memberCriteria(ctx: Ctx, teamId: string): { criteria: Record<string, st
   const criteria: Record<string, string> = { none: "Nobody in particular; leave it unassigned." };
   const keys = new Map<string, string>();
   team.members.slice(0, MAX_OPTIONS).forEach((m, i) => {
-    // Only people who can take an issue (editors); Jev never sees their names, only what they work on.
+    // Only people who can take an issue (editors); the model never sees their names, only what they work on.
     if (!sql("SELECT 1 FROM members WHERE ws_id = ? AND user_id = ? AND role IN ('owner', 'editor')").get(ctx.wsId, m.userId)) return;
     const recent = (sql("SELECT title FROM pj_issues WHERE team_id = ? AND assignee_id = ? ORDER BY updated_at DESC LIMIT 3").all(teamId, m.userId) as { title: string }[]).map((r) => r.title.slice(0, 80));
     const who = `Teammate ${i + 1}${m.role === "lead" ? " (team lead)" : ""}`;
@@ -179,8 +179,8 @@ function memberCriteria(ctx: Ctx, teamId: string): { criteria: Record<string, st
 }
 
 async function afterIssueCreated(c: PjChange): Promise<void> {
-  if (!jevOn(c.ws)) return;
-  const ctx = jevCtx(c.by, c.ws);
+  if (!smartOn(c.ws)) return;
+  const ctx = autoCtx(c.by, c.ws);
   if (!ctx) return;
   let issue: Issue;
   try {
@@ -263,7 +263,7 @@ async function afterIssueCreated(c: PjChange): Promise<void> {
     );
     made.push(kind);
   };
-  // The person may have changed the issue while Jev thought: re-read before filling.
+  // The person may have changed the issue while the question was out: re-read before filling.
   const fresh = () => getIssueBrief(ctx, issue.id);
 
   const p = answers.priority;
@@ -314,10 +314,10 @@ async function afterIssueCreated(c: PjChange): Promise<void> {
 // --- A new comment ----------------------------------------------------------------
 
 async function afterCommentCreated(c: PjChange): Promise<void> {
-  if (!jevOn(c.ws) || !c.issueId) return;
+  if (!smartOn(c.ws) || !c.issueId) return;
   let ctx: Ctx;
   try {
-    ctx = { ...ctxFor(c.by, c.ws, "read"), via: "jev" };
+    ctx = { ...ctxFor(c.by, c.ws, "read"), via: "auto" };
   } catch {
     return;
   }
@@ -367,7 +367,7 @@ interface SuggestionRow {
 
 const KEEP_APPLIED_MS = 7 * 86_400_000;
 
-/** What Jev proposes on an issue, and what it filled in lately (with Undo). Only what this person may see. */
+/** What is suggested on an issue, and what was filled in automatically lately (with Undo). Only what this person may see. */
 export function suggestionsOf(ctx: Ctx, issueId: string): Suggestion[] {
   if (!visibleIssue(ctx, issueId)) return [];
   const rows = sql("SELECT * FROM pj_suggestions WHERE issue_id = ? AND ws_id = ? AND (state = 'open' OR (state = 'applied' AND created_at > ?)) ORDER BY created_at").all(
@@ -386,12 +386,12 @@ export function suggestionsOf(ctx: Ctx, issueId: string): Suggestion[] {
       value.identifier = ref.identifier;
       value.title = ref.title;
     }
-    out.push({ id: r.id, issueId: r.issue_id, kind: r.kind, value, confidence: r.confidence, model: r.model, state: r.state, createdAt: r.created_at });
+    out.push({ id: r.id, issueId: r.issue_id, kind: r.kind, value, confidence: r.confidence, state: r.state, createdAt: r.created_at });
   }
   return out;
 }
 
-/** A person accepts, dismisses, or undoes (an automatic change) one of Jev's suggestions — with their own rights. */
+/** A person accepts, dismisses, or undoes (an automatic change) one of the suggestions — with their own rights. */
 export function resolveSuggestion(ctx: Ctx, id: string, action: unknown): Suggestion[] {
   needs(ctx, "edit");
   if (action !== "accept" && action !== "dismiss" && action !== "undo") throw bad("bad action");
@@ -422,10 +422,8 @@ export function resolveSuggestion(ctx: Ctx, id: string, action: unknown): Sugges
         updateIssue(ctx, r.issue_id, { statusId: v.statusId });
         break;
       case "duplicate": {
+        // The relation closes it in the team's Duplicate status (social.ts).
         addRelation(ctx, r.issue_id, { type: "duplicate", relatedId: v.issueId });
-        const team = sql("SELECT team_id FROM pj_issues WHERE id = ?").get(r.issue_id) as { team_id: string };
-        const canceled = statusOfCategory(team.team_id, "canceled");
-        if (canceled) updateIssue(ctx, r.issue_id, { statusId: canceled });
         break;
       }
     }
@@ -434,7 +432,7 @@ export function resolveSuggestion(ctx: Ctx, id: string, action: unknown): Sugges
     if (r.state !== "applied") throw bad("not applied");
     const cur = getIssueBrief(ctx, r.issue_id);
     const prev = r.prev ? (JSON.parse(r.prev) as Record<string, unknown>) : {};
-    // Undo only what is still Jev's: a person's later change stays.
+    // Undo only what is still the automation's: a person's later change stays.
     if (r.kind === "priority" && cur.priority === v.priority) updateIssue(ctx, r.issue_id, { priority: prev.priority ?? 0 });
     if (r.kind === "label" && cur.labelIds.includes(String(v.labelId))) updateIssue(ctx, r.issue_id, { removeLabelIds: [v.labelId] });
     if (r.kind === "project" && cur.projectId === v.projectId) updateIssue(ctx, r.issue_id, { projectId: prev.projectId ?? null });
@@ -445,7 +443,7 @@ export function resolveSuggestion(ctx: Ctx, id: string, action: unknown): Sugges
   return suggestionsOf(ctx, r.issue_id);
 }
 
-/** Jev's suggestions are kept 90 days; open ones too (an old suggestion is no longer useful). */
+/** Suggestions are kept 90 days; open ones too (an old suggestion is no longer useful). */
 export const SUGGESTION_DAYS = 90;
 
 export function pruneSuggestions(now = Date.now()): number {

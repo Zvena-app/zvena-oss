@@ -96,7 +96,7 @@ export default async function CookiesPage() {
       <h2 id="google">2. Cookie set by Google on the sign-in prompt</h2>
       <p>
         When Sign in with Google is turned on, the sign-in page loads Google&rsquo;s sign-in script from accounts.google.com for signed-out visitors,
-        to show the &ldquo;Sign in with Google&rdquo; (One Tap) prompt. That script may set the <code>g_state</code> cookie on zvena.app to remember that you closed the prompt, so it is not shown again
+        to show the &ldquo;Sign in with Google&rdquo; (One Tap) prompt. That script may set the <code>g_state</code> cookie on {new URL(config.appUrl).host} to remember that you closed the prompt, so it is not shown again
         right away. Your browser also talks to Google directly to display the prompt; Google&rsquo;s{" "}
         <a href="https://policies.google.com/privacy" rel="noopener">
           privacy policy

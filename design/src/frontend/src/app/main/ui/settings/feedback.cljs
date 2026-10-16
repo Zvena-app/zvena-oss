@@ -21,6 +21,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
+   [app.zvena :as zvena]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -152,10 +153,12 @@
       (tr "blueai.feedback.help-title")]
      [:p {:class (stl/css :field-text :bottom-margin)} (tr "blueai.feedback.help-subtitle")]
 
-     [:a {:class (stl/css :link)
-          :href "mailto:support@zvena.app"}
-      "support@zvena.app"]
-     [:p {:class (stl/css :field-text)} (tr "blueai.feedback.mail-subtitle")]]))
+     (when zvena/support-email
+       [:*
+        [:a {:class (stl/css :link)
+             :href (str "mailto:" zvena/support-email)}
+         zvena/support-email]
+        [:p {:class (stl/css :field-text)} (tr "blueai.feedback.mail-subtitle")]])]))
 
 (mf/defc feedback-page*
   [{:keys [error-report-id] :as props}]

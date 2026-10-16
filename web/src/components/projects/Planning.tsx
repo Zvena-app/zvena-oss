@@ -5,7 +5,7 @@
 // and dependency arrows) and cycles (list and page with burn-up and load).
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Archive, Box, CalendarRange, ChevronRight, Diamond, FileText, Map as MapIcon, MoreHorizontal, Plus, RefreshCcw, Sparkles, Star, Trash2, Users } from "lucide-react";
+import { Archive, Box, CalendarRange, ChevronRight, Diamond, FileText, Map as MapIcon, MoreHorizontal, Plus, RefreshCcw, Star, Trash2, Users, Wand2 } from "lucide-react";
 import { PROJECT_STATES, type Cycle, type CycleSummary, type Health, type Project, type ProjectDetail, type ProjectState } from "@/lib/projects/types";
 import { openCreate } from "./app-state";
 import { api, errorText, invalidateAll, loadBoot, toast, toggleFavorite, useLookups, useQuery, workspaceId } from "./data";
@@ -23,12 +23,15 @@ import { Avatar, confirmDialog, DatePicker, Empty, ErrorState, IconButton, Loadi
 
 // --- Shared bits -----------------------------------------------------------------
 
-function Progress({ done, total, width = 64 }: { done: number; total: number; width?: number }) {
+/** Completed share of the scope, with the work in progress drawn after it (Linear's project and cycle bars). */
+function Progress({ done, started = 0, total, width = 64 }: { done: number; started?: number; total: number; width?: number }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
+  const wip = total ? Math.min(100 - pct, Math.round((started / total) * 100)) : 0;
   return (
     <span className="pj-progress" title={`${done}/${total}`}>
       <span className="pj-progress-bar" style={{ width }}>
         <span style={{ width: `${pct}%` }} />
+        {wip > 0 && <span className="pj-progress-started" style={{ width: `${wip}%` }} />}
       </span>
       <span className="pj-progress-pct">{pct}%</span>
     </span>
@@ -198,7 +201,7 @@ export function ProjectsList({ teamKey }: { teamKey?: string }) {
                   <span className="pj-ptable-cell" role="cell">{lead ? <Avatar name={lead.name} id={lead.id} size={20} src={lead.avatar} /> : <span className="pj-muted">—</span>}</span>
                   <span role="cell" className={`pj-ptable-cell pj-small ${overdue ? "pj-overdue" : ""}`}>{p.targetDate ? f.day(p.targetDate) : "—"}</span>
                   <span className="pj-ptable-cell" role="cell">
-                    <Progress done={p.progress.completed} total={p.progress.total} />
+                    <Progress done={p.progress.completed} started={p.progress.started} total={p.progress.total} />
                   </span>
                   <span className="pj-ptable-cell" role="cell">
                     <ProjectStateIcon state={p.state} />
@@ -216,7 +219,7 @@ export function ProjectsList({ teamKey }: { teamKey?: string }) {
   );
 }
 
-// --- Goals and tasks from a document (Jev) -----------------------------------------
+// --- Goals and tasks from a document (smart) ---------------------------------------
 
 interface DocLine {
   text: string;
@@ -230,8 +233,8 @@ interface DocLine {
 }
 
 /**
- * A Docs page → projects (its goals) and issues (the work under them). Jev
- * reads the lines (rules when it is off); the person ticks what to create.
+ * A Docs page → projects (its goals) and issues (the work under them). Smart
+ * suggestions read the lines (rules when they are off); the person ticks what to create.
  */
 function FromDocDialog({ teamId, onClose }: { teamId?: string; onClose: () => void }) {
   const { t } = useT();
@@ -239,7 +242,7 @@ function FromDocDialog({ teamId, onClose }: { teamId?: string; onClose: () => vo
   const myTeams = L.b.teams.filter((x) => x.isMember && !x.archivedAt);
   const [q, setQ] = useState("");
   const [docs, setDocs] = useState<{ id: string; title: string; icon?: string; sub?: string }[] | null>(null);
-  const [plan, setPlan] = useState<{ note: { id: string; title: string }; lines: DocLine[]; source: "jev" | "rules" } | null>(null);
+  const [plan, setPlan] = useState<{ note: { id: string; title: string }; lines: DocLine[]; source: "model" | "rules" } | null>(null);
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [team, setTeam] = useState(teamId ?? myTeams[0]?.id ?? L.b.teams[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
@@ -264,7 +267,7 @@ function FromDocDialog({ teamId, onClose }: { teamId?: string; onClose: () => vo
   const open = async (id: string) => {
     setBusy(true);
     try {
-      const p = await api<{ note: { id: string; title: string }; lines: DocLine[]; source: "jev" | "rules" }>("assist", { method: "POST", body: { action: "fromDoc", noteId: id } });
+      const p = await api<{ note: { id: string; title: string }; lines: DocLine[]; source: "model" | "rules" }>("assist", { method: "POST", body: { action: "fromDoc", noteId: id } });
       setPlan(p);
       setPicked(new Set(p.lines.map((l, i) => (l.kind !== "none" && !l.exists ? i : -1)).filter((i) => i >= 0)));
     } catch (e) {
@@ -345,9 +348,9 @@ function FromDocDialog({ teamId, onClose }: { teamId?: string; onClose: () => vo
               <FileText size={14} />
               <b>{plan.note.title || "—"}</b>
               <span className="pj-assist-source" data-source={plan.source}>
-                {plan.source === "jev" ? (
+                {plan.source === "model" ? (
                   <>
-                    <Sparkles size={11} /> {t("doc.byJev")}
+                    <Wand2 size={11} /> {t("doc.bySmart")}
                   </>
                 ) : (
                   t("doc.byRules")
@@ -367,7 +370,7 @@ function FromDocDialog({ teamId, onClose }: { teamId?: string; onClose: () => vo
                     <span className="pj-tag">{l.kind === "goal" ? t("doc.goal") : t("doc.task")}</span>
                     <span className="pj-fromdoc-text">{l.text}</span>
                     {l.exists && <span className="pj-small pj-muted">{t("doc.exists", { id: l.exists })}</span>}
-                    {l.confidence !== undefined && <span className="pj-jev-conf">{Math.round(l.confidence * 100)}%</span>}
+                    {l.confidence !== undefined && <span className="pj-suggest-conf">{Math.round(l.confidence * 100)}%</span>}
                   </label>
                 ))}
               </div>
@@ -693,7 +696,7 @@ function ProjectOverview({ p }: { p: ProjectDetail }) {
       <aside className="pj-project-side">
         <div className="pj-card-box">
           <div className="pj-prop-label">{t("pr.progress")}</div>
-          <Progress done={p.progress.completed} total={p.progress.total} width={140} />
+          <Progress done={p.progress.completed} started={p.progress.started} total={p.progress.total} width={140} />
           <div className="pj-small pj-muted">
             {p.progress.completed}/{p.progress.total} {t("pr.scope")}
             {p.progress.points ? ` · ${p.progress.pointsDone}/${p.progress.points} pts` : ""}
@@ -1125,7 +1128,7 @@ export function CyclesList({ teamKey }: { teamKey: string }) {
       </span>
       <span className="pj-cycle-row-end">
         {c.completedAt && <span className="pj-tag">{t("cy.completed")}</span>}
-        <Progress done={c.progress.completed} total={c.progress.total} />
+        <Progress done={c.progress.completed} started={c.progress.started} total={c.progress.total} />
         <span className="pj-small pj-muted">
           {c.progress.completed}/{c.progress.total}
         </span>
@@ -1246,7 +1249,7 @@ export function CyclePage({ teamKey, number }: { teamKey: string; number: string
                   <div key={l.userId ?? "none"} className="pj-load-row">
                     {l.userId ? <Avatar name={p?.name ?? "?"} id={l.userId} size={18} /> : <span className="pj-muted">—</span>}
                     <span className="pj-load-name">{l.userId ? (p?.name ?? t("act.former")) : t("f.noAssignee")}</span>
-                    <Progress done={l.completed} total={l.total} width={80} />
+                    <Progress done={l.completed} started={l.started} total={l.total} width={80} />
                     <span className="pj-small pj-muted">
                       {l.completed}/{l.total}
                       {l.points ? ` · ${l.points} pts` : ""}
@@ -1280,19 +1283,21 @@ function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: st
   );
 }
 
-function Burnup({ data, t }: { data: { day: string; scope: number; completed: number }[]; t: PT }) {
+function Burnup({ data, t }: { data: { day: string; scope: number; started?: number; completed: number }[]; t: PT }) {
   const w = 520;
   const h = 140;
   const max = Math.max(1, ...data.map((d) => d.scope));
   const px = (i: number) => (i / Math.max(1, data.length - 1)) * (w - 20) + 10;
   const py = (v: number) => h - 16 - (v / max) * (h - 30);
-  const line = (k: "scope" | "completed") => data.map((d, i) => `${i ? "L" : "M"}${px(i).toFixed(1)},${py(d[k]).toFixed(1)}`).join(" ");
+  const line = (k: "scope" | "started" | "completed") => data.map((d, i) => `${i ? "L" : "M"}${px(i).toFixed(1)},${py(d[k] ?? 0).toFixed(1)}`).join(" ");
+  const hasStarted = data.some((d) => d.started !== undefined);
   return (
     <figure className="pj-burnup">
       <figcaption className="pj-prop-label">{t("cy.burnup")}</figcaption>
       <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={t("cy.burnup")}>
         <line x1="10" x2={w - 10} y1={h - 16} y2={h - 16} className="pj-axis" />
         <path d={line("scope")} className="pj-line-scope" />
+        {hasStarted && <path d={line("started")} className="pj-line-started" />}
         <path d={`${line("completed")} L${px(data.length - 1)},${h - 16} L10,${h - 16} Z`} className="pj-area-done" />
         <path d={line("completed")} className="pj-line-done" />
         <text x="10" y={h - 2} className="pj-axis-label">
@@ -1307,6 +1312,12 @@ function Burnup({ data, t }: { data: { day: string; scope: number; completed: nu
           <i className="pj-legend-scope" />
           {t("cy.scope")}
         </span>
+        {hasStarted && (
+          <span>
+            <i className="pj-legend-started" />
+            {t("cy.started")}
+          </span>
+        )}
         <span>
           <i className="pj-legend-done" />
           {t("cy.done")}

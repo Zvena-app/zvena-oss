@@ -3,7 +3,7 @@
 //   the selected frame shows its issues in Design's right panel; Quick
 //   actions (Ctrl+/) find zvena's issues; a comment becomes an issue
 //   (/eco/from-design) linked to the frame; resolving the comment in Design
-//   closes that issue, reopening it opens the issue again (Jev's hub).
+//   closes that issue, reopening it opens the issue again (the automations hub).
 //   BASE=http://localhost:3100 DESIGN=http://localhost:3110 node tests/e2e/design-bridge.mjs
 import { BASE, DESIGN, check, context, devSignIn, foreignHosts, launch, summary } from "./lib.mjs";
 
@@ -162,7 +162,7 @@ try {
   }, 15000);
   check("a comment becomes an issue linked to its frame", Boolean(made), made ? `${made.card.sub} (${made.via})` : "");
 
-  // Resolved in Design: Jev closes the issue the comment became (and reopens it with the thread).
+  // Resolved in Design: the issue the comment became closes automatically (and reopens with the thread).
   const madeId = made.card.key.split(":")[1];
   const doneOf = async () => {
     const b = (await api("GET", `/api/projects/issues/${madeId}?ws=${ws}`)).body;

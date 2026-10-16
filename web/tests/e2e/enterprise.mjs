@@ -207,7 +207,7 @@ try {
   await owner.locator('[data-test="site-domain-input"]').first().fill(SITE);
   await owner.getByRole("button", { name: "Connect domain" }).first().click();
   const target = (await owner.locator('[data-test="site-cname"] .zst-code-text').innerText({ timeout: 10000 })).trim();
-  check("17 the site shows its own CNAME target", /^zv-[0-9a-f]{20}\.sites\.zvena\.app$/.test(target), target);
+  check("17 the site shows its own CNAME target", /^zv-[0-9a-f]{20}\.sites\.[a-z0-9.-]+$/.test(target), target);
   check("18 not served before it is verified", (await raw("/", SITE)).status === 404);
   await api(owner, "/api/enterprise/test-dns", "POST", { type: "cname", name: SITE, values: [target] });
   await owner.locator('[data-test="site-verify"]').click();

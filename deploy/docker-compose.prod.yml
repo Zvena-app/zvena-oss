@@ -29,11 +29,24 @@ services:
       driver: json-file
       options: { max-size: 20m, max-file: "5" }
     mem_limit: 256m
+    cpu_shares: 10240
 
   web:
     environment:
       ZVENA_STAND: ""
       ZVENA_DEV_LOGIN: "0"
+    cpu_shares: 10240
+
+  # Production first: when the server also builds images or runs test stands,
+  # the services people use get ten times the CPU weight of everything else.
+  design-backend:
+    cpu_shares: 10240
+  design-frontend:
+    cpu_shares: 10240
+  postgres:
+    cpu_shares: 10240
+  valkey:
+    cpu_shares: 10240
 
 volumes:
   caddy-data:

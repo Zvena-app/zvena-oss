@@ -86,6 +86,10 @@ try {
   await v.getByText("Идея", { exact: true }).click();
   const back = await v.locator(".nt-ff").count();
   check("3b a question shows only when an earlier answer calls for it", before === 2 && after === 3 && back === 2, `${before} → ${after} → ${back}`);
+  // Form-builder phishing: a public form warns against passwords and links "Report abuse" to its own address.
+  const warned = await v.locator('[data-test="form-no-passwords"]').isVisible();
+  const reportHref = (await v.locator('[data-test="form-report"]').getAttribute("href")) ?? "";
+  check("3b' a public form says never to submit passwords and can be reported", warned && reportHref.includes(encodeURIComponent(`/f/${lform}`)), `${warned} ${reportHref}`);
   await v.locator(".nt-ff input[type=text], .nt-ff input:not([type])").first().fill("Ольга");
   await v.getByRole("button", { name: /Отправить|Submit/ }).click();
   const sent = await v.locator(".nt-formpage-done, .nt-form-done, [data-state=sent]").first().waitFor({ timeout: 8000 }).then(() => true).catch(() => false);

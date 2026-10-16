@@ -134,34 +134,61 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
       // A first visit gets the starter page: its template loads alongside the session and sync.
       const starter = store.meta.seeded ? null : templatesPart.load();
       starter?.catch(() => {});
-      let u: NotesUser | null = null;
-      try {
-        const want = initialUser?.ws.id ?? new URLSearchParams(location.search).get("ws") ?? "";
-        const r = await fetch(`/api/auth/session${want ? `?ws=${encodeURIComponent(want)}` : ""}`, { credentials: "same-origin", cache: "no-store" });
-        const j = (await r.json()) as { user?: NotesUser | null };
-        if (!r.ok) throw new Error(String(r.status));
-        if (j.user?.id && j.user.ws) u = j.user;
-      } catch {
-        // No answer (offline, a hiccup): trust who the server saw when the
-        // page loaded, instead of treating the account as signed out, which
-        // made sync drop this device's copy of the account's pages.
-        u = initialUser ?? null;
+      // The session check (it also refreshes the cookie). undefined: no answer
+      // (offline, a hiccup) — then who the server saw when the page loaded is
+      // trusted, instead of treating the account as signed out, which made
+      // sync drop this device's copy of the account's pages.
+      const want = initialUser?.ws.id ?? new URLSearchParams(location.search).get("ws") ?? "";
+      const checked = fetch(`/api/auth/session${want ? `?ws=${encodeURIComponent(want)}` : ""}`, { credentials: "same-origin", cache: "no-store" })
+        .then(async (r) => {
+          const j = (await r.json()) as { user?: NotesUser | null };
+          if (!r.ok) throw new Error(String(r.status));
+          return j.user?.id && j.user.ws ? j.user : null;
+        })
+        .catch((): undefined => undefined);
+      const begin = async (u: NotesUser | null) => {
+        setUser(u);
+        // New top-level pages of a member go to their Private (Notion); a guest device keeps its own.
+        store.setDefaultSpace(u && u.ws.role !== "guest" ? "private" : undefined);
+        const s = new NotesSync(store);
+        syncRef.current = s;
+        s.subscribe(setSync);
+        s.onRejected = () => toast(t("toast.syncFailed"));
+        s.onDetached = () => toast(t("toast.otherTab"), { label: t("toast.reload"), run: () => location.reload() }, 20_000);
+        if (u) setWorkspace(u.ws.id);
+        // Reminders reach the Inbox at this person's local time.
+        if (u) reportTimeZone();
+        void loadCustomEmoji(u?.ws.id ?? null);
+        // Guest documents move into the personal workspace only (never into a shared one).
+        await s.start(u ? { key: storeKey(u), ws: u.ws.id, adoptGuest: u.ws.personal, guest: u.ws.role === "guest" } : null);
+      };
+      let u: NotesUser | null;
+      if (initialUser && !early) {
+        // Signed in when the page was made, and nothing of theirs on this device
+        // to show yet: sync starts now, alongside the check (one round trip to
+        // the pages, not two). The check's newer copy (roles, workspaces)
+        // replaces it; only an answer naming someone else (signed out, or
+        // another account in another tab since) starts over for them. With
+        // this device's pages already on screen, sync follows the check as
+        // before, which leaves the first paint the main thread.
+        u = initialUser;
+        // (The same answer changes nothing: no second render of the whole workspace.)
+        void checked.then((c) => live && c && storeKey(c) === storeKey(initialUser) && JSON.stringify(c) !== JSON.stringify(initialUser) && setUser(c));
+        await begin(u);
+        if (!live) return;
+        const c = await checked;
+        if (!live) return;
+        if (c !== undefined && storeKey(c) !== storeKey(initialUser)) {
+          syncRef.current?.stop();
+          u = c;
+          await begin(u);
+        }
+      } else {
+        const c = await checked;
+        if (!live) return;
+        u = c === undefined ? (initialUser ?? null) : c;
+        await begin(u);
       }
-      if (!live) return;
-      setUser(u);
-      // New top-level pages of a member go to their Private (Notion); a guest device keeps its own.
-      store.setDefaultSpace(u && u.ws.role !== "guest" ? "private" : undefined);
-      const s = new NotesSync(store);
-      syncRef.current = s;
-      s.subscribe(setSync);
-      s.onRejected = () => toast(t("toast.syncFailed"));
-      s.onDetached = () => toast(t("toast.otherTab"), { label: t("toast.reload"), run: () => location.reload() }, 20_000);
-      if (u) setWorkspace(u.ws.id);
-      // Reminders reach the Inbox at this person's local time.
-      if (u) reportTimeZone();
-      void loadCustomEmoji(u?.ws.id ?? null);
-      // Guest documents move into the personal workspace only (never into a shared one).
-      await s.start(u ? { key: storeKey(u), ws: u.ws.id, adoptGuest: u.ws.personal, guest: u.ws.role === "guest" } : null);
       if (!live) return;
       // Trash keeps pages for 30 days (the Trash panel says so), then they go
       // for good — after the pull, and only where the person may delete.
@@ -630,7 +657,9 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
         body: file,
       });
       if (!res.ok) {
-        toast(t("toast.uploadFailed"));
+        // Without an account only pictures, within a small allowance: say so instead of "failed".
+        const why = (await res.json().catch(() => null)) as { signIn?: boolean } | null;
+        toast(t(why?.signIn ? "toast.uploadSignIn" : "toast.uploadFailed"));
         throw new Error(`upload ${res.status}`);
       }
       const j = (await res.json()) as { url: string };

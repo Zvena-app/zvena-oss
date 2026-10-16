@@ -4,6 +4,7 @@ import { config } from "@/lib/config";
 import { crossSite, currentUser, fail } from "@/lib/http";
 import { safeNext } from "@/lib/oauth";
 import { rateLimited } from "@/lib/rate-limit";
+import { readFormCapped } from "@/lib/safe-json";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   if (bad) return bad;
   const me = currentUser(req);
   if (!me) return fail(401, "unauthorized");
-  const form = await req.formData().catch(() => null);
+  const form = await readFormCapped(req);
   const next = safeNext(String(form?.get("next") ?? "/home"));
   if (form?.get("consent") !== "1") return NextResponse.redirect(new URL(`/consent?next=${encodeURIComponent(next)}`, config.appUrl), 303);
   recordConsent(me.user.id);

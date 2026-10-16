@@ -21,7 +21,7 @@ If the founder can no longer lead the project, there is no written succession pr
 
 ## Money
 
-zvena has no income today: no paid plans, no ads, no investors. The founder, Ethan Merker, pays all of zvena's running costs personally (servers, storage and backups, email delivery, domains, Jev's AI requests). If the project starts accepting donations or sponsorship, the sources and how the money is spent will be published, and sponsors get no say over users' data.
+zvena has no income today: no paid plans, no ads, no investors. The founder, Ethan Merker, pays all of zvena's running costs personally (servers, storage and backups, email delivery, domains, the model requests behind smart suggestions). If the project starts accepting donations or sponsorship, the sources and how the money is spent will be published, and sponsors get no say over users' data.
 
 ## Open tasks
 

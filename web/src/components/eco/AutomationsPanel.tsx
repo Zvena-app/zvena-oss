@@ -1,11 +1,11 @@
 "use client";
 
-// Jev on Home: what runs the workspace by itself, in one place.
+// Automations on Home: what runs in the workspace by itself, in one place.
 //
 //   goals     every goal with where its number stands (a bar that fills as
 //             the chart, the project or the number moves) — met ones ticked;
-//   waiting   what Jev proposes and a person settles in one click;
-//   done      what Jev did lately (goals met, goals linked, parents closed,
+//   waiting   suggestions a person settles in one click;
+//   done      what was done automatically lately (goals met, goals linked, parents closed,
 //             fields of new issues filled), each with Undo where it can;
 //   switches  the owner decides what exact rules do by themselves.
 //
@@ -13,7 +13,7 @@
 // proposal arriving redraws the panel without a reload.
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, CircleCheck, Settings2, Sparkles, Target, Undo2, X } from "lucide-react";
+import { Check, CircleCheck, Settings2, Target, Undo2, X } from "lucide-react";
 import { pulse, pulseHeaders } from "@/lib/pulse/client";
 import { useI18n } from "@/lib/i18n-react";
 import { intlTag, type Locale } from "@/i18n/locales";
@@ -35,13 +35,12 @@ interface Goal {
   target: number;
   met: boolean;
   progress: number | null;
-  byJev: boolean;
 }
 interface Item {
   id: string;
   at: number;
   kind: "goal_met" | "goal_linked" | "parent_done" | "parent_reopened" | "issue_flow" | "automation" | "rule" | "autopilot";
-  source: "jev" | "rule";
+  source: "model" | "rule";
   status: string;
   confidence: number | null;
   subject: string;
@@ -51,14 +50,13 @@ interface Item {
   canResolve: boolean;
 }
 interface Data {
-  overview: { jev: { configured: boolean; on: boolean; breakerOpen: boolean }; rules: { parents: boolean; goals: boolean; design: boolean; calendar: boolean }; ingest: boolean };
+  overview: { rules: { parents: boolean; goals: boolean; design: boolean; calendar: boolean }; ingest: boolean };
   goals: Goal[];
   activity: Item[];
-  week: number;
 }
 
 async function call<T>(ws: string, body?: unknown): Promise<T> {
-  const res = await fetch(`/api/decide?ws=${encodeURIComponent(ws)}${body ? "" : "&view=jev"}`, {
+  const res = await fetch(`/api/decide?ws=${encodeURIComponent(ws)}${body ? "" : "&view=hub"}`, {
     method: body ? "POST" : "GET",
     credentials: "same-origin",
     cache: "no-store",
@@ -82,31 +80,31 @@ function sentence(et: ReturnType<typeof useEt>, it: Item, locale: Locale): strin
   const n = (v: unknown) => (typeof v === "number" ? fmt(v, locale) : String(v ?? ""));
   switch (it.kind) {
     case "goal_met":
-      return et("jevActGoalMet", { title: String(d.issue ?? it.title) });
+      return et("autoActGoalMet", { title: String(d.issue ?? it.title) });
     case "goal_linked":
-      return et(it.status === "pending" ? "jevActGoalProposed" : "jevActGoalLinked", { title: it.title, number: String(d.number ?? ""), op: OP_TEXT[(d.op as Op) ?? ">="] ?? "≥", target: n(d.target) });
+      return et(it.status === "pending" ? "autoActGoalProposed" : "autoActGoalLinked", { title: it.title, number: String(d.number ?? ""), op: OP_TEXT[(d.op as Op) ?? ">="] ?? "≥", target: n(d.target) });
     case "parent_done":
-      return et("jevActParentDone", { title: it.title });
+      return et("autoActParentDone", { title: it.title });
     case "parent_reopened":
-      return et("jevActParentReopened", { title: it.title });
+      return et("autoActParentReopened", { title: it.title });
     case "issue_flow":
-      if (d.why === "event_moved") return et("jevActEventMoved", { title: it.title, date: typeof d.due === "string" ? new Date(`${d.due}T12:00:00`).toLocaleDateString(intlTag(locale), { day: "numeric", month: "short" }) : "" });
-      return et(d.why === "thread_reopened" ? "jevActThreadReopened" : "jevActThreadResolved", { title: it.title });
+      if (d.why === "event_moved") return et("autoActEventMoved", { title: it.title, date: typeof d.due === "string" ? new Date(`${d.due}T12:00:00`).toLocaleDateString(intlTag(locale), { day: "numeric", month: "short" }) : "" });
+      return et(d.why === "thread_reopened" ? "autoActThreadReopened" : "autoActThreadResolved", { title: it.title });
     case "automation": {
       const name = String(d.automation || "⚡");
-      if (it.status === "pending") return et("jevActAutomationWaits", { name, title: it.title });
-      return et(d.scheduled ? "jevActAutomationScheduled" : "jevActAutomation", { name, title: it.title });
+      if (it.status === "pending") return et("autoActAutomationWaits", { name, title: it.title });
+      return et(d.scheduled ? "autoActAutomationScheduled" : "autoActAutomation", { name, title: it.title });
     }
     case "autopilot": {
-      const field = et(`jevField_${String(d.field)}` as EcoKey);
-      return et(it.status === "open" ? "jevActSuggests" : "jevActFilled", { field, title: it.title });
+      const field = et(`autoField_${String(d.field)}` as EcoKey);
+      return et(it.status === "open" ? "autoActSuggests" : "autoActFilled", { field, title: it.title });
     }
     default:
-      return et("jevActRule", { title: it.title });
+      return et("autoActRule", { title: it.title });
   }
 }
 
-export function JevPanel({ ws, canEdit, owner }: { ws: string; canEdit: boolean; owner: boolean }) {
+export function AutomationsPanel({ ws, canEdit, owner }: { ws: string; canEdit: boolean; owner: boolean }) {
   const { locale } = useI18n();
   const et = useEt();
   const [data, setData] = useState<Data | null>(null);
@@ -168,69 +166,60 @@ export function JevPanel({ ws, canEdit, owner }: { ws: string; canEdit: boolean;
     load();
   };
 
-  if (!data) return failed ? null : <section className="eco-jev" aria-busy="true" aria-label={et("jevTitle")} />;
-  const { jev, rules } = data.overview;
+  if (!data) return failed ? null : <section className="eco-hub" aria-busy="true" aria-label={et("autoTitle")} />;
+  const { rules } = data.overview;
   const waiting = data.activity.filter((a) => a.canResolve);
   const done = data.activity.filter((a) => !a.canResolve && (a.status === "applied" || a.status === "accepted" || a.status === "undone")).slice(0, 6);
-  const week = data.week;
-  const state = !jev.configured ? et("jevUnconfigured") : !jev.on ? et("jevOff") : jev.breakerOpen ? et("jevResting") : et("jevOn");
   const open = data.goals.filter((g) => !g.issue.done);
   const met = data.goals.filter((g) => g.issue.done).slice(0, 3);
 
   return (
-    <section className="eco-jev" aria-labelledby="eh-jev">
-      <div className="eco-jev-head">
-        <span className="eco-jev-mark" aria-hidden>
-          <Sparkles size={14} />
-        </span>
-        <h2 id="eh-jev">{et("jevTitle")}</h2>
-        <span className="eco-jev-state" data-on={(jev.configured && jev.on) || undefined}>
-          {state}
-        </span>
-        {week > 0 && <span className="eco-jev-week">{et("jevWeek", { n: week })}</span>}
+    <section className="eco-hub" aria-labelledby="eh-hub">
+      <div className="eco-hub-head">
+        <h2 id="eh-hub">{et("autoTitle")}</h2>
         {owner && (
-          <button type="button" className="eco-icon-btn" aria-expanded={gear} aria-label={et("jevSettings")} title={et("jevSettings")} onClick={() => setGear((v) => !v)}>
+          <button type="button" className="eco-icon-btn" aria-expanded={gear} aria-label={et("autoSettings")} title={et("autoSettings")} onClick={() => setGear((v) => !v)}>
             <Settings2 size={14} />
           </button>
         )}
       </div>
       {owner && gear && (
-        <div className="eco-jev-settings" role="group" aria-label={et("jevSettings")}>
+        <div className="eco-hub-settings" role="group" aria-label={et("autoSettings")}>
           <label>
             <input type="checkbox" checked={rules.goals} onChange={(e) => void setRule({ goals: e.target.checked })} />
-            {et("jevAutoGoals")}
+            {et("autoLinkGoals")}
           </label>
           <label>
             <input type="checkbox" checked={rules.parents} onChange={(e) => void setRule({ parents: e.target.checked })} />
-            {et("jevParents")}
+            {et("autoParents")}
           </label>
           <label>
             <input type="checkbox" checked={rules.design} onChange={(e) => void setRule({ design: e.target.checked })} />
-            {et("jevDesign")}
+            {et("autoDesign")}
           </label>
           <label>
             <input type="checkbox" checked={rules.calendar} onChange={(e) => void setRule({ calendar: e.target.checked })} />
-            {et("jevCalendar")}
+            {et("autoCalendar")}
           </label>
-          <div className="eco-jev-ingest">
-            <b>{et("jevIngest")}</b>
-            <p className="eco-jev-empty">{et("jevIngestHint")}</p>
+          <div className="eco-hub-ingest">
+            <b>{et("autoIngest")}</b>
+            <p className="eco-hub-empty">{et("autoIngestHint")}</p>
             {key && (
               <>
-                <p className="eco-jev-empty">{et("jevIngestShown")}</p>
-                <pre className="eco-jev-code" data-test="jev-ingest-example">{`curl -X POST ${typeof location === "undefined" ? "" : location.origin}/api/pulse/ingest \\
+                <p className="eco-hub-empty">{et("autoIngestShown")}</p>
+                <pre className="eco-hub-code" data-test="ingest-example">{`curl -X POST ${typeof location === "undefined" ? "" : location.origin}/api/pulse/ingest \\
   -H "Authorization: Bearer ${key}" \\
   -H "content-type: application/json" \\
   -d '{"metric":"signups","value":120,"label":"Signups"}'`}</pre>
               </>
             )}
-            <span className="eco-jev-acts">
+            <span className="eco-hub-acts">
               <button type="button" className="eco-btn eco-btn-ghost" onClick={() => void ingest(true)}>
-                {et("jevIngestNew")}
+                {et("autoIngestNew")}
               </button>
               {(data.overview.ingest || key) && (
                 <button type="button" className="eco-btn eco-btn-ghost" onClick={() => void ingest(false)}>
-                  {et("jevIngestRevoke")}
+                  {et("autoIngestRevoke")}
                 </button>
               )}
             </span>
@@ -238,23 +227,22 @@ export function JevPanel({ ws, canEdit, owner }: { ws: string; canEdit: boolean;
         </div>
       )}
 
-      <div className="eco-jev-block">
+      <div className="eco-hub-block">
         <h3>
-          <Target size={13} aria-hidden /> {et("jevGoals")}
+          <Target size={13} aria-hidden /> {et("autoGoals")}
         </h3>
         {open.length === 0 && met.length === 0 ? (
-          <p className="eco-jev-empty">{et("jevGoalsEmpty")}</p>
+          <p className="eco-hub-empty">{et("autoGoalsEmpty")}</p>
         ) : (
-          <ul className="eco-jev-goals">
+          <ul className="eco-hub-goals">
             {[...open, ...met].map((g) => (
               <li key={g.reaction} data-met={g.issue.done || undefined}>
-                <a className="eco-jev-goal-title" href={href(ws, `issue:${g.issue.id}`, g.issue.identifier)}>
+                <a className="eco-hub-goal-title" href={href(ws, `issue:${g.issue.id}`, g.issue.identifier)}>
                   {g.issue.done ? <CircleCheck size={14} aria-hidden /> : <Target size={14} aria-hidden />}
-                  <span className="eco-jev-id">{g.issue.identifier}</span>
-                  <span className="eco-jev-text">{g.issue.title}</span>
-                  {g.byJev && <span className="eco-jev-chip">{et("jevByJev")}</span>}
+                  <span className="eco-hub-id">{g.issue.identifier}</span>
+                  <span className="eco-hub-text">{g.issue.title}</span>
                 </a>
-                <span className="eco-jev-goal-num">
+                <span className="eco-hub-goal-num">
                   {g.label || g.key} {g.value === null ? "—" : fmt(g.value, locale)} {OP_TEXT[g.op]} {fmt(g.target, locale)}
                 </span>
                 {g.progress !== null && (
@@ -269,21 +257,21 @@ export function JevPanel({ ws, canEdit, owner }: { ws: string; canEdit: boolean;
       </div>
 
       {waiting.length > 0 && (
-        <div className="eco-jev-block">
-          <h3>{et("jevWaiting", { n: waiting.length })}</h3>
-          <ul className="eco-jev-items">
+        <div className="eco-hub-block">
+          <h3>{et("autoWaiting", { n: waiting.length })}</h3>
+          <ul className="eco-hub-items">
             {waiting.slice(0, 5).map((it) => (
               <li key={it.id}>
-                <a href={href(ws, it.subject)} className="eco-jev-text">
+                <a href={href(ws, it.subject)} className="eco-hub-text">
                   {sentence(et, it, locale)}
                 </a>
-                {it.confidence !== null && <span className="eco-jev-sure">{et("jevSure", { p: Math.round(it.confidence * 100) })}</span>}
+                {it.confidence !== null && <span className="eco-hub-sure">{et("autoSure", { p: Math.round(it.confidence * 100) })}</span>}
                 {canEdit && (
-                  <span className="eco-jev-acts">
+                  <span className="eco-hub-acts">
                     <button type="button" className="eco-btn eco-btn-primary" disabled={busy === it.id} onClick={() => void act(it.id, "accept")}>
-                      <Check size={13} aria-hidden /> {et("jevAccept")}
+                      <Check size={13} aria-hidden /> {et("autoAccept")}
                     </button>
-                    <button type="button" className="eco-icon-btn" disabled={busy === it.id} aria-label={et("jevDismiss")} title={et("jevDismiss")} onClick={() => void act(it.id, "dismiss")}>
+                    <button type="button" className="eco-icon-btn" disabled={busy === it.id} aria-label={et("autoDismiss")} title={et("autoDismiss")} onClick={() => void act(it.id, "dismiss")}>
                       <X size={14} />
                     </button>
                   </span>
@@ -294,26 +282,26 @@ export function JevPanel({ ws, canEdit, owner }: { ws: string; canEdit: boolean;
         </div>
       )}
 
-      <div className="eco-jev-block">
-        <h3>{et("jevRecent")}</h3>
+      <div className="eco-hub-block">
+        <h3>{et("autoRecent")}</h3>
         {done.length === 0 ? (
-          <p className="eco-jev-empty">{et("jevRecentEmpty")}</p>
+          <p className="eco-hub-empty">{et("autoRecentEmpty")}</p>
         ) : (
-          <ul className="eco-jev-items">
+          <ul className="eco-hub-items">
             {done.map((it) => (
               <li key={it.id} data-undone={it.status === "undone" || undefined}>
-                <a href={href(ws, it.subject)} className="eco-jev-text">
+                <a href={href(ws, it.subject)} className="eco-hub-text">
                   {sentence(et, it, locale)}
                 </a>
-                <time className="eco-jev-when" dateTime={new Date(it.at).toISOString()}>
+                <time className="eco-hub-when" dateTime={new Date(it.at).toISOString()}>
                   {new Date(it.at).toLocaleTimeString(intlTag(locale), { hour: "2-digit", minute: "2-digit" })}
                 </time>
                 {it.status === "undone" ? (
-                  <span className="eco-jev-sure">{et("jevUndone")}</span>
+                  <span className="eco-hub-sure">{et("autoUndone")}</span>
                 ) : (
                   canEdit &&
                   it.canUndo && (
-                    <button type="button" className="eco-icon-btn" disabled={busy === it.id} aria-label={et("jevUndo")} title={et("jevUndo")} onClick={() => void act(it.id, "undo")}>
+                    <button type="button" className="eco-icon-btn" disabled={busy === it.id} aria-label={et("autoUndo")} title={et("autoUndo")} onClick={() => void act(it.id, "undo")}>
                       <Undo2 size={14} />
                     </button>
                   )
@@ -323,7 +311,7 @@ export function JevPanel({ ws, canEdit, owner }: { ws: string; canEdit: boolean;
           </ul>
         )}
       </div>
-      {failed && <p className="eco-jev-empty">{et("failed")}</p>}
+      {failed && <p className="eco-hub-empty">{et("failed")}</p>}
     </section>
   );
 }

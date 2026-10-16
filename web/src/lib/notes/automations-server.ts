@@ -10,9 +10,9 @@
 //   - Button properties run their actions through the same engine
 //     (/api/notes/button).
 // Writes go through pushNotes with by "automation:<id>"; those writes do not
-// trigger automations again (no chains, no loops). Jev's hub hears every run
-// (its journal, with Undo) and judges "only if Jev agrees" automations
-// (lib/decide/docs-jev.ts registers both through setAutomationHooks). Webhooks go out after the
+// trigger automations again (no chains, no loops). The automations hub hears every run
+// (its journal, with Undo) and judges "run only if …" automations
+// (lib/decide/docs-smart.ts registers both through setAutomationHooks). Webhooks go out after the
 // response, through the SSRF guard of lib/web-read.ts. A guest's local-only
 // workspace runs its automations in the browser (components/notes/automations-run.ts).
 
@@ -137,7 +137,7 @@ function logRun(ws: string, dbId: string, automationId: string, error: string | 
   ).run(ws, dbId, automationId, now, error ? 0 : 1, error);
 }
 
-/** Notes a run that did not happen (Jev off, said no…) where the automation's last run shows. */
+/** Notes a run that did not happen (smart suggestions off, condition not met…) where the automation's last run shows. */
 export function noteRun(ws: string, dbId: string, automationId: string, error: string | null): void {
   logRun(ws, dbId, automationId, error);
 }
@@ -216,7 +216,7 @@ export function pendingWebhooks(): readonly { url: string; body: unknown }[] {
   return state.hooks;
 }
 
-// --- Jev's hooks -----------------------------------------------------------------
+// --- The hub's hooks -------------------------------------------------------------
 
 export interface RanInfo {
   ws: string;
@@ -227,14 +227,14 @@ export interface RanInfo {
   result: RunResult;
   /** Whose access the writes used. */
   as: string | null;
-  /** Jev's verdict, when the automation asked. */
-  jev?: { confidence: number; model?: string; ms?: number; accepted?: string };
+  /** The condition's verdict, when the automation asked. */
+  verdict?: { confidence: number; model?: string; ms?: number; accepted?: string };
 }
 
 export interface AutomationHooks {
-  /** An automation that asks Jev fired on a row: the hub judges it (later, off the write's path). */
+  /** An automation with a "run only if" condition fired on a row: the hub judges it (later, off the write's path). */
   judge(job: { ws: string; db: Note; row: Note; automation: Automation; actorId: string | null }): void;
-  /** An automation ran (on a write, by the clock, or after Jev's or a person's yes). */
+  /** An automation ran (on a write, by the clock, or after the condition's or a person's yes). */
   ran(info: RanInfo): void;
 }
 
@@ -384,7 +384,7 @@ function runAutomation(
   db: Note,
   row: Note | null,
   a: Automation,
-  opts: { ws: string; actorId: string | null; budget: { left: number }; now: number; as?: string[]; jev?: RanInfo["jev"] }
+  opts: { ws: string; actorId: string | null; budget: { left: number }; now: number; as?: string[]; verdict?: RanInfo["verdict"] }
 ): RunResult {
   const author = authorOf(opts.ws, db, a.by);
   const as = opts.as ?? (author ? [author] : []);
@@ -400,7 +400,7 @@ function runAutomation(
   }
   logRun(opts.ws, db.id, a.id, res.error, opts.now);
   try {
-    hooksNow()?.ran({ ws: opts.ws, db, before: row, automation: a, result: res, as: as[0] ?? null, ...(opts.jev ? { jev: opts.jev } : {}) });
+    hooksNow()?.ran({ ws: opts.ws, db, before: row, automation: a, result: res, as: as[0] ?? null, ...(opts.verdict ? { verdict: opts.verdict } : {}) });
   } catch {
     // The journal never stops a run.
   }
@@ -408,14 +408,14 @@ function runAutomation(
 }
 
 /**
- * Runs one automation on a row now, after Jev's (or a person's) yes: the
+ * Runs one automation on a row now, after the condition's (or a person's) yes: the
  * database, the row and the automation as they are at this moment — gone,
  * off or changed since, nothing runs. `as`: whose access (default: its author).
  */
 export function runAutomationNow(
   ws: string,
-  ref: { db: string; row: string; automation: string; jev?: string },
-  opts: { actorId: string | null; as?: string[]; jev?: RanInfo["jev"] },
+  ref: { db: string; row: string; automation: string; onlyIf?: string },
+  opts: { actorId: string | null; as?: string[]; verdict?: RanInfo["verdict"] },
   now = Date.now()
 ): RunResult | null {
   const db = load(ws, ref.db);
@@ -423,8 +423,8 @@ export function runAutomationNow(
   const a = db?.db?.automations?.find((x) => x.id === ref.automation);
   if (!db?.db || !row || !a || !a.on || row.parentId !== db.id || row.template || inTrash(ws, row)) return null;
   // Asked about one question: an automation edited since asks again.
-  if (ref.jev !== undefined && JSON.stringify(a.jev ?? null) !== ref.jev) return null;
-  return runAutomation(db, row, a, { ws, actorId: opts.actorId, budget: { left: MAX_PER_PUSH }, now, ...(opts.as ? { as: opts.as } : {}), ...(opts.jev ? { jev: opts.jev } : {}) });
+  if (ref.onlyIf !== undefined && JSON.stringify(a.onlyIf ?? null) !== ref.onlyIf) return null;
+  return runAutomation(db, row, a, { ws, actorId: opts.actorId, budget: { left: MAX_PER_PUSH }, now, ...(opts.as ? { as: opts.as } : {}), ...(opts.verdict ? { verdict: opts.verdict } : {}) });
 }
 
 /** Who an automation acts for (its author; see authorOf). */
@@ -481,11 +481,11 @@ function onPush(changes: readonly NoteChange[], ctx: PushContext): void {
     for (const a of db.db.automations ?? []) {
       if (a.trigger.type === "added" && stale) continue;
       if (!fires(a, before, row, db.db)) continue;
-      if (a.jev) {
-        // Jev judges it off the write's path; without the hub (or Jev) it does not run.
+      if (a.onlyIf) {
+        // The hub judges it off the write's path; without the hub it does not run.
         const hooks = hooksNow();
         if (hooks) hooks.judge({ ws: ctx.ws, db, row: latest.get(row.id) ?? row, automation: a, actorId: actorOf(ctx.by) });
-        else logRun(ctx.ws, db.id, a.id, "Jev is not available", now);
+        else logRun(ctx.ws, db.id, a.id, "the condition cannot be checked here", now);
         continue;
       }
       const res = runAutomation(db, latest.get(row.id) ?? row, a, { ws: ctx.ws, actorId: actorOf(ctx.by), budget, now });

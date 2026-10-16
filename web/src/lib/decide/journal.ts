@@ -1,10 +1,10 @@
-// What Jev did, and what it proposes, across the workspace. Server-only.
+// What runs by itself did, and what it proposes, across the workspace. Server-only.
 //
-// Jev acts in several places: reactions (a goal's number reached its target,
+// Automatic work happens in several places: reactions (a goal's number reached its target,
 // a rule fired), the hub's own steps (a parent issue closed with its last
 // sub-issue, a goal linked to its number — lib/decide/cascade.ts, autogoal.ts;
 // an issue that follows Design or Calendar — flows.ts), Documents' database
-// automations (docs-jev.ts) and Projects' autopilot (fields of a new issue). Each keeps its own record
+// automations (docs-smart.ts) and Projects' autopilot (fields of a new issue). Each keeps its own record
 // (dz_decisions, pj_suggestions); this module reads them as one list, newest
 // first, and is the one place a person confirms, dismisses or undoes any of it.
 //
@@ -27,7 +27,7 @@ import { visibleMetrics } from "./sources";
 
 /** What a hub record did or proposes (kept in dz_decisions.actions). */
 export type HubPayload =
-  /** Jev made an issue a goal on a number (or proposes to): the reaction it saved. */
+  /** An issue was made a goal on a number (or is proposed to be): the reaction saved. */
   | { kind: "goal"; reaction: Reaction; issue: string }
   /** A parent issue followed its sub-issues: closed with the last one (or reopened with one), from status `prev` to `status`. */
   | { kind: "parent"; issue: string; prev: string; status: string; reopen?: boolean }
@@ -35,11 +35,11 @@ export type HubPayload =
   | { kind: "issue"; issue: string; field: "status" | "due"; prev: string | null; next: string | null; why: IssueWhy; from: string }
   /**
    * A database automation ran on a row (or by the clock: row null), or waits for a person's yes
-   * (`facts`: a hash of what Jev judged; the yes holds while the page says the same).
+   * (`facts`: a hash of what the model judged; the yes holds while the page says the same).
    * `prev`/`next`: the values it set that can be put back (options, numbers, dates, checkboxes,
-   * people — ids, never text); `added`: pages it made. `jev`: the question it asked, as saved.
+   * people — ids, never text); `added`: pages it made. `onlyIf`: its "run only if" condition, as saved.
    */
-  | { kind: "automation"; db: string; row: string | null; automation: string; jev?: string; facts?: string; prev?: Record<string, unknown>; next?: Record<string, unknown>; added?: string[] };
+  | { kind: "automation"; db: string; row: string | null; automation: string; onlyIf?: string; facts?: string; prev?: Record<string, unknown>; next?: Record<string, unknown>; added?: string[] };
 
 export type IssueWhy = "thread_resolved" | "thread_reopened" | "event_moved";
 const WHYS = new Set<IssueWhy>(["thread_resolved", "thread_reopened", "event_moved"]);
@@ -47,7 +47,7 @@ const KINDS = new Set(["goal", "parent", "issue", "automation"]);
 const IDISH = /^[A-Za-z0-9_-]{1,64}$/;
 const obj = (v: unknown): Record<string, unknown> | undefined => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : undefined);
 
-/** What some kinds do when a person accepts or undoes them, registered by their module (docs-jev.ts). */
+/** What some kinds do when a person accepts or undoes them, registered by their module (docs-smart.ts). */
 export interface KindHandler {
   accept?(ws: string, id: string, p: HubPayload, by: string): Settle;
   undo?(ws: string, p: HubPayload, by: string): Settle;
@@ -84,7 +84,7 @@ function payloadOf(json: string | null): HubPayload | null {
         db: v.db,
         row: v.row as string | null,
         automation: v.automation,
-        ...(typeof v.jev === "string" ? { jev: v.jev } : {}),
+        ...(typeof v.onlyIf === "string" ? { onlyIf: v.onlyIf } : {}),
         ...(typeof v.facts === "string" ? { facts: v.facts } : {}),
         ...(obj(v.prev) ? { prev: obj(v.prev) } : {}),
         ...(obj(v.next) ? { next: obj(v.next) } : {}),
@@ -99,7 +99,7 @@ function payloadOf(json: string | null): HubPayload | null {
 
 export interface HubRecord {
   subject: string;
-  source: "jev" | "rule";
+  source: "model" | "rule";
   mode: "auto" | "suggest";
   status: "applied" | "pending";
   payload: HubPayload;
@@ -108,7 +108,7 @@ export interface HubRecord {
   confidence?: number;
   model?: string;
   ms?: number;
-  /** Who Jev acted for (the person whose rights it used). */
+  /** Who it acted for (the person whose rights it used). */
   by: string;
 }
 
@@ -138,7 +138,7 @@ export function recordHub(ws: string, h: HubRecord): string {
     // Whose rights a pending proposal will use is settled by who accepts it; an applied one keeps its person.
     h.status === "applied" ? h.by : null
   );
-  emit(ws, { type: "decision", ref: id, by: "jev", data: { mode: h.mode, kind: h.payload.kind } });
+  emit(ws, { type: "decision", ref: id, by: "auto", data: { mode: h.mode, kind: h.payload.kind } });
   return id;
 }
 
@@ -149,7 +149,7 @@ export function pendingFor(ws: string, subject: string, kind: HubPayload["kind"]
   return r?.id ?? null;
 }
 
-/** The latest applied record of the hub about an issue (a parent Jev closed). */
+/** The latest applied record of the hub about an issue (a parent closed automatically). */
 export function lastApplied(ws: string, issue: string, kind: HubPayload["kind"]): { id: string; payload: HubPayload } | null {
   ensureSchema();
   const r = sql("SELECT id, actions FROM dz_decisions WHERE ws = ? AND row_id = ? AND status IN ('applied', 'accepted') AND actions LIKE ? ORDER BY at DESC LIMIT 1").get(ws, issue, `{"kind":"${kind}"%`) as
@@ -161,7 +161,7 @@ export function lastApplied(ws: string, issue: string, kind: HubPayload["kind"])
 
 function editCtx(by: string, ws: string): Ctx | null {
   try {
-    return { ...ctxFor(by, ws, "edit"), via: "jev" };
+    return { ...ctxFor(by, ws, "edit"), via: "auto" };
   } catch {
     return null;
   }
@@ -198,7 +198,7 @@ export function resolve(ws: string, id: string, accept: boolean, by: string): Se
   return "applied";
 }
 
-/** A person takes back what Jev did by itself (a goal it linked, a parent it closed or reopened). */
+/** A person takes back what was done automatically (a goal linked, a parent closed or reopened). */
 export function undo(ws: string, id: string, by: string): Settle {
   ensureSchema();
   const row = sql("SELECT subject, actions, status FROM dz_decisions WHERE ws = ? AND id = ?").get(ws, id) as { subject: string; actions: string | null; status: string } | undefined;
@@ -224,7 +224,7 @@ export function undo(ws: string, id: string, by: string): Settle {
     } catch {
       return "gone";
     }
-    // Only what is still Jev's: a person's later change stays.
+    // Only what is still the automation's: a person's later change stays.
     const now = p.field === "status" ? cur.statusId : cur.dueDate;
     if (now === p.next) {
       try {
@@ -240,7 +240,7 @@ export function undo(ws: string, id: string, by: string): Settle {
     } catch {
       return "gone";
     }
-    // Only what is still Jev's: a person's later change stays.
+    // Only what is still the automation's: a person's later change stays.
     if (cur.statusId === p.status) {
       try {
         updateIssue(ctx, p.issue, { statusId: p.prev });
@@ -263,8 +263,8 @@ export interface ActivityItem {
   id: string;
   at: number;
   kind: ActivityKind;
-  /** Jev's model judged it (with a confidence), or an exact rule did. */
-  source: "jev" | "rule";
+  /** The decision model judged it (with a confidence), or an exact rule did. */
+  source: "model" | "rule";
   /** applied, pending, accepted, rejected, undone, expired, unchanged; Projects: open, applied, accepted, dismissed, undone. */
   status: string;
   confidence: number | null;
@@ -343,7 +343,7 @@ function titleOf(n: Namer, subject: string): string | null {
 }
 
 /**
- * What Jev did and proposes in the workspace, newest first, as this person
+ * What was done automatically and is proposed in the workspace, newest first, as this person
  * may see it: decisions about things hidden from them, and rules over pages
  * they cannot open, are left out.
  */
@@ -401,7 +401,7 @@ export function activityOf(ws: string, userId: string, limit = 50): ActivityItem
       id: `d:${d.id}`,
       at: d.at,
       kind,
-      source: d.source === "jev" ? "jev" : "rule",
+      source: d.source === "model" ? "model" : "rule",
       status: d.status,
       confidence: d.confidence,
       subject,
@@ -435,7 +435,7 @@ export function activityOf(ws: string, userId: string, limit = 50): ActivityItem
         id: `s:${r.id}`,
         at: r.created_at,
         kind: "autopilot",
-        source: "jev",
+        source: "model",
         status: r.state,
         confidence: r.confidence,
         subject: `issue:${r.issue_id}`,

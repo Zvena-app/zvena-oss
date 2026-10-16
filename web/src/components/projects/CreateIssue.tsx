@@ -237,18 +237,18 @@ export function CreateIssueDialog({ defaults }: { defaults: CreateDefaults }) {
 
 /**
  * Issues that may already say the same, while the title is typed: the
- * full-text index finds them, Jev (when on) says which one is the same.
+ * full-text index finds them, smart suggestions (when on) say which one is the same.
  * They open in a new tab, so the draft stays.
  */
 function SimilarIssues({ title, description }: { title: string; description: string }) {
   const { t } = useT();
-  const [res, setRes] = useState<{ issues: { id: string; identifier: string; title: string; confidence?: number }[]; source: "jev" | "rules" } | null>(null);
+  const [res, setRes] = useState<{ issues: { id: string; identifier: string; title: string; confidence?: number }[]; source: "model" | "rules" } | null>(null);
   useEffect(() => {
     const q = title.trim();
     if ([...q].length < 6) return;
     const ctl = new AbortController();
     const timer = setTimeout(() => {
-      api<{ issues: { id: string; identifier: string; title: string; confidence?: number }[]; source: "jev" | "rules" }>("assist", { method: "POST", body: { action: "similar", title: q, description: description.slice(0, 2000) }, signal: ctl.signal })
+      api<{ issues: { id: string; identifier: string; title: string; confidence?: number }[]; source: "model" | "rules" }>("assist", { method: "POST", body: { action: "similar", title: q, description: description.slice(0, 2000) }, signal: ctl.signal })
         .then(setRes)
         .catch(() => undefined);
     }, 600);
@@ -258,10 +258,10 @@ function SimilarIssues({ title, description }: { title: string; description: str
     };
   }, [title, description]);
   if (!res || !res.issues.length || [...title.trim()].length < 6) return null;
-  const jev = res.source === "jev" && res.issues[0]?.confidence !== undefined;
+  const smart = res.source === "model" && res.issues[0]?.confidence !== undefined;
   return (
     <div className="pj-similar" data-source={res.source}>
-      <span className="pj-similar-head">{jev ? t("c.similarJev", { p: Math.round((res.issues[0].confidence ?? 0) * 100) }) : t("c.similar")}</span>
+      <span className="pj-similar-head">{smart ? t("c.similarSmart", { p: Math.round((res.issues[0].confidence ?? 0) * 100) }) : t("c.similar")}</span>
       {res.issues.map((i) => (
         <a key={i.id} href={href(`/issue/${i.identifier}`)} target="_blank" rel="noopener" className="pj-similar-item">
           <b>{i.identifier}</b> {i.title}

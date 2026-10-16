@@ -4,7 +4,7 @@
 // issue, a page, a project and a design frame, in three sizes.
 //
 //   row     a line in "Related", search results, Home
-//   block   a live block inside a document (an issue with its checkbox)
+//   block   a live block inside a document (an issue with its status menu)
 //   chip    inline, a pill
 //
 // Colors come from the surface it sits on (eco.css maps Projects', Documents'
@@ -17,49 +17,16 @@ import { useEt } from "./i18n";
 import { useI18n } from "@/lib/i18n-react";
 import { intlTag, type Locale } from "@/i18n/locales";
 import type { CardState } from "./client";
+import { StatusIcon as ProjectsStatusIcon } from "@/components/projects/icons";
+import { StatusButton } from "./StatusMenu";
 
-export function StatusIcon({ category, color, size = 14 }: { category: StatusCategory; color?: string; size?: number }) {
-  const c = color || "currentColor";
-  const r = 6;
-  switch (category) {
-    case "backlog":
-      return (
-        <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden className="eco-status">
-          <circle cx="7" cy="7" r={r} fill="none" stroke={c} strokeWidth="1.5" strokeDasharray="1.4 1.6" />
-        </svg>
-      );
-    case "unstarted":
-      return (
-        <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden className="eco-status">
-          <circle cx="7" cy="7" r={r} fill="none" stroke={c} strokeWidth="1.5" />
-        </svg>
-      );
-    case "started":
-      return (
-        <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden className="eco-status">
-          <circle cx="7" cy="7" r={r} fill="none" stroke={c} strokeWidth="1.5" />
-          <path d="M7 3.5 A3.5 3.5 0 0 1 7 10.5 Z" fill={c} />
-        </svg>
-      );
-    case "completed":
-      return (
-        <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden className="eco-status">
-          <circle cx="7" cy="7" r="6.75" fill={c} />
-          <path d="M4.2 7.2 6.1 9 9.8 5.2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    case "canceled":
-      return (
-        <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden className="eco-status">
-          <circle cx="7" cy="7" r="6.75" fill={c} />
-          <path d="M5 5l4 4M9 5l-4 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      );
-  }
+/** Linear's status icon (Projects' own): dashed backlog, empty todo, a partly filled circle in progress, done, canceled. */
+export function StatusIcon({ category, color, fraction, size = 14 }: { category: StatusCategory; color?: string; fraction?: number; size?: number }) {
+  return <ProjectsStatusIcon category={category} color={color || "currentColor"} fraction={fraction ?? 0.5} size={size} />;
 }
 
 export function KindIcon({ card, size = 16 }: { card: Card; size?: number }) {
-  if (card.kind === "issue") return card.status ? <StatusIcon category={card.status.category} color={card.status.color} size={size - 2} /> : <CircleDashed size={size - 2} />;
+  if (card.kind === "issue") return card.status ? <StatusIcon category={card.status.category} color={card.status.color} fraction={card.status.fraction} size={size - 2} /> : <CircleDashed size={size - 2} />;
   if (card.kind === "note") return card.icon ? <span className="eco-emoji">{card.icon}</span> : <FileText size={size} />;
   if (card.kind === "project")
     return card.icon ? (
@@ -102,19 +69,19 @@ function Progress({ value }: { value: number }) {
 export interface CardViewProps {
   card: CardState;
   variant?: "row" | "block" | "chip";
-  /** Issues: the checkbox (block variant). Absent: no checkbox. */
-  onToggle?: (done: boolean) => void;
+  /** Issues (block variant): the workspace their status menu changes them in. Absent: the status only shows. */
+  statusWs?: string;
   busy?: boolean;
   /** Shown at the end of the row (a remove button, the way it is linked). */
   right?: ReactNode;
   /** Instead of following the link (a picker). */
   onPick?: (card: Card) => void;
   active?: boolean;
-  /** Block: shown before the checkbox (Home puts the issue's priority there). */
+  /** Block: shown before the status (Home puts the issue's priority there). */
   lead?: ReactNode;
 }
 
-export function CardView({ card, variant = "row", onToggle, busy, right, onPick, active, lead }: CardViewProps) {
+export function CardView({ card, variant = "row", statusWs, busy, right, onPick, active, lead }: CardViewProps) {
   const et = useEt();
   const { locale } = useI18n();
   if (card === undefined) {
@@ -157,7 +124,7 @@ export function CardView({ card, variant = "row", onToggle, busy, right, onPick,
   );
   if (variant === "chip") {
     return (
-      <a className="eco-card eco-chip" href={card.url} onClick={click} data-kind={card.kind} data-done={done || undefined}>
+      <a className="eco-card eco-chip" href={card.url} onClick={click} data-kind={card.kind} data-done={done || canceled || undefined}>
         <KindIcon card={card} size={14} />
         {card.kind === "issue" && card.sub && <span className="eco-ident">{card.sub}</span>}
         <span className="eco-title">{card.title}</span>
@@ -168,19 +135,8 @@ export function CardView({ card, variant = "row", onToggle, busy, right, onPick,
     return (
       <div className="eco-card eco-block" data-kind={card.kind} data-done={done || canceled || undefined} contentEditable={false}>
         {lead}
-        {card.kind === "issue" && onToggle ? (
-          <button
-            type="button"
-            className="eco-check"
-            role="checkbox"
-            aria-checked={done}
-            aria-label={done ? et("issueUndone") : et("issueDone")}
-            title={done ? et("issueUndone") : et("issueDone")}
-            disabled={busy}
-            onClick={() => onToggle(!done)}
-          >
-            {card.status ? <StatusIcon category={card.status.category} color={card.status.color} size={16} /> : <CircleDashed size={16} />}
-          </button>
+        {card.kind === "issue" ? (
+          <StatusButton ws={statusWs} card={card} disabled={busy} />
         ) : (
           <span className="eco-kind">
             <KindIcon card={card} />
@@ -199,7 +155,7 @@ export function CardView({ card, variant = "row", onToggle, busy, right, onPick,
     );
   }
   return (
-    <a className="eco-card eco-row" href={card.url} onClick={click} data-kind={card.kind} data-done={done || undefined} data-active={active || undefined}>
+    <a className="eco-card eco-row" href={card.url} onClick={click} data-kind={card.kind} data-done={done || canceled || undefined} data-active={active || undefined}>
       {card.image ? (
         <img className="eco-thumb" src={card.image} alt="" loading="lazy" />
       ) : (

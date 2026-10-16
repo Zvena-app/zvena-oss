@@ -8,7 +8,8 @@ const ctx = await context(browser);
 const page = await ctx.newPage();
 try {
   await page.goto(BASE);
-  check("landing renders", /design/i.test((await page.locator("h1").first().textContent()) ?? ""));
+  // No marketing page in this edition: the address of the instance leads to sign-in.
+  check("the instance address leads to sign-in", new URL(page.url()).pathname === "/signin", page.url());
   check("cookie notice on the website", await page.locator(".zv-cookie").waitFor({ timeout: 10000 }).then(() => true, () => false));
   await page.goto(`${BASE}/signin`);
   check("sign-in shows the Terms line", (await page.locator(".zv-terms").first().innerText()).includes("Terms of Service"));

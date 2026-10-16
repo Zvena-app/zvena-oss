@@ -42,6 +42,59 @@ function userAgent(): string {
   return `zvena-maps/1.0 (+${config.appUrl}${contact ? `; ${contact}` : ""})`;
 }
 
+let warnedContact = false;
+/**
+ * The OSM tile and Nominatim policies ask every application for a way to
+ * reach its operator; without one (ZVENA_MAPS_CONTACT) heavy use gets the
+ * server's address blocked and maps break for everyone. Said once, at
+ * start-up and on the first upstream request.
+ */
+export function warnMapsContact(): boolean {
+  if (warnedContact || (process.env.ZVENA_MAPS_CONTACT || "").trim()) return false;
+  const osm = /(^|\.)openstreetmap\.org$/i;
+  const host = (u: string) => {
+    try {
+      return new URL(u.replace(/\{[zxys]\}/g, "0")).hostname;
+    } catch {
+      return "";
+    }
+  };
+  if (!osm.test(host(tilesTemplate())) && !osm.test(host(geocoderBase()))) return false;
+  warnedContact = true;
+  console.warn("[maps] ZVENA_MAPS_CONTACT is empty: OpenStreetMap's tile and Nominatim policies require a contact (an e-mail or URL of this server's operator) — set it, or point ZVENA_TILES_URL / ZVENA_GEOCODER_URL at your own provider");
+  return true;
+}
+
+// Upstream tile budgets (cached tiles are free): per person and for the whole
+// server, per day (ZVENA_MAPS_TILES_PER_USER_DAY, ZVENA_MAPS_TILES_PER_DAY) —
+// the OSM tile policy forbids bulk downloading through us.
+interface TileBudget {
+  day: number;
+  total: number;
+  users: Map<string, number>;
+}
+const BKEY = Symbol.for("zvena.maps.budget");
+const gb = globalThis as unknown as Record<symbol, TileBudget | undefined>;
+
+/** Over today's upstream budget and nothing cached for that tile. */
+export class TileBudgetSpent extends Error {
+  constructor() {
+    super("tile budget");
+  }
+}
+
+/** Takes one upstream tile from today's budget of `user` and of the server; false when spent. */
+export function takeTileBudget(user: string | undefined, now = Date.now()): boolean {
+  const day = Math.floor(now / DAY);
+  let b = gb[BKEY];
+  if (!b || b.day !== day) b = gb[BKEY] = { day, total: 0, users: new Map() };
+  const used = user ? (b.users.get(user) ?? 0) : 0;
+  if (b.total >= num("ZVENA_MAPS_TILES_PER_DAY", 50_000) || (user && used >= num("ZVENA_MAPS_TILES_PER_USER_DAY", 5_000))) return false;
+  b.total += 1;
+  if (user) b.users.set(user, used + 1);
+  return true;
+}
+
 /** Bytes of an upstream answer, read with a cap (null: failed, refused or too big). */
 async function getBytes(url: string, accept: string, max: number, timeoutMs: number): Promise<{ bytes: Buffer; type: string } | null> {
   const ctl = new AbortController();
@@ -201,7 +254,7 @@ function maybeSweep(now: number): void {
  * A map tile (PNG bytes): from the disk cache while fresh, else from the
  * upstream (an old copy still serves when the upstream fails). Null: none.
  */
-export async function getTile(t: TileId, now = Date.now()): Promise<Buffer | null> {
+export async function getTile(t: TileId, now = Date.now(), user?: string): Promise<Buffer | null> {
   const file = join(tilesDir(), String(t.z), String(t.x), `${t.y}.png`);
   let cached: Buffer | null = null;
   try {
@@ -214,6 +267,11 @@ export async function getTile(t: TileId, now = Date.now()): Promise<Buffer | nul
   const key = `${t.z}/${t.x}/${t.y}`;
   const running = tiles.inflight.get(key);
   if (running) return (await running) ?? cached;
+  if (!takeTileBudget(user, now)) {
+    if (cached) return cached;
+    throw new TileBudgetSpent();
+  }
+  warnMapsContact();
   const job = slot(async () => {
     const got = await getBytes(tileUrl(t), "image/png,image/*;q=0.8", TILE_BYTES, 10_000);
     if (!got || !got.type.startsWith("image/")) return null;
@@ -309,6 +367,7 @@ export function toPlace(r: unknown): PlaceValue | null {
 }
 
 async function geocoderJson(path: string): Promise<unknown> {
+  warnMapsContact();
   const got = await throttled(() => getBytes(`${geocoderBase()}${path}`, "application/json", GEO_BYTES, 8000));
   if (!got) return null;
   try {

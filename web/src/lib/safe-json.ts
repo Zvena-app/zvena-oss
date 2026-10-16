@@ -45,6 +45,21 @@ export async function readBodyCapped(req: Request, maxBytes: number): Promise<{ 
   return { ok: true, bytes: Buffer.concat(chunks) };
 }
 
+/**
+ * A form body (urlencoded or multipart) read with a cap: what req.formData()
+ * gives, without first buffering whatever size the client sends (the proxy
+ * lets large bodies through for uploads). Null: too big or not a form.
+ */
+export async function readFormCapped(req: Request, maxBytes = 64_000): Promise<FormData | null> {
+  const body = await readBodyCapped(req, maxBytes);
+  if (!body.ok) return null;
+  try {
+    return await new Response(body.bytes as BodyInit, { headers: { "content-type": req.headers.get("content-type") ?? "" } }).formData();
+  } catch {
+    return null;
+  }
+}
+
 export async function readJsonCapped(req: Request, maxBytes = 2_000_000): Promise<CappedJson> {
   const body = await readBodyCapped(req, maxBytes);
   if (!body.ok) return body;

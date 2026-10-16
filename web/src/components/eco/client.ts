@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { pulse, pulseHeaders, type PulseMessage } from "@/lib/pulse/client";
-import type { Card, InboxItem, Related, SearchResults } from "@/lib/eco/types";
+import type { Card, InboxItem, Related, SearchResults, StatusOption } from "@/lib/eco/types";
 
 export class EcoHttpError extends Error {
   constructor(
@@ -50,6 +50,8 @@ export const eco = {
   unlink: (ws: string, src: string, dst: string) => call<{ ok: boolean }>("DELETE", "link", ws, { query: { src, dst } }),
   issueFromDoc: (ws: string, body: { note: string; title: string; teamId?: string; assigneeId?: string; projectId?: string }) => call<{ card: Card }>("POST", "issue-from-doc", ws, { body }),
   issueDone: (ws: string, issue: string, done: boolean) => call<{ card: Card }>("POST", "issue-done", ws, { body: { issue, done } }),
+  issueStatuses: (ws: string, issue: string) => call<{ current: string; statuses: StatusOption[] }>("GET", "issue-statuses", ws, { query: { issue } }),
+  issueStatus: (ws: string, issue: string, statusId: string) => call<{ card: Card }>("POST", "issue-status", ws, { body: { issue, statusId } }),
   docForIssue: (ws: string, issue: string) => call<{ noteId: string; url: string }>("POST", "doc-for-issue", ws, { body: { issue } }),
   designForIssue: (ws: string, issue: string) => call<{ file: string; url: string }>("POST", "design-for-issue", ws, { body: { issue } }),
   docFor: (ws: string, ref: string) => call<{ noteId: string; url: string }>("POST", "doc-for", ws, { body: { ref } }),
@@ -97,10 +99,17 @@ export function useUnread(ws: string, me: string, initial = 0): number {
 }
 
 /** The Inbox (or its archive), live. */
-export function useInbox(ws: string, me: string, archived: boolean): { items: InboxItem[] | null; unread: number; reload: () => void; setItems: (fn: (items: InboxItem[]) => InboxItem[]) => void } {
+export function useInbox(
+  ws: string,
+  me: string,
+  archived: boolean,
+  initial?: { items: InboxItem[]; unread: number } | null
+): { items: InboxItem[] | null; unread: number; reload: () => void; setItems: (fn: (items: InboxItem[]) => InboxItem[]) => void } {
   // Answers are kept with what they answer: switching to the archive shows "loading", not the Inbox.
   const key = `${ws}|${archived ? 1 : 0}`;
-  const [state, setState] = useState<{ key: string; items: InboxItem[]; unread: number } | null>(null);
+  // The page's copy of the Inbox (lib/eco/inbox-page.ts) shows at once.
+  const [state, setState] = useState<{ key: string; items: InboxItem[]; unread: number } | null>(() => (initial && !archived ? { key, items: initial.items, unread: initial.unread } : null));
+  const fromPage = useRef(Boolean(initial && !archived));
   const load = useCallback(() => {
     if (!ws) return;
     eco
@@ -109,6 +118,12 @@ export function useInbox(ws: string, me: string, archived: boolean): { items: In
       .catch(() => setState((s) => (s?.key === key ? s : { key, items: [], unread: 0 })));
   }, [ws, archived, key]);
   useEffect(() => {
+    // The copy was read before this tab listened: the stream's "hello" reads it
+    // again when the stream opens now; an open one (another section's) cannot, so now.
+    if (fromPage.current) {
+      fromPage.current = false;
+      if (!pulse().live()) return;
+    }
     load();
   }, [load]);
   useInboxPulse(ws, me, load);

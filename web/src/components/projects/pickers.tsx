@@ -5,11 +5,11 @@
 // and the context menu of an issue or a selection. Every change is sent to
 // the server; the lists update at once and are corrected by the answer.
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pill, type PillTone } from "@/components/zvena/ds";
 import { Archive, ArchiveRestore, CalendarDays, ChevronRight, Copy, Hash, Link2, Tag, Trash2, Users, UserCircle2, Box, RefreshCcw, Gauge, ExternalLink, BellRing, SquareCheck } from "lucide-react";
 import { ESTIMATE_SCALES, estimateLabel, PRIORITIES, type Issue, type Priority } from "@/lib/projects/types";
-import { api, deleteWithUndo, errorText, loadBoot, offerUndo, saveIssue, saveIssues, toast, useLookups, type Lookups } from "./data";
+import { api, deleteWithUndo, errorText, invalidateAll, loadBoot, offerUndo, saveIssue, saveIssues, toast, useLookups, type Lookups } from "./data";
 import { CycleGlyph, Glyph, PriorityIcon, ProjectGlyph, StatusIcon, uiColor } from "./icons";
 import { useT, type PT } from "./i18n";
 import { href, navigate, setParams } from "./router";
@@ -350,6 +350,53 @@ export function dueWord(due: string, today: string, t: PT, day: (d: string) => s
   return day(due);
 }
 
+/** Finds an issue by identifier or words (for relations and "set parent"). */
+export function IssueSearch({ exclude, onPick, onClose }: { exclude: string[]; onPick: (i: { id: string; identifier: string; title: string }) => void; onClose: () => void }) {
+  const { t } = useT();
+  const L = useLookups();
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<{ id: string; identifier: string; title: string; statusId: string }[]>([]);
+  useEffect(() => {
+    const term = q.trim();
+    if (!term) return;
+    const ctl = new AbortController();
+    const timer = setTimeout(() => {
+      void api<{ issues: { id: string; identifier: string; title: string; statusId: string }[] }>("search", { query: { q: term }, signal: ctl.signal })
+        .then((r) => setRes(r.issues.filter((i) => !exclude.includes(i.id))))
+        .catch(() => undefined);
+    }, 180);
+    return () => {
+      clearTimeout(timer);
+      ctl.abort();
+    };
+  }, [q, exclude]);
+  const items: MenuItem[] = (q.trim() ? res : []).map((i) => {
+    const s = L.status.get(i.statusId);
+    return { id: i.id, label: `${i.identifier} ${i.title}`, icon: s ? <StatusIcon category={s.category} color={s.color} fraction={L.fraction(s.id)} /> : undefined, onSelect: () => onPick(i) };
+  });
+  return (
+    <div className="pj-issue-search">
+      <div className="pj-menu-search">
+        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("s.placeholder")} aria-label={t("nav.search")} />
+      </div>
+      {q.trim() ? <Menu items={items} onClose={onClose} search={false} emptyText={t("s.nothing")} /> : <div className="pj-menu-empty">{t("s.hint")}</div>}
+    </div>
+  );
+}
+
+/**
+ * Marks an issue as a duplicate of another (Linear): the relation, and the
+ * server moves it to its team's Duplicate status.
+ */
+export function markDuplicate(issue: Issue, of: { id: string; identifier: string }, t: PT): void {
+  void api(`issues/${issue.id}/relations`, { method: "POST", body: { type: "duplicate", relatedId: of.id } })
+    .then(() => {
+      invalidateAll();
+      toast(t("tr.markedDup", { id: issue.identifier, of: of.identifier }), "success");
+    })
+    .catch((e) => toast(errorText(e, t), "error"));
+}
+
 // --- Context menu --------------------------------------------------------------
 
 export function issueUrl(issue: Issue): string {
@@ -378,7 +425,7 @@ export function IssueContextMenu({ issues, anchor, onClose, onSelect }: { issues
   const { t } = useT();
   const L = useLookups();
   const apply = useApply();
-  const [sub, setSub] = useState<PropKind | null>(null);
+  const [sub, setSub] = useState<PropKind | "duplicate" | null>(null);
   const one = issues.length === 1 ? issues[0] : null;
   const items = useMemo<MenuItem[]>(() => {
     const arrow = <ChevronRight size={14} className="pj-menu-arrow" />;
@@ -399,6 +446,7 @@ export function IssueContextMenu({ issues, anchor, onClose, onSelect }: { issues
         if (L.team.get(issues[0].teamId)?.estimates !== "none") list.push({ id: "estimate", label: t("p.estimate"), icon: <Gauge size={14} />, right: arrow, hotkey: "e", keepOpen: true, onSelect: () => setSub("estimate") });
       }
       list.push({ id: "team", label: t("i.moveTeam"), icon: <Users size={15} />, right: arrow, keepOpen: true, onSelect: () => setSub("team") });
+      if (one) list.push({ id: "duplicate", label: t("i.markDuplicate"), icon: <Copy size={15} />, right: arrow, keepOpen: true, onSelect: () => setSub("duplicate") });
     }
     if (one) {
       list.push(
@@ -427,8 +475,17 @@ export function IssueContextMenu({ issues, anchor, onClose, onSelect }: { issues
   }, [L, t, issues, one, apply, onSelect]);
   if (!anchor) return null;
   return (
-    <Popover anchor={anchor} onClose={onClose} width={sub === "due" ? 268 : 240} label={one ? one.identifier : t("i.selected", { n: issues.length })}>
-      {sub ? (
+    <Popover anchor={anchor} onClose={onClose} width={sub === "due" ? 268 : sub === "duplicate" ? 320 : 240} label={one ? one.identifier : t("i.selected", { n: issues.length })}>
+      {sub === "duplicate" && one ? (
+        <IssueSearch
+          exclude={[one.id]}
+          onClose={onClose}
+          onPick={(of) => {
+            onClose();
+            markDuplicate(one, of, t);
+          }}
+        />
+      ) : sub && sub !== "duplicate" ? (
         <PropPicker kind={sub} issues={issues} onClose={onClose} />
       ) : (
         <>

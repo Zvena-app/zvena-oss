@@ -2,22 +2,22 @@
 //
 // An issue whose title states a target for a number — "Reach 1,000 sign-ups",
 // "MRR $10k", "Cut churn below 3%" — is a goal. When it is made (or when a
-// person asks from its Goal panel), Jev links it to the workspace's live
+// person asks from its Goal panel), it is linked to the workspace's live
 // number that measures it, so it closes by itself when the number gets there:
 //
 //   1. the title's numbers are read by rules (1,000 · 10k · 2.5M · 3%), years
 //      and quarters are not targets;
-//   2. Jev decides in one call: is this a goal on a number, which of the live
+//   2. the decision model decides in one call: is this a goal on a number, which of the live
 //      numbers measures it, which of the title's numbers is the target, and
 //      whether the number should grow to it or fall to it;
 //   3. sure (≥ AUTO): the goal is set at once, with the creator's rights, and
 //      the journal keeps it with Undo; fairly sure (≥ SUGGEST): a proposal the
 //      creator accepts in one click (the issue's Goal panel, the Inbox);
-//   4. Jev off, slow or unsure: the rules propose only when exactly one
+//   4. smart suggestions off, the model slow or unsure: the rules propose only when exactly one
 //      number's name appears in the title — never set anything themselves.
 //
-// What goes to Jev: the issue's title, and the names and current values of
-// the live numbers the creator may see. Nothing else (the fields are fixed in ./jev.ts).
+// What goes to the model: the issue's title, and the names and current values of
+// the live numbers the creator may see. Nothing else (see /legal/privacy#suggestions).
 
 import { notify } from "../eco/inbox";
 import { ctxFor } from "../projects/core";
@@ -27,7 +27,7 @@ import { spend } from "../projects/autopilot";
 import { listStatuses } from "../projects/teams";
 import { metricsOf, reactionsOf, saveReaction, settingsOf } from "./engine";
 import { goalIssueOf, goalReaction, type GoalOp } from "./goals";
-import { ask, choice, jevAvailable, noul } from "./jev";
+import { ask, choice, noul, smartAvailable } from "./smart";
 import { pendingFor, recordHub } from "./journal";
 import { visibleMetrics } from "./sources";
 
@@ -80,7 +80,7 @@ export type Outcome = { status: "applied" | "pending"; decision: string } | { st
 
 /**
  * Links an issue to the live number that measures it, for the person `by`
- * (the creator, or whoever asked): at once when Jev is sure, as a proposal
+ * (the creator, or whoever asked): at once when the model is sure, as a proposal
  * when it is fairly sure.
  */
 export async function proposeGoal(ws: string, issueId: string, by: string): Promise<Outcome> {
@@ -99,7 +99,7 @@ export async function proposeGoal(ws: string, issueId: string, by: string): Prom
   if (pending) return { status: "pending", decision: pending };
   const targets = targetsIn(issue.title);
   if (!targets.length) return { status: "none", why: "no target" };
-  // Mail numbers are their owner's own business: never offered to Jev.
+  // Mail numbers are their owner's own business: never offered to the model.
   const metrics = visibleMetrics(ws, by, metricsOf(ws))
     .filter((m) => !m.key.startsWith("mail:"))
     .sort((a, b) => b.at - a.at)
@@ -109,7 +109,7 @@ export async function proposeGoal(ws: string, issueId: string, by: string): Prom
   const subject = `issue:${issueId}`;
   const make = (key: string, op: GoalOp, target: number) => goalReaction({ issue: issueId, key, op, target });
 
-  if (settingsOf(ws).jev && jevAvailable() && spend(ws)) {
+  if (settingsOf(ws).smart && smartAvailable() && spend(ws)) {
     const criteria: Record<string, string> = { none: "None of these numbers measures the goal." };
     metrics.forEach((m, i) => (criteria[`n${i}`] = `${m.label || m.key} (now ${m.value})`));
     const questions = {
@@ -140,16 +140,16 @@ export async function proposeGoal(ws: string, issueId: string, by: string): Prom
       if (conf >= AUTO) {
         const saved = saveReaction(ws, reaction, by);
         if ("error" in saved) return { status: "none", why: "forbidden" };
-        const decision = recordHub(ws, { subject, source: "jev", mode: "auto", status: "applied", payload: { kind: "goal", reaction: saved, issue: issueId }, reaction: saved.id, confidence: conf, model: out.model, ms: out.ms, by });
+        const decision = recordHub(ws, { subject, source: "model", mode: "auto", status: "applied", payload: { kind: "goal", reaction: saved, issue: issueId }, reaction: saved.id, confidence: conf, model: out.model, ms: out.ms, by });
         return { status: "applied", decision };
       }
-      const decision = recordHub(ws, { subject, source: "jev", mode: "suggest", status: "pending", payload: { kind: "goal", reaction, issue: issueId }, confidence: conf, model: out.model, ms: out.ms, by });
-      notify(by, { ws, kind: "jev", ref: subject, by: null, text: `${metric.label || metric.key} ${op === "<=" ? "≤" : "≥"} ${target.text}` });
+      const decision = recordHub(ws, { subject, source: "model", mode: "suggest", status: "pending", payload: { kind: "goal", reaction, issue: issueId }, confidence: conf, model: out.model, ms: out.ms, by });
+      notify(by, { ws, kind: "proposal", ref: subject, by: null, text: `${metric.label || metric.key} ${op === "<=" ? "≤" : "≥"} ${target.text}` });
       return { status: "pending", decision };
     }
   }
 
-  // Without Jev: propose only when exactly one number is named in the title.
+  // Without the model: propose only when exactly one number is named in the title.
   const title = words(issue.title);
   const named = metrics.filter((m) => {
     const w = words(m.label || m.key.replace(/[._:-]+/g, " "));
@@ -158,7 +158,7 @@ export async function proposeGoal(ws: string, issueId: string, by: string): Prom
   if (named.length !== 1 || targets.length !== 1) return { status: "none", why: "unsure" };
   const reaction = make(named[0].key, fallsTo(issue.title) ? "<=" : ">=", targets[0].value);
   const decision = recordHub(ws, { subject, source: "rule", mode: "suggest", status: "pending", payload: { kind: "goal", reaction, issue: issueId }, by });
-  notify(by, { ws, kind: "jev", ref: subject, by: null, text: `${named[0].label || named[0].key} ${fallsTo(issue.title) ? "≤" : "≥"} ${targets[0].text}` });
+  notify(by, { ws, kind: "proposal", ref: subject, by: null, text: `${named[0].label || named[0].key} ${fallsTo(issue.title) ? "≤" : "≥"} ${targets[0].text}` });
   return { status: "pending", decision };
 }
 

@@ -68,10 +68,11 @@
                                :on-click show-shortcuts}
        [:span (tr "label.shortcuts")]
        [:span {:class (stl/css :help-menu-shortcut)} (sc/get-tooltip :show-shortcuts)]]
-      [:> dropdown-menu-item* {:class (stl/css :help-menu-item)
-                               :data-url (str "mailto:" zvena/support-email)
-                               :on-click open-url}
-       [:span (tr "blueai.help.ask")]]
+      (when zvena/support-email
+        [:> dropdown-menu-item* {:class (stl/css :help-menu-item)
+                                 :data-url (str "mailto:" zvena/support-email)
+                                 :on-click open-url}
+         [:span (tr "blueai.help.ask")]])
       [:li {:class (stl/css :help-menu-separator) :role "separator"}]
       [:> dropdown-menu-item* {:class (stl/css :help-menu-item)
                                :data-url (zvena/source-url)

@@ -4,11 +4,11 @@
 // once) that then follow their objects, the Inbox's newest items, and the
 // search button that opens Cmd+K.
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Search } from "lucide-react";
-import type { Card } from "@/lib/eco/types";
+import type { Card, InboxItem } from "@/lib/eco/types";
 import { PriorityIcon } from "@/components/projects/icons";
-import { cardStore, eco, useCard, useModKey } from "./client";
+import { cardStore, useCard, useModKey } from "./client";
 import { CardView } from "./CardView";
 import { openPalette } from "./CommandPalette";
 import { InboxView } from "./InboxView";
@@ -18,30 +18,14 @@ import "./eco.css";
 function Live({ ws, card, check, prio }: { ws: string; card: Card; check: boolean; prio?: string[] }) {
   const live = useCard(ws, card.key);
   const c = live === undefined ? card : live;
-  const [busy, setBusy] = useState(false);
   if (c === null) return null;
   if (!check || c.kind !== "issue") return <CardView card={c} />;
   const p = c.priority ?? 0;
-  return (
-    <CardView
-      card={c}
-      variant="block"
-      busy={busy}
-      lead={prio && p >= 0 && p <= 4 ? <PriorityIcon priority={p as 0 | 1 | 2 | 3 | 4} size={16} title={prio[p]} /> : undefined}
-      onToggle={(done) => {
-        setBusy(true);
-        eco
-          .issueDone(ws, c.key.slice("issue:".length), done)
-          .then((r) => cardStore(ws).seed([r.card]))
-          .catch(() => undefined)
-          .finally(() => setBusy(false));
-      }}
-    />
-  );
+  return <CardView card={c} variant="block" statusWs={ws} lead={prio && p >= 0 && p <= 4 ? <PriorityIcon priority={p as 0 | 1 | 2 | 3 | 4} size={16} title={prio[p]} /> : undefined} />;
 }
 
 /**
- * Server-picked cards, live from here on. `check`: issues get their checkbox;
+ * Server-picked cards, live from here on. `check`: issues get their status menu;
  * `prio`: the five priority names (none, urgent … low) — issues show theirs.
  */
 export function LiveCards({ ws, cards, empty, check = false, prio, list = false }: { ws: string; cards: Card[]; empty?: string; check?: boolean; prio?: string[]; list?: boolean }) {
@@ -58,8 +42,8 @@ export function LiveCards({ ws, cards, empty, check = false, prio, list = false 
   );
 }
 
-export function HomeInbox({ ws, me }: { ws: string; me: string }) {
-  return <InboxView ws={ws} me={me} limit={5} />;
+export function HomeInbox({ ws, me, initial }: { ws: string; me: string; initial?: { items: InboxItem[]; unread: number } | null }) {
+  return <InboxView ws={ws} me={me} limit={5} initial={initial} />;
 }
 
 export function SearchButton({ label }: { label?: string }) {

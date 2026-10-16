@@ -3,9 +3,13 @@ import { redirect } from "next/navigation";
 import { CalendarApp } from "@/components/calendar/CalendarApp";
 import { Messages } from "@/i18n/Messages";
 import { messagesOf } from "@/i18n/runtime";
+import { weekStartOf } from "@/components/calendar/format";
+import { visibleDays } from "@/components/calendar/model";
+import { initialCalendar } from "@/lib/calendar/api";
 import { calText } from "@/lib/calendar/strings";
-import { isDay } from "@/lib/calendar/tz";
-import type { ViewKind } from "@/lib/calendar/types";
+import { addDays, atMinute, dayOf, isDay } from "@/lib/calendar/tz";
+import type { Bootstrap, ViewKind } from "@/lib/calendar/types";
+import type { Locale } from "@/i18n/locales";
 import { pageLocale, requireUser } from "@/lib/page";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,6 +27,20 @@ type Props = { searchParams: Promise<{ ws?: string; team?: string; date?: string
 
 const VIEWS: readonly string[] = ["day", "week", "month", "agenda"];
 
+/** When the page's copy was read (the app reads it again when it is old). */
+const readAt = () => Date.now();
+
+/**
+ * The range the app opens with on a wide screen (CalendarApp: the view's days,
+ * a day either side) and the coming week from an hour ago (its "next" card).
+ */
+function firstRange(b: Bootstrap, initial: { date?: string; view?: ViewKind }, locale: Locale, now: number) {
+  const tz = b.prefs.tz;
+  const days = visibleDays({ view: initial.view ?? b.prefs.view, anchor: initial.date ?? dayOf(now, tz) }, b.prefs, weekStartOf(b.prefs, locale), false);
+  const start = now - 3_600_000;
+  return { from: atMinute(addDays(days[0], -1), 0, tz), to: atMinute(addDays(days[days.length - 1], 2), 0, tz), upcomingFrom: start, upcomingTo: start + 8 * 86_400_000 };
+}
+
 export default async function CalendarPage({ searchParams }: Props) {
   const sp = await searchParams;
   const { user, locale } = await requireUser("/calendar", sp.ws, sp.team);
@@ -34,11 +52,14 @@ export default async function CalendarPage({ searchParams }: Props) {
     ...(sp.occ && /^\d{8}(T\d{6}Z)?$/.test(sp.occ) ? { occ: sp.occ } : {}),
     ...(sp.new === "1" ? { create: true } : {}),
   };
+  // The bootstrap and the first view's events come with the page (no round trip before they show).
+  const at = readAt();
+  const data = await initialCalendar({ id: user.id, name: user.name, ...(user.email ? { email: user.email } : {}) }, user.ws.id, locale, (b) => firstRange(b, initial, locale, at));
   // Calendar's words, and Projects' (its description editor) in the page's language.
   return (
     <Messages ns="calendar" locale={locale} dict={messagesOf("calendar", locale)}>
       <Messages ns="projects" locale={locale} dict={messagesOf("projects", locale)}>
-        <CalendarApp user={user} initial={initial} />
+        <CalendarApp user={user} initial={initial} data={data} dataAt={at} />
       </Messages>
     </Messages>
   );

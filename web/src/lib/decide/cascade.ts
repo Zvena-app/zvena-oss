@@ -1,12 +1,12 @@
 // Work that follows other work. Server-only.
 //
 // A parent issue is done when its sub-issues are: when the last open
-// sub-issue closes (completed or canceled, at least one completed), Jev moves
-// the parent to its team's completed status; when one of them opens again and
-// the parent is still where Jev put it, the parent goes back to where it was.
+// sub-issue closes (completed or canceled, at least one completed), the parent
+// moves to its team's completed status; when one of them opens again and
+// the parent is still where it was moved, the parent goes back to where it was.
 // Higher parents follow the same way (each step is a change of its own).
 //
-// Exact rules, no AI: it runs whatever the Jev switch says, with the rights
+// Exact rules, no AI: it runs whatever the smart switch says, with the rights
 // of the person whose change set it off, and every step lands in the journal
 // with Undo (lib/decide/journal.ts). The workspace's owner can turn it off
 // (hub settings, lib/decide/hub.ts).
@@ -54,7 +54,7 @@ export function followParent(c: Pick<PjChange, "ws" | "id" | "by">, enabled: Ena
   if (!parentId) return null;
   let ctx: Ctx;
   try {
-    ctx = { ...ctxFor(c.by, c.ws, "edit"), via: "jev" };
+    ctx = { ...ctxFor(c.by, c.ws, "edit"), via: "auto" };
   } catch {
     return null;
   }
@@ -79,7 +79,7 @@ export function followParent(c: Pick<PjChange, "ws" | "id" | "by">, enabled: Ena
     return "done";
   }
   if (cat === "completed" && n.closed < n.total) {
-    // Only a parent Jev closed, and only while it is still where Jev put it.
+    // Only a parent closed by this rule, and only while it is still where it was put.
     const last = lastApplied(c.ws, parentId, "parent");
     if (!last || last.payload.kind !== "parent" || last.payload.reopen || last.payload.status !== parent.statusId) return null;
     const back = last.payload.prev;

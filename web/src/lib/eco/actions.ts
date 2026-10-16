@@ -7,7 +7,8 @@
 //   a line of a document  → an issue            (the issue's description links back)
 //   an issue              → a document           (the doc starts with the live issue)
 //   an issue              → a design file        (named after the issue)
-//   an issue's checkbox   → done / not done      (the issue's workflow, not a copy)
+//   an issue's status     → any status of its team's workflow (Linear's status menu)
+//   a checked line        → a done issue          (turning a checklist into issues)
 
 import { canRead } from "../notes/access";
 import { ecoText } from "./strings";
@@ -26,7 +27,8 @@ import { indexNote } from "./indexer";
 import { addLink, linksOf, removeManual } from "./links";
 import { parseRefKey, refHref } from "./refs";
 import { keyVisible, restricted } from "./visibility";
-import type { Card } from "./types";
+import { statusFraction } from "../projects/types";
+import type { Card, StatusCategory, StatusOption } from "./types";
 
 export class EcoError extends Error {
   constructor(
@@ -124,7 +126,12 @@ export async function issueFromDoc(a: Actor, input: { note?: unknown; title?: un
   return card;
 }
 
-/** An issue's checkbox wherever it shows: done moves it to the team's first completed status, undone to its first unstarted one. */
+/**
+ * A checked line of a document becoming an issue: done moves it to the
+ * team's first completed status, undone to its first unstarted one (canceled
+ * issues count as closed: left as they are). Everywhere an issue shows, its
+ * status changes through issueStatuses / setIssueStatus instead.
+ */
 export async function setIssueDone(a: Actor, issueId: unknown, done: boolean): Promise<Card> {
   const ctx = editCtx(a);
   if (typeof issueId !== "string") throw new EcoError(400, "bad issue");
@@ -134,13 +141,50 @@ export async function setIssueDone(a: Actor, issueId: unknown, done: boolean): P
   } catch {
     throw new EcoError(404, "issue not found");
   }
-  // Already where the checkbox says (any completed status counts as done): left as it is.
+  // Already where the line says (any completed status counts as done, a canceled one is closed already): left as it is.
   const category = listStatuses(ctx).find((st) => st.id === issue.statusId)?.category;
   const isDone = category === "completed";
-  if (isDone !== done) {
+  if (isDone !== done && !(done === false && category === "canceled")) {
     const statusId = statusOfCategory(issue.teamId, done ? "completed" : "unstarted") ?? defaultStatus(issue.teamId);
     if (statusId !== issue.statusId) updateIssue(ctx, issue.id, { statusId });
   }
+  const [card] = await cardsFor(a, [`issue:${issue.id}`]);
+  if (!card) throw new EcoError(404, "issue not found");
+  return card;
+}
+
+function issueFor(ctx: Ctx, issueId: unknown) {
+  if (typeof issueId !== "string") throw new EcoError(400, "bad issue");
+  try {
+    return getIssueBrief(ctx, issueId);
+  } catch {
+    throw new EcoError(404, "issue not found");
+  }
+}
+
+/** The statuses an issue can move to: its team's whole workflow (backlog → todo → in progress → done, canceled). */
+export function issueStatuses(a: Actor, issueId: unknown): { current: string; statuses: StatusOption[] } {
+  let ctx: Ctx;
+  try {
+    ctx = ctxFor(a.userId, a.wsId, "read");
+  } catch {
+    throw new EcoError(403, "forbidden");
+  }
+  const issue = issueFor(ctx, issueId);
+  const all = listStatuses(ctx);
+  const rank: Record<StatusCategory, number> = { backlog: 0, unstarted: 1, started: 2, completed: 3, canceled: 4 };
+  const own = all.filter((s) => s.teamId === issue.teamId).sort((x, y) => rank[x.category] - rank[y.category] || x.position - y.position);
+  return { current: issue.statusId, statuses: own.map((s) => ({ id: s.id, name: s.name, color: s.color, category: s.category, fraction: statusFraction(all, s.id) })) };
+}
+
+/** Moves an issue to one of its team's statuses (Projects' own rules: times, goals, notifications). */
+export async function setIssueStatus(a: Actor, issueId: unknown, statusId: unknown): Promise<Card> {
+  const ctx = editCtx(a);
+  const issue = issueFor(ctx, issueId);
+  if (typeof statusId !== "string") throw new EcoError(400, "bad status");
+  const s = listStatuses(ctx).find((x) => x.id === statusId);
+  if (!s || s.teamId !== issue.teamId) throw new EcoError(400, "bad status");
+  if (s.id !== issue.statusId) updateIssue(ctx, issue.id, { statusId: s.id });
   const [card] = await cardsFor(a, [`issue:${issue.id}`]);
   if (!card) throw new EcoError(404, "issue not found");
   return card;

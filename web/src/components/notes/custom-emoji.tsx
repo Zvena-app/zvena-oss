@@ -2,11 +2,12 @@
 /* eslint-disable @next/next/no-img-element -- custom emoji are the workspace's own uploaded images, shown as they are */
 
 // zvena Documents: a workspace's custom emoji (Notion's :name: images) — the
-// inline emoji in text, the "Custom" section of the emoji picker with
-// "Add emoji", and the hook that keeps them in step (lib/notes/emoji.ts).
+// "Custom" section of the emoji picker with "Add emoji", and the hook that
+// keeps them in step (lib/notes/emoji.ts). The inline emoji in text is the
+// editor's (custom-emoji-inline.tsx), so the editor stays out of what the
+// sidebar, comments and pickers load.
 
 import { useRef, useState, useSyncExternalStore } from "react";
-import { createReactInlineContentSpec } from "@blocknote/react";
 import { Plus, X } from "lucide-react";
 import { useNotesMaybe } from "./context";
 import { toast } from "./ui";
@@ -30,18 +31,6 @@ export function EmojiGlyph({ value, size = 18 }: { value: string; size?: number 
   if (!hit) return <>{value}</>;
   return <img className="nt-cemoji" src={hit.url} alt={m ? value : ""} title={m ? value : undefined} width={size} height={size} draggable={false} />;
 }
-
-export const CustomEmojiInline = createReactInlineContentSpec(
-  { type: "customEmoji", propSchema: { name: { default: "" }, url: { default: "" } }, content: "none" },
-  {
-    render: function CustomEmojiRender(props) {
-      const { name, url } = props.inlineContent.props;
-      // Only images uploaded to Documents; anything else reads as :name:.
-      if (!EMOJI_FILE_RE.test(url)) return <span className="nt-cemoji-text">{`:${name}:`}</span>;
-      return <img className="nt-cemoji" src={url} alt={`:${name}:`} title={`:${name}:`} draggable={false} />;
-    },
-  }
-);
 
 /**
  * The picker's "Custom" section: the workspace's emoji and, for editors,

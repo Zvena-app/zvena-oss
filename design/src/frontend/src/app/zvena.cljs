@@ -24,7 +24,13 @@
        explicit)
      "/")))
 
-(def support-email "support@zvena.app")
+(def support-email
+  "The instance's support address, from `penpotZvenaSupportEmail` in
+  config.js (set by the frontend image from PENPOT_ZVENA_SUPPORT_EMAIL);
+  nil when the operator set none — the support items are then hidden."
+  (let [email (obj/get global "penpotZvenaSupportEmail")]
+    (when-not (str/blank? email)
+      (str/trim email))))
 
 (defn- with-team
   [path team-id]

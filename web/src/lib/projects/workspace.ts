@@ -61,7 +61,7 @@ export function inbox(ctx: Ctx, opts: { archived?: boolean; limit?: number; befo
      ORDER BY updated_at DESC LIMIT ?`
   ).all(ctx.userId, ctx.wsId, opts.archived ? 0 : 1, now, opts.archived ? 1 : 0, opts.before ?? Number.MAX_SAFE_INTEGER, limit + 1) as unknown as NotifRow[];
   const page = rows.slice(0, limit);
-  // Jev's "possible duplicate": the original, named only if this person sees it.
+  // The autopilot's "possible duplicate": the original, named only if this person sees it.
   const dupOf = (r: NotifRow) => (r.kind === "duplicate" ? String((JSON.parse(r.data) as { of?: unknown }).of ?? "") : "");
   const refs = issueRefs(ctx, [...page.map((r) => r.issue_id), ...page.map(dupOf)].filter((x): x is string => Boolean(x)));
   const prio = new Map(

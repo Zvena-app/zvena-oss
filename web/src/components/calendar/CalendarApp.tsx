@@ -7,21 +7,18 @@
 // Projects layers, scheduling links. Live: the pulse ("calendar", and
 // "notes" / "projects" for layers) brings other people's changes in.
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronLeft, ChevronRight, Plus, Search, Settings } from "lucide-react";
 import { Shell } from "@/components/zvena/ds/Shell";
 import { isTyping, overlayOpen } from "@/components/zvena/ds/keys";
 import { toast } from "@/components/zvena/ds/toast-store";
 import { pulse } from "@/lib/pulse/client";
 import { addDays, atMinute, dayOf, localZone, minuteOfDay, validTimeZone } from "@/lib/calendar/tz";
-import type { Bootstrap, CalendarInfo, EventDetail, EventItem, LayerItem, Prefs, Scope, ViewKind } from "@/lib/calendar/types";
+import type { Bootstrap, CalendarInfo, EventDetail, EventItem, InitialCalendar, LayerItem, Prefs, Scope, ViewKind } from "@/lib/calendar/types";
 import type { SessionUser } from "@/lib/session";
 import { AgendaView } from "./AgendaView";
 import { calApi } from "./api";
-import { CommandMenu } from "./CommandMenu";
 import { CalContext, type CalActions, type CalState, type DialogKind, type Draft, type PanelTarget, type Patch } from "./context";
-import { Dialogs, ScopeDialog } from "./dialogs";
-import { EventPanel } from "./EventPanel";
 import { isoWeek, rangeTitle, uses12h, weekStartOf } from "./format";
 import { useCt } from "./i18n";
 import { eventItem, eventLink, itemKey, joinUrl, layerItem, narrowDays, nextEvent, step, visibleDays, type GridItem, type ViewState } from "./model";
@@ -31,6 +28,23 @@ import { TimeGrid, type BusyOverlay, type MoveTarget } from "./TimeGrid";
 import { copyText } from "./ui";
 import "@/components/projects/projects.css";
 import "./calendar.css";
+import { lazyComponent, lazyPart, preloadWhenIdle } from "@/lib/lazy-part";
+import { loadEditor, preloadEditor } from "@/components/projects/Editor";
+
+// What opens on demand — the event panel (with its text editor), the dialogs,
+// ⌘K — loads as chunks of its own: at once when the address opens an event or
+// a new one, else once the calendar is idle, so opening them does not wait.
+const panelPart = lazyPart(() => import("./EventPanel"));
+const dialogsPart = lazyPart(() => import("./dialogs"));
+const menuPart = lazyPart(() => import("./CommandMenu"));
+const EventPanel = lazyComponent(panelPart, (m) => m.EventPanel, <aside className="cal-panel" aria-busy="true" />);
+const Dialogs = lazyComponent(dialogsPart, (m) => m.Dialogs);
+const ScopeDialog = lazyComponent(dialogsPart, (m) => m.ScopeDialog);
+const CommandMenu = lazyComponent(menuPart, (m) => m.CommandMenu);
+if (typeof window !== "undefined" && /[?&](event|new)=/.test(location.search)) {
+  void panelPart.load().catch(() => {});
+  preloadEditor("now");
+}
 
 export interface CalendarInitial {
   date?: string;
@@ -70,9 +84,11 @@ function useNow(): number {
 // (the rail routes on the client) draws from it at once and freshens it.
 let lastBoot: { ws: string; user: string; boot: Bootstrap } | null = null;
 
-export function CalendarApp({ user, initial }: { user: SessionUser; initial: CalendarInitial }) {
+export function CalendarApp({ user, initial, data, dataAt = 0 }: { user: SessionUser; initial: CalendarInitial; data?: InitialCalendar | null; dataAt?: number }) {
   const { t, locale } = useCt();
   const ws = user.ws.id;
+  // The page brought the bootstrap and the first view's events (app/calendar/page.tsx).
+  const fromPage = data && data.boot.ws.id === ws && data.boot.me.id === user.id ? data : null;
   const [boot, setBootState] = useState<Bootstrap | null>(() => (lastBoot && lastBoot.ws === ws && lastBoot.user === user.id ? lastBoot.boot : null));
   const setBoot = useCallback(
     (b: Bootstrap) => {
@@ -97,9 +113,20 @@ export function CalendarApp({ user, initial }: { user: SessionUser; initial: Cal
       setBootError(true);
     }
   }, [ws, setBoot]);
+  // The page's copy shows before the first paint (no round trip); the bootstrap is
+  // fetched again only when that copy is old (a prefetched page, kept up to 30 s)
+  // or missing (a first visit, which sends the browser's zone).
+  useLayoutEffect(() => {
+    // Hydration renders what the server did (loading); the copy shows right after, before paint.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (fromPage) setBoot(fromPage.boot);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
+    if (fromPage && Date.now() - dataAt < 5_000) return;
     const tm = setTimeout(() => void loadBoot(), 0);
     return () => clearTimeout(tm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadBoot]);
 
   if (!boot)
@@ -108,10 +135,10 @@ export function CalendarApp({ user, initial }: { user: SessionUser; initial: Cal
         <div className="cal-app cal-app-loading">{bootError ? <button type="button" className="cal-btn" onClick={() => void loadBoot()}>{t("app.retry")}</button> : <span className="cal-muted">{t("app.loading")}</span>}</div>
       </Shell>
     );
-  return <Calendar user={user} boot={boot} setBoot={setBoot} reboot={loadBoot} initial={initial} t={t} locale={locale} />;
+  return <Calendar user={user} boot={boot} setBoot={setBoot} reboot={loadBoot} initial={initial} first={fromPage} t={t} locale={locale} />;
 }
 
-function Calendar({ user, boot, setBoot, reboot, initial, t, locale }: { user: SessionUser; boot: Bootstrap; setBoot: (b: Bootstrap) => void; reboot: () => Promise<void>; initial: CalendarInitial; t: ReturnType<typeof useCt>["t"]; locale: string }) {
+function Calendar({ user, boot, setBoot, reboot, initial, first, t, locale }: { user: SessionUser; boot: Bootstrap; setBoot: (b: Bootstrap) => void; reboot: () => Promise<void>; initial: CalendarInitial; first: InitialCalendar | null; t: ReturnType<typeof useCt>["t"]; locale: string }) {
   const ws = user.ws.id;
   const narrow = useNarrow();
   const now = useNow();
@@ -127,29 +154,93 @@ function Calendar({ user, boot, setBoot, reboot, initial, t, locale }: { user: S
   const view: ViewKind = vs.view;
 
   // ------------------------------------------------------------ data
-  const [items, setItems] = useState<EventItem[]>([]);
-  const [layers, setLayers] = useState<LayerItem[]>([]);
+  const from = atMinute(addDays(days[0], -1), 0, tz);
+  const to = atMinute(addDays(days[days.length - 1], 2), 0, tz);
+  // The page's events when they are this view's range (a phone's narrower week is not).
+  const [seeded] = useState(() => (first?.events && first.events.from === from && first.events.to === to && first.events.tz === tz ? first.events : null));
+  const [items, setItems] = useState<EventItem[]>(() => seeded?.items ?? []);
+  const [layers, setLayers] = useState<LayerItem[]>(() => seeded?.layers ?? []);
   // Moves shown at once, before the server answers (dropped with the next load).
   const [pending, setPending] = useState<Map<string, Partial<EventItem>>>(new Map());
   const [rev, setRev] = useState(0);
   const reload = useCallback(() => setRev((r) => r + 1), []);
-  const from = atMinute(addDays(days[0], -1), 0, tz);
-  const to = atMinute(addDays(days[days.length - 1], 2), 0, tz);
+  // Ranges already read (this one, and the ones either side, read ahead once it
+  // is in): "next" and "previous" draw at once. A copy counts while no change
+  // came in since (rev) and for a minute; an older one shows until the fresh one lands.
+  const ranges = useRef(new Map<string, { rev: number; at: number; items: EventItem[]; layers: LayerItem[] }>());
+  const near = useMemo(
+    () =>
+      ([-1, 1] as const).map((dir) => {
+        const d = visibleDays({ ...vs, anchor: step(vs, dir, prefs, narrow) }, prefs, weekStart, narrow);
+        return { from: atMinute(addDays(d[0], -1), 0, tz), to: atMinute(addDays(d[d.length - 1], 2), 0, tz) };
+      }),
+    [vs, prefs, weekStart, narrow, tz]
+  );
+  const nearRef = useRef(near);
+  useLayoutEffect(() => {
+    nearRef.current = near;
+  });
+  const skipLoad = useRef(seeded !== null);
+  const lastKey = useRef("");
   useEffect(() => {
+    const cache = ranges.current;
+    const keyOf = (f: number, t: number) => `${f}|${t}|${tz}`;
+    const fresh = (k: string) => {
+      const c = cache.get(k);
+      return c && c.rev === rev && Date.now() - c.at < 60_000 ? c : null;
+    };
     const ctl = new AbortController();
-    void calApi<{ items: EventItem[]; layers: LayerItem[] }>(ws, "events", { query: { from, to, tz }, signal: ctl.signal })
+    const read = (f: number, t: number) => calApi<{ items: EventItem[]; layers: LayerItem[] }>(ws, "events", { query: { from: f, to: t, tz }, signal: ctl.signal }).then((r) => {
+      cache.set(keyOf(f, t), { rev, at: Date.now(), items: r.items, layers: r.layers });
+      if (cache.size > 12) cache.delete(cache.keys().next().value as string);
+      return r;
+    });
+    const key = keyOf(from, to);
+    // Read ahead when the range moved (a change coming in refreshes this range only).
+    const moved = lastKey.current !== key;
+    lastKey.current = key;
+    const ahead = () => {
+      if (moved) for (const n of nearRef.current) if (!fresh(keyOf(n.from, n.to))) void read(n.from, n.to).catch(() => undefined);
+    };
+    if (skipLoad.current && seeded) {
+      skipLoad.current = false;
+      cache.set(key, { rev, at: Date.now(), items: seeded.items, layers: seeded.layers });
+      const tm = setTimeout(ahead, 1500);
+      return () => {
+        clearTimeout(tm);
+        ctl.abort();
+      };
+    }
+    skipLoad.current = false;
+    const have = fresh(key) ?? cache.get(key);
+    if (have) {
+      setItems(have.items);
+      setLayers(have.layers);
+    }
+    if (have && fresh(key)) {
+      ahead();
+      return () => ctl.abort();
+    }
+    void read(from, to)
       .then((r) => {
         setItems(r.items);
         setLayers(r.layers);
         setPending(new Map());
+        ahead();
       })
       .catch(() => undefined);
     return () => ctl.abort();
-  }, [ws, from, to, tz, rev]);
+  }, [ws, from, to, tz, rev, seeded]);
 
   // The coming week, whatever the view shows (the rail's "next" card, ⌘J).
-  const [upcoming, setUpcoming] = useState<EventItem[]>([]);
+  const [upSeed] = useState(() => (first?.upcoming && first.upcoming.from > Date.now() - 3_660_000 && first.events?.tz === tz ? first.upcoming.items : null));
+  const [upcoming, setUpcoming] = useState<EventItem[]>(() => upSeed ?? []);
+  const skipUpcoming = useRef(upSeed !== null);
   useEffect(() => {
+    if (skipUpcoming.current) {
+      skipUpcoming.current = false;
+      return;
+    }
     const ctl = new AbortController();
     const start = Date.now() - 3_600_000;
     void calApi<{ items: EventItem[] }>(ws, "events", { query: { from: start, to: start + 8 * 86_400_000, tz, layers: "0" }, signal: ctl.signal })
@@ -158,7 +249,11 @@ function Calendar({ user, boot, setBoot, reboot, initial, t, locale }: { user: S
     return () => ctl.abort();
   }, [ws, tz, rev]);
 
-  // Live: other people's changes (and this person's other tabs).
+  // Live: other people's changes (and this person's other tabs). The page's copy was
+  // read before this tab listened: one fetch confirms it, when the stream says hello
+  // (it opens now) or at once when the stream is already open (another section opened it).
+  const confirmPage = useRef(seeded !== null || upSeed !== null);
+  useEffect(() => preloadWhenIdle([panelPart, { load: loadEditor }, dialogsPart, menuPart]), []);
   useEffect(() => {
     const leave = pulse().join(ws);
     let tm: ReturnType<typeof setTimeout> | null = null;
@@ -173,8 +268,15 @@ function Calendar({ user, boot, setBoot, reboot, initial, t, locale }: { user: S
       }),
       pulse().on("notes", () => boot.layers.some((l) => l.kind === "docs" && !l.hidden) && soon(800)),
       pulse().on("projects", () => boot.layers.some((l) => l.kind !== "docs" && !l.hidden) && soon(800)),
-      pulse().on("hello", () => soon(50)),
+      pulse().on("hello", () => {
+        confirmPage.current = false;
+        soon(50);
+      }),
     ];
+    if (confirmPage.current && pulse().live()) {
+      confirmPage.current = false;
+      soon(50);
+    }
     return () => {
       if (tm) clearTimeout(tm);
       offs.forEach((f) => f());
