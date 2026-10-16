@@ -2468,7 +2468,7 @@ const NoteEditorInner = forwardRef<EditorHandle, NoteEditorProps>(function NoteE
               controller would add its own mobile bar there (F42). */}
           {!readOnly && !touchScreen && <FormattingToolbarController formattingToolbar={() => (suggestMode === "off" ? <FormatToolbar onComment={startComment} /> : <SuggestToolbar onComment={startComment} />)} />}
           {!readOnly && !embedded && suggestMode === "off" && <MobileToolbar editor={editor} root={editorRoot} onInsert={() => suggestionOpen("/")} onMention={() => suggestionOpen("@")} onComment={startComment} />}
-          {!readOnly && suggestMode === "off" && <SideMenuController sideMenu={() => <NotionSideMenu />} />}
+          {!readOnly && suggestMode === "off" && <SideMenuController sideMenu={NotionSideMenu} />}
           <LinkToolbarController />
           {!readOnly && suggestMode === "off" && <FilePanelController filePanel={NotionFilePanel} />}
           {keyMenu?.kind === "actions" && (

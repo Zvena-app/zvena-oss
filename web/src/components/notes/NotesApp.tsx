@@ -19,7 +19,7 @@ import { useLiveSites } from "./live-site";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronsRight, Menu as MenuIcon, X, Maximize2, SquarePen, Trash2 } from "lucide-react";
-import { notesStore, type SaveState } from "@/lib/notes/store";
+import { notesStore, type NotesStore, type SaveState } from "@/lib/notes/store";
 import { loadPeople, reportTimeZone, setMe } from "@/lib/notes/people";
 import { recordView } from "@/lib/notes/history-client";
 import { loadCustomEmoji } from "@/lib/notes/emoji";
@@ -94,7 +94,6 @@ function readNum(key: string, dflt: number): number {
 export default function NotesApp({ initialUser }: { initialUser?: NotesUser | null }) {
   const store = notesStore();
   const snap = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  const saveState = useSyncExternalStore(store.subscribeSave, store.getSaveState, () => "saved" as const);
   const { t, locale } = useNotesT();
   const [route, setRoute] = useState<Route>({ kind: "start" });
   const [user, setUser] = useState<NotesUser | null | undefined>(initialUser);
@@ -912,7 +911,7 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
             <span>{t("ro.banner", { role: t(`ro.role.${user.ws.role}`), comment: user.ws.role === "commenter" ? t("ro.comment") : "" })}</span>
           </div>
         )}
-        <SaveNotice state={saveState} guest={user === null} onRetry={() => void store.retrySave()} />
+        <SaveNotice store={store} guest={user === null} />
         {user === null && <GuestBanner onSignIn={api.signIn} />}
         <div className="nt-work">
           <div className="nt-scroller">
@@ -1049,8 +1048,12 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
  * browser keeps nothing): said plainly, with a retry, and closing the tab
  * asks first — they would be lost.
  */
-function SaveNotice({ state, guest, onRetry }: { state: SaveState; guest: boolean; onRetry: () => void }) {
+function SaveNotice({ store, guest }: { store: NotesStore; guest: boolean }) {
   const { t } = useNotesT();
+  // Subscribed here, not in NotesApp: every write passes "saving" → "saved",
+  // and re-rendering the whole app for it would close open menus (the block
+  // menu lives in state the editor's side menu loses when re-rendered).
+  const state = useSyncExternalStore(store.subscribeSave, store.getSaveState, () => "saved" as SaveState);
   // Without storage an account's pages are still on the server; a guest's are only here.
   const atRisk = state === "failed" || (state === "memory" && guest);
   useEffect(() => {
@@ -1064,7 +1067,7 @@ function SaveNotice({ state, guest, onRetry }: { state: SaveState; guest: boolea
     <div className="nt-banner" role="alert" data-save-state={state}>
       <span>{state === "failed" ? t("save.failed") : t("save.memory")}</span>
       {state === "failed" && (
-        <button type="button" className="nt-btn-reset" onClick={onRetry}>
+        <button type="button" className="nt-btn-reset" onClick={() => void store.retrySave()}>
           {t("save.retry")}
         </button>
       )}
