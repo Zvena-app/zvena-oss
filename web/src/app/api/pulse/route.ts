@@ -65,10 +65,14 @@ export async function GET(req: Request) {
           if (e.type === "inbox") {
             if (e.ref !== userId) return;
           } else if (e.type === "notes" || e.type === "doc") {
-            const acc = new AccessResolver(ws as string, userId);
-            const ids = (e.ref ? [e.ref] : (e.refs ?? [])).filter((id) => acc.level(id) !== null);
-            if (ids.length === 0) return;
-            e = { ...e, ref: ids.length === 1 ? ids[0] : undefined, refs: ids.length > 1 ? ids : undefined };
+            const all = e.ref ? [e.ref] : (e.refs ?? []);
+            // A poke naming no page (access changed somewhere: lib/notes/access.ts) goes to everyone.
+            if (all.length > 0) {
+              const acc = new AccessResolver(ws as string, userId);
+              const ids = all.filter((id) => acc.level(id) !== null);
+              if (ids.length === 0) return;
+              e = { ...e, ref: ids.length === 1 ? ids[0] : undefined, refs: ids.length > 1 ? ids : undefined };
+            }
           } else return;
         } else if (e.type === "notes" || e.type === "doc") {
           // A member hears only about pages they may open: a private page's id (and who

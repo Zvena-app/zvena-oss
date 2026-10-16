@@ -29,6 +29,7 @@ import { roleIn, type Role } from "../workspaces";
 import { nextStamp } from "./stamp";
 import type { AccessLevel, NoteAccessInfo } from "./types";
 import { accessChanged } from "./access-events";
+import { emit } from "../pulse/bus";
 
 const RANK: Record<AccessLevel, number> = { full: 4, edit: 3, comment: 2, view: 1 };
 
@@ -346,15 +347,22 @@ export function settleAccess(ws: string, ids: readonly string[], before: Map<str
   if (ids.length === 0) return;
   const people = [...new Set([...before.keys(), ...principals(ws)])];
   const after = readableSets(ws, people, ids);
+  let lost = false;
   for (const u of people) {
     const had = before.get(u) ?? new Set<string>();
     const has = after.get(u) ?? new Set<string>();
+    for (const id of had) if (!has.has(id)) lost = true;
     for (const id of had) if (!has.has(id)) sql("INSERT INTO note_revoked (ws, note_id, user_id, stamp) VALUES (?, ?, ?, ?) ON CONFLICT(ws, note_id, user_id) DO UPDATE SET stamp = excluded.stamp").run(ws, id, u, nextStamp());
     for (const id of has) if (!had.has(id)) sql("DELETE FROM note_revoked WHERE ws = ? AND note_id = ? AND user_id = ?").run(ws, id, u);
   }
   for (const id of ids) if (!skip.has(id)) sql("UPDATE notes SET stamp = ? WHERE ws = ? AND id = ?").run(nextStamp(), ws, id);
   // Open live sessions re-check their people (lib/notes/collab.ts).
   accessChanged(ws);
+  // Devices that lost a page pull now and drop it (else an open tab kept
+  // showing it until the next safety pull, up to 5 minutes). The poke names
+  // no page — the stream would not tell them about one they cannot read —
+  // and goes out once the write is done.
+  if (lost) queueMicrotask(() => emit(ws, { type: "notes" }));
 }
 
 /** Runs an access change on the subtrees of `roots` and settles who sees what afterwards (one transaction). */

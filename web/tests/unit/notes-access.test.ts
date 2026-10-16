@@ -9,6 +9,7 @@ import { acceptPageInvite, createPageInvite, previewPageInvite } from "@/lib/not
 import { pullNotes, pushNotes, validShareSnapshot } from "@/lib/notes/server-store";
 import { addTeamspaceMember, createTeamspace, joinTeamspace, teamspacesOf, updateTeamspace } from "@/lib/notes/teamspaces";
 import type { Note } from "@/lib/notes/types";
+import { listen, type PulseEvent } from "@/lib/pulse/bus";
 import { acceptInvite, createInvite, createWorkspace, removeMember } from "@/lib/workspaces";
 
 let n = 0;
@@ -263,4 +264,28 @@ test("access: a page whose parent is not on the server is its creator's until th
   as(t.ws, t.anna, [parent]);
   assert.equal(levelOf(t.ws, t.anna, child.id), "full");
   assert.equal(levelOf(t.ws, t.boris, child.id), null);
+});
+
+test("access: a revoke pokes devices to pull at once, naming no page", async () => {
+  const t = team();
+  const mine = blankNote({ kind: "page", title: "Plan", space: "private" });
+  as(t.ws, t.anna, [mine]);
+  grant(t.ws, mine.id, t.boris, "edit", t.anna);
+  const heard: PulseEvent[] = [];
+  const off = listen(t.ws, (e) => void heard.push(e));
+  try {
+    revoke(t.ws, mine.id, t.boris);
+    await new Promise((r) => setTimeout(r, 20));
+    const pokes = heard.filter((e) => e.type === "notes");
+    assert.equal(pokes.length, 1);
+    assert.equal(pokes[0].ref, undefined);
+    assert.equal(pokes[0].refs, undefined);
+    // Sharing (nobody loses anything) needs no poke: the notes' own stamps carry it.
+    heard.length = 0;
+    grant(t.ws, mine.id, t.boris, "comment", t.anna);
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(heard.filter((e) => e.type === "notes").length, 0);
+  } finally {
+    off();
+  }
 });
