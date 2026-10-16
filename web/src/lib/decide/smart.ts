@@ -126,8 +126,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // The spending budget: every question costs money, so the server asks at most
 // ZVENA_AI_DAILY_QUESTIONS questions a day in all and ZVENA_AI_WS_DAILY_QUESTIONS
-// for one workspace (UTC days), and never sends a state bigger than
-// ZVENA_AI_MAX_BYTES. The counts live in the database (smart_budget), so a
+// for one workspace (UTC days), ZVENA_AI_DAILY_PER_OWNER for all the
+// workspaces one person owns (many workspaces must not add up to the whole
+// server's budget), and never sends a state bigger than ZVENA_AI_MAX_BYTES. The counts live in the database (smart_budget), so a
 // restart or a second process does not hand out a new day's budget; the check
 // and the take are one transaction. What is charged, per call of ask():
 //   - one per question asked, once: a retry after 429/529 is the same question;
@@ -145,6 +146,12 @@ CREATE TABLE IF NOT EXISTS smart_budget (
   ws TEXT NOT NULL,
   used INTEGER NOT NULL,
   PRIMARY KEY (day, ws)
+);
+CREATE TABLE IF NOT EXISTS smart_budget_owner (
+  day TEXT NOT NULL,
+  owner TEXT NOT NULL,               -- the workspace's owner when the questions were asked
+  used INTEGER NOT NULL,
+  PRIMARY KEY (day, owner)
 );`;
 const BUDGET_KEEP_DAYS = 7;
 interface Budget {
@@ -162,9 +169,11 @@ function limits() {
     const v = Number(process.env[name]);
     return Number.isFinite(v) && v >= 0 && process.env[name]?.trim() ? Math.floor(v) : def;
   };
+  const perWs = n("ZVENA_AI_WS_DAILY_QUESTIONS", 1_000);
   return {
     total: n("ZVENA_AI_DAILY_QUESTIONS", 20_000),
-    perWs: n("ZVENA_AI_WS_DAILY_QUESTIONS", 1_000),
+    perWs,
+    perOwner: n("ZVENA_AI_DAILY_PER_OWNER", 2 * perWs),
     maxBytes: n("ZVENA_AI_MAX_BYTES", 32_768),
     maxResponseBytes: n("ZVENA_AI_MAX_RESPONSE_BYTES", 262_144),
   };
@@ -181,27 +190,43 @@ function budgetTable(now: number): void {
   const day = dayOf(now);
   if (budget.pruned !== day) {
     budget.pruned = day;
-    sql("DELETE FROM smart_budget WHERE day < ?").run(dayOf(now - BUDGET_KEEP_DAYS * 86_400_000));
+    const old = dayOf(now - BUDGET_KEEP_DAYS * 86_400_000);
+    sql("DELETE FROM smart_budget WHERE day < ?").run(old);
+    sql("DELETE FROM smart_budget_owner WHERE day < ?").run(old);
   }
 }
 
-/** Takes `n` questions from today's budget for `ws`; false (and nothing taken) when it would go over. */
-function spend(ws: string, n: number, now: number): boolean {
+/** What spend() took: `owner` is whose share it also came from (null: a workspace with no owner on record). */
+interface Spent {
+  owner: string | null;
+}
+
+/** Takes `n` questions from today's budget for `ws` (and its owner); null (and nothing taken) when it would go over. */
+function spend(ws: string, n: number, now: number): Spent | null {
   budgetTable(now);
   const day = dayOf(now);
   const lim = limits();
   // BEGIN IMMEDIATE: no other writer between the check and the take.
   return tx(() => {
     const c = sql("SELECT COALESCE(SUM(used), 0) AS total, COALESCE(SUM(CASE WHEN ws = ? THEN used END), 0) AS mine FROM smart_budget WHERE day = ?").get(ws, day) as { total: number; mine: number };
-    if (Number(c.total) + n > lim.total || Number(c.mine) + n > lim.perWs) return false;
+    if (Number(c.total) + n > lim.total || Number(c.mine) + n > lim.perWs) return null;
+    // Counted per owner, not summed over their workspaces now: deleting or handing over a
+    // workspace does not hand out a new share.
+    const owner = (sql("SELECT owner_id FROM workspaces WHERE id = ?").get(ws) as { owner_id: string } | undefined)?.owner_id ?? null;
+    if (owner) {
+      const o = sql("SELECT used FROM smart_budget_owner WHERE day = ? AND owner = ?").get(day, owner) as { used: number } | undefined;
+      if (Number(o?.used ?? 0) + n > lim.perOwner) return null;
+      sql("INSERT INTO smart_budget_owner (day, owner, used) VALUES (?, ?, ?) ON CONFLICT(day, owner) DO UPDATE SET used = used + excluded.used").run(day, owner, n);
+    }
     sql("INSERT INTO smart_budget (day, ws, used) VALUES (?, ?, ?) ON CONFLICT(day, ws) DO UPDATE SET used = used + excluded.used").run(day, ws, n);
-    return true;
+    return { owner };
   });
 }
 
 /** Gives back what spend() took on `day` when nothing was sent. */
-function refund(ws: string, n: number, day: string): void {
+function refund(ws: string, spent: Spent, n: number, day: string): void {
   sql("UPDATE smart_budget SET used = MAX(0, used - ?) WHERE day = ? AND ws = ?").run(n, day, ws);
+  if (spent.owner) sql("UPDATE smart_budget_owner SET used = MAX(0, used - ?) WHERE day = ? AND owner = ?").run(n, day, spent.owner);
 }
 
 /** Today's spending, for /status and tests. */
@@ -210,7 +235,7 @@ export function smartBudget(now = Date.now()) {
   const day = dayOf(now);
   const lim = limits();
   const used = Number((sql("SELECT COALESCE(SUM(used), 0) AS used FROM smart_budget WHERE day = ?").get(day) as { used: number }).used);
-  return { day, used, limit: lim.total, perWorkspace: lim.perWs };
+  return { day, used, limit: lim.total, perWorkspace: lim.perWs, perOwner: lim.perOwner };
 }
 
 /** The answer's body as JSON, read with a cap (a lying or missing Content-Length cannot make it bigger); null past it or when it is not JSON. */
@@ -246,7 +271,8 @@ export async function ask<Qs extends Record<string, Question>>(ws: string, state
   const lim = limits();
   if (Buffer.byteLength(body) > lim.maxBytes) return null;
   const cost = Math.max(1, Object.keys(questions).length);
-  if (!spend(ws, cost, t0)) return null;
+  const spent = spend(ws, cost, t0);
+  if (!spent) return null;
   let sent = 0;
 
   const deadline = t0 + (opts.timeoutMs ?? cfg.timeoutMs);
@@ -297,7 +323,7 @@ export async function ask<Qs extends Record<string, Question>>(ws: string, state
     }
   }
   // Nothing went out at all (the time budget was gone before the first try): the questions are given back.
-  if (!sent) refund(ws, cost, dayOf(t0));
+  if (!sent) refund(ws, spent, cost, dayOf(t0));
   st.calls++;
   st.errors++;
   st.totalMs += Date.now() - t0;
@@ -375,5 +401,6 @@ export function resetSmart(opts: { budget?: boolean } = {}): void {
   if (opts.budget !== false) {
     budgetTable(Date.now());
     sql("DELETE FROM smart_budget").run();
+    sql("DELETE FROM smart_budget_owner").run();
   }
 }

@@ -440,7 +440,8 @@ Workspace owners turn each rule off on Home → Automations → the settings but
    ZVENA_AI_TIMEOUT_MS=1500
    ZVENA_AI_DEFAULT=on          # off: nothing is sent until a workspace owner turns it on
    ZVENA_AI_DAILY_QUESTIONS=20000     # the spending budget: questions a day in all…
-   ZVENA_AI_WS_DAILY_QUESTIONS=1000   # …and per workspace; over it, rules alone until the next UTC day
+   ZVENA_AI_WS_DAILY_QUESTIONS=1000   # …per workspace…
+   ZVENA_AI_DAILY_PER_OWNER=2000      # …and for all of one person's workspaces; over it, rules alone until the next UTC day
    ```
 2. Run `sudo deploy/scripts/up.sh`.
 3. Check: Projects → Settings → Smart suggestions shows the switch instead of "Not available on this server".
