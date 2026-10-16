@@ -30,7 +30,9 @@
 #   Query: OAuth (code, state), sign-in links (token, next — a path that may
 #   hold one of the links above), signed links (sig, s, key, t — a booking's
 #   token), Design's share links (share-id), what people type or paste (q,
-#   email, emails, filter, name, url, u, note, download — a file's name).
+#   email, emails, filter, name, url, u, note, download — a file's name;
+#   title, text — what the installed app is shared, on /clip), the e-mail
+#   sign-in's reference (r — it names the address) and a place (lat, lng).
 (log-filter) {
 	format filter {
 		request>remote_ip ip_mask 16 32
@@ -46,7 +48,7 @@
 		request>headers>X-Zvena-Key delete
 		request>headers>X-File-Name delete
 		request>headers>X-Name delete
-		request>uri regexp `(?i)(/(?:join|share|f|n|cal/[^/?#]+|api/calendar/(?:feed|invite|public/[^/?#]+/booking)|api/notes/(?:form|file))/)[^/?#.]+|([?&](?:code|state|token|device_id|access_token|id_token|password|secret|signature|sig|s|key|t|next|login|share-id|q|email|emails|filter|name|url|u|note|download)=)[^&#]*` "${1}${2}***"
+		request>uri regexp `(?i)(/(?:join|share|f|n|cal/[^/?#]+|api/calendar/(?:feed|invite|public/[^/?#]+/booking)|api/notes/(?:form|file))/)[^/?#.]+|([?&](?:code|state|token|device_id|access_token|id_token|password|secret|signature|sig|s|key|t|next|login|share-id|q|email|emails|filter|name|url|u|note|download|title|text|r|lat|lng)=)[^&#]*` "${1}${2}***"
 		resp_headers>Set-Cookie delete
 		resp_headers>Location delete
 	}
