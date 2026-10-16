@@ -72,7 +72,7 @@ test("health: the overall status — core part down is a major outage, Design do
 
 test("health: configured mail is 'unverified' until a letter or an SMTP login shows it works", () => {
   resetMailCheck();
-  withEnv({ SMTP_HOST: "smtp.example.invalid", SMTP_FROM: "zvena <noreply@example.invalid>", RESEND_API_KEY: undefined }, () => {
+  withEnv({ SMTP_HOST: "smtp.example.invalid", SMTP_FROM: "zvena <noreply@example.invalid>" }, () => {
     const now = Date.now();
     assert.equal(mailState(now), "unverified");
     noteMailCheck(true, "delivery", now - 1000);
@@ -90,7 +90,7 @@ test("health: configured mail is 'unverified' until a letter or an SMTP login sh
 
 test("health: the SMTP check logs in (never sends), at most once per window; a dead server shows as degraded", async () => {
   resetMailCheck();
-  await withEnv({ SMTP_HOST: "127.0.0.1", SMTP_PORT: "1", SMTP_FROM: "noreply@example.invalid", RESEND_API_KEY: undefined }, async () => {
+  await withEnv({ SMTP_HOST: "127.0.0.1", SMTP_PORT: "1", SMTP_FROM: "noreply@example.invalid" }, async () => {
     const run = refreshSmtpCheck();
     assert.ok(run, "a check starts when nothing tells");
     assert.equal(refreshSmtpCheck(), null, "one at a time");
