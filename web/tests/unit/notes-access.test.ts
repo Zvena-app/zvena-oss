@@ -275,6 +275,8 @@ test("access: a revoke pokes devices to pull at once, naming no page", async () 
   const off = listen(t.ws, (e) => void heard.push(e));
   try {
     revoke(t.ws, mine.id, t.boris);
+    // The poke goes out after the write (a microtask, then the bus's setImmediate): wait for it, not for a fixed time.
+    for (let i = 0; i < 100 && !heard.some((e) => e.type === "notes"); i++) await new Promise((r) => setTimeout(r, 10));
     await new Promise((r) => setTimeout(r, 20));
     const pokes = heard.filter((e) => e.type === "notes");
     assert.equal(pokes.length, 1);
