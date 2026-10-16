@@ -1,7 +1,8 @@
 // zvena for desktop — the main process.
 //
 // The app is a window onto the zvena web app (APP_URL, else the server
-// set in Settings, else https://zvena.app) with what a browser tab cannot
+// set in Settings; with neither, the first start asks for the server's
+// address in Settings before any window opens) with what a browser tab cannot
 // do: tabs of its own, zvena:// links, a quick search shortcut that works
 // in every app, the dock badge, launch at login, updates. All the product
 // lives on the server; the pages work offline through the web app's own
@@ -76,6 +77,8 @@ function windowOf(wc) {
 }
 
 function newWindow(state = {}) {
+  // No server yet: Settings asks for it, and the window opens once it is saved.
+  if (!appOrigin()) return void openSettings();
   let bounds = cleanBounds(state.bounds);
   if (bounds && !onSomeDisplay(bounds, screen.getAllDisplays().map((d) => d.workArea))) bounds = { width: bounds.width, height: bounds.height };
   // A new window steps down and right of the focused one, as browsers do.
@@ -156,6 +159,10 @@ function openPage(url) {
 }
 
 function openDeepLink(raw) {
+  if (!appOrigin()) {
+    pendingLink = raw;
+    return void openSettings();
+  }
   const url = deepLinkTarget(raw, appOrigin());
   if (url) openPage(url);
   else focusedWindow()?.focus();
@@ -186,11 +193,17 @@ function restoreWindows() {
 
 let shortcutOk = true;
 
+/** The quick search window, or Settings while there is no server yet. */
+function quickSearch() {
+  if (appOrigin()) quick.toggle();
+  else openSettings();
+}
+
 function registerShortcut(acc) {
   globalShortcut.unregisterAll();
   if (!acc) return true;
   try {
-    return globalShortcut.register(acc, () => quick.toggle());
+    return globalShortcut.register(acc, () => quickSearch());
   } catch {
     return false;
   }
@@ -234,7 +247,11 @@ function openSettings() {
   settingsWin.removeMenu?.();
   settingsWin.webContents.on("will-navigate", (e) => e.preventDefault());
   settingsWin.once("ready-to-show", () => settingsWin?.show());
-  settingsWin.on("closed", () => (settingsWin = null));
+  settingsWin.on("closed", () => {
+    settingsWin = null;
+    // Closed on the first start without a server: there is nothing to show.
+    if (!appOrigin() && windows.size === 0 && !quitting) app.quit();
+  });
   void settingsWin.loadURL("zvena-ui://ui/settings.html");
 }
 
@@ -244,7 +261,9 @@ function settingsView() {
     values: { serverUrl: s.serverUrl || "", designUrl: s.designUrl || "", quickSearchShortcut: s.quickSearchShortcut, launchAtLogin: s.launchAtLogin, openLinksInApp: s.openLinksInApp },
     envServer: serverOrigin(process.env.APP_URL) || "",
     shortcutOk,
-    defaultServer: "https://zvena.app",
+    /** No APP_URL and no saved server: the address must be filled in. */
+    needsServer: !appOrigin(),
+    exampleServer: "https://zvena.example.com",
     rtl: isRtl(locale),
     words: Object.fromEntries(["settingsTitle", "serverUrl", "serverHint", "designUrl", "shortcut", "shortcutHint", "launchAtLogin", "openLinksInApp", "save", "cancel", "invalidUrl", "invalidShortcut", "shortcutTaken"].map((k) => [k, t(k)])),
   };
@@ -259,6 +278,8 @@ function saveSettings(v) {
   const serverO = server ? serverOrigin(withScheme(server)) : "";
   const designO = design ? serverOrigin(withScheme(design)) : "";
   if (server && !serverO) errors.serverUrl = t("invalidUrl");
+  // There is no built-in server: without APP_URL the address is required.
+  if (!server && !serverOrigin(process.env.APP_URL)) errors.serverUrl = t("serverNeeded");
   if (design && !designO) errors.designUrl = t("invalidUrl");
   const rawAcc = typeof r.quickSearchShortcut === "string" ? r.quickSearchShortcut.trim() : "";
   const acc = rawAcc ? normalizeAccelerator(rawAcc) : "";
@@ -280,6 +301,11 @@ function saveSettings(v) {
     quick.reset();
     for (const w of [...windows]) w.win.close();
     newWindow();
+    if (pendingLink) {
+      const link = pendingLink;
+      pendingLink = null;
+      openDeepLink(link);
+    }
   }
   return { ok: true };
 }
@@ -374,7 +400,7 @@ app.whenReady().then(() => {
   hardenSession(appOrigin, locale);
   quick = new QuickSearch({ appOrigin, designOrigin, openInMain: openPage, openExternal });
   updates = startUpdates();
-  const menuCtx = { t, run: runOnFocused, newWindow: () => newWindow(), quickSearch: () => quick.toggle(), settings: openSettings, help: () => openPage(`${appOrigin()}/help`), updates, devTools: devToolsOn() };
+  const menuCtx = { t, run: runOnFocused, newWindow: () => newWindow(), quickSearch, settings: openSettings, help: () => (appOrigin() ? openPage(`${appOrigin()}/help`) : openSettings()), updates, devTools: devToolsOn() };
   Menu.setApplicationMenu(appMenu(menuCtx));
   tray = trayOrDock({ ...menuCtx, show: () => (focusedWindow() ? focusedWindow().focus() : newWindow()) });
   wireIpc();
@@ -384,8 +410,9 @@ app.whenReady().then(() => {
   const hidden = process.argv.includes("--hidden") || (MAC && app.getLoginItemSettings().wasOpenedAsHidden);
   if (!hidden || pendingLink) restoreWindows();
   if (pendingLink) {
-    openDeepLink(pendingLink);
+    const link = pendingLink;
     pendingLink = null;
+    openDeepLink(link);
   }
   app.on("activate", () => {
     if (windows.size === 0) restoreWindows();

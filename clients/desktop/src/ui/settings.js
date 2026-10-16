@@ -16,9 +16,14 @@ async function start() {
   for (const el of document.querySelectorAll("[data-w]")) el.textContent = view.words[el.dataset.w] ?? "";
   for (const k of FIELDS) $(k).value = view.values[k] ?? "";
   for (const k of CHECKS) $(k).checked = Boolean(view.values[k]);
-  $("serverUrl").placeholder = view.envServer || view.defaultServer;
+  $("serverUrl").placeholder = view.envServer || view.exampleServer;
   // APP_URL (the environment) decides the server while it is set.
   if (view.envServer) $("serverUrl").disabled = true;
+  // The first start: no server yet, so its address comes first (Save says so if it is left empty).
+  if (view.needsServer) {
+    $("serverUrl").required = true;
+    $("serverUrl").focus();
+  }
   if (!view.shortcutOk) $("quickSearchShortcut-err").textContent = view.words.shortcutTaken;
 }
 

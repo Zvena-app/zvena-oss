@@ -5,9 +5,9 @@
   "description": "zvena for desktop: docs, projects and design in one window.",
   "author": {
     "name": "zvena",
-    "email": "hello@zvena.app"
+    "email": "hi@zvena.app"
   },
-  "homepage": "https://zvena.app",
+  "homepage": "https://github.com/Zvena-app/zvena-oss",
   "license": "AGPL-3.0-only",
   "private": true,
   "main": "src/main.js",

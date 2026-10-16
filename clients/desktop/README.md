@@ -3,8 +3,11 @@
 An Electron app around the zvena web app, like Notion's desktop app. All of
 the product lives on the server; the app adds what a browser tab cannot do.
 
-- **Server:** `APP_URL` from the environment, else the address in Settings,
-  else `https://zvena.app`. A window opens on `/home`. Plain `http://` is
+- **Server:** `APP_URL` from the environment, else the address in Settings.
+  There is no built-in server: on the first start, without `APP_URL`, the
+  app opens Settings and asks for your server's address (for example
+  `https://zvena.example.com`) before any window opens; closing Settings
+  without one quits. A window then opens on `/home`. Plain `http://` is
   accepted only for `localhost` / `127.0.0.1` (a dev server or a test stand).
 - **Tabs:** ⌘/Ctrl+T new tab, ⌘W close (the last tab closes the window),
   ⌘1–8 a tab by position, ⌘9 the last one, ⌘⇧T reopen a closed tab (with its

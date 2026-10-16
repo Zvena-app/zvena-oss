@@ -4,8 +4,6 @@
 
 "use strict";
 
-const DEFAULT_APP_URL = "https://zvena.app";
-
 /**
  * A server origin the app may load, or null. https anywhere; plain http
  * only for this machine (a dev server or a test stand), never across a
@@ -25,9 +23,12 @@ function serverOrigin(raw) {
   return null;
 }
 
-/** The app origin: APP_URL, else the saved setting, else zvena.app. */
+/**
+ * The app origin: APP_URL, else the saved setting, else null. There is no
+ * built-in server: on null the app asks for the address (Settings) first.
+ */
 function resolveAppOrigin(envUrl, savedUrl) {
-  return serverOrigin(envUrl) || serverOrigin(savedUrl) || DEFAULT_APP_URL;
+  return serverOrigin(envUrl) || serverOrigin(savedUrl) || null;
 }
 
 function parse(raw) {
@@ -49,7 +50,7 @@ const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])$/i;
 /**
  * Whether a page may open inside the app: the app origin, the Design
  * origin when one is set, and other https hosts under the app's own domain
- * (design.zvena.app next to zvena.app). Everything else goes to the browser.
+ * (design.example.com next to example.com). Everything else goes to the browser.
  */
 function isInAppUrl(raw, appOrigin, designOrigin) {
   const u = parse(raw);
@@ -260,7 +261,6 @@ function restorableTabs(saved, appOrigin) {
 }
 
 module.exports = {
-  DEFAULT_APP_URL,
   serverOrigin,
   resolveAppOrigin,
   isAppUrl,

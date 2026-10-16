@@ -4,38 +4,45 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const L = require("../src/links");
 
-const APP = "https://zvena.app";
+const APP = "https://zvena.example.com";
 
 test("server origins: https anywhere, http only on this machine, nothing else", () => {
-  assert.equal(L.serverOrigin("https://zvena.app/home?x=1"), "https://zvena.app");
+  assert.equal(L.serverOrigin("https://zvena.example.com/home?x=1"), "https://zvena.example.com");
   assert.equal(L.serverOrigin("http://127.0.0.1:3955"), "http://127.0.0.1:3955");
   assert.equal(L.serverOrigin("http://localhost:3100/"), "http://localhost:3100");
-  assert.equal(L.serverOrigin("http://zvena.app"), null);
+  assert.equal(L.serverOrigin("http://zvena.example.com"), null);
   assert.equal(L.serverOrigin("http://192.168.1.5"), null);
-  assert.equal(L.serverOrigin("https://user:pw@zvena.app"), null);
+  assert.equal(L.serverOrigin("https://user:pw@zvena.example.com"), null);
   assert.equal(L.serverOrigin("file:///etc/passwd"), null);
   assert.equal(L.serverOrigin("javascript:alert(1)"), null);
   assert.equal(L.serverOrigin(""), null);
-  assert.equal(L.resolveAppOrigin(undefined, ""), APP);
+  // No built-in server: without APP_URL or a saved one there is no origin (the app asks for it).
+  assert.equal(L.resolveAppOrigin(undefined, ""), null);
+  assert.equal(L.resolveAppOrigin("", "http://evil.example"), null);
+  assert.equal(L.resolveAppOrigin(undefined, "https://zvena.example.com/home"), APP);
+  assert.equal("DEFAULT_APP_URL" in L, false);
   assert.equal(L.resolveAppOrigin("http://127.0.0.1:3955", "https://my.example"), "http://127.0.0.1:3955");
   assert.equal(L.resolveAppOrigin("bogus", "https://my.example/x"), "https://my.example");
 });
 
 test("zvena:// links map to the app origin and never leave it", () => {
-  assert.equal(L.deepLinkTarget("zvena://docs?ws=abc#Title-0123456789abcdef0123456789abcdef", APP), "https://zvena.app/docs?ws=abc#Title-0123456789abcdef0123456789abcdef");
-  assert.equal(L.deepLinkTarget("zvena://home", APP), "https://zvena.app/home");
-  assert.equal(L.deepLinkTarget("zvena://projects/abc/issues", APP), "https://zvena.app/projects/abc/issues");
-  assert.equal(L.deepLinkTarget("zvena:docs#x", APP), "https://zvena.app/docs#x");
-  assert.equal(L.deepLinkTarget("zvena://open?url=" + encodeURIComponent("https://zvena.app/docs#Page-1"), APP), "https://zvena.app/docs#Page-1");
+  assert.equal(L.deepLinkTarget("zvena://docs?ws=abc#Title-0123456789abcdef0123456789abcdef", APP), "https://zvena.example.com/docs?ws=abc#Title-0123456789abcdef0123456789abcdef");
+  assert.equal(L.deepLinkTarget("zvena://home", APP), "https://zvena.example.com/home");
+  assert.equal(L.deepLinkTarget("zvena://projects/abc/issues", APP), "https://zvena.example.com/projects/abc/issues");
+  assert.equal(L.deepLinkTarget("zvena:docs#x", APP), "https://zvena.example.com/docs#x");
+  assert.equal(L.deepLinkTarget("zvena://open?url=" + encodeURIComponent("https://zvena.example.com/docs#Page-1"), APP), "https://zvena.example.com/docs#Page-1");
   // Another origin through open?url=, or through tricks in the path, is ignored.
   assert.equal(L.deepLinkTarget("zvena://open?url=" + encodeURIComponent("https://evil.example/docs"), APP), null);
   assert.equal(L.deepLinkTarget("zvena://open?url=" + encodeURIComponent("javascript:alert(1)"), APP), null);
   assert.equal(L.deepLinkTarget("zvena://open", APP), null);
-  assert.equal(L.deepLinkTarget("zvena:////evil.example/x", APP), "https://zvena.app/evil.example/x");
-  assert.equal(L.deepLinkTarget("zvena://docs/../../x", APP), "https://zvena.app/docs/x");
+  // Before a server is set, a link has nowhere to go.
+  assert.equal(L.deepLinkTarget("zvena://docs#x", null), null);
+  assert.equal(L.navigationVerdict("https://zvena.example.com/docs", null, null), "browser");
+  assert.equal(L.deepLinkTarget("zvena:////evil.example/x", APP), "https://zvena.example.com/evil.example/x");
+  assert.equal(L.deepLinkTarget("zvena://docs/../../x", APP), "https://zvena.example.com/docs/x");
   assert.equal(L.deepLinkTarget("zvena://u:p@evil.example/", APP), null);
   assert.equal(L.deepLinkTarget("zvena://evil.example:8080/x", APP), null);
-  assert.equal(L.deepLinkTarget("https://zvena.app/docs", APP), null);
+  assert.equal(L.deepLinkTarget("https://zvena.example.com/docs", APP), null);
   assert.equal(L.deepLinkTarget("zvena://" + "a".repeat(5000), APP), null);
   for (const raw of ["zvena://evil.example", "zvena://docs%2F%2Fevil.example", "zvena://\\\\evil.example", "zvena://@evil.example/", "zvena://[::1]/x", "zvena:%2F%2Fevil.example"]) {
     const out = L.deepLinkTarget(raw, APP);
@@ -46,14 +53,14 @@ test("zvena:// links map to the app origin and never leave it", () => {
 });
 
 test("navigation: the app and its own subdomains stay, the rest goes to the browser or nowhere", () => {
-  assert.equal(L.navigationVerdict("https://zvena.app/docs#x", APP, null), "app");
-  assert.equal(L.navigationVerdict("https://design.zvena.app/#/workspace", APP, null), "app");
+  assert.equal(L.navigationVerdict("https://zvena.example.com/docs#x", APP, null), "app");
+  assert.equal(L.navigationVerdict("https://design.zvena.example.com/#/workspace", APP, null), "app");
   assert.equal(L.navigationVerdict("https://design.example.com/", APP, "https://design.example.com"), "app");
-  assert.equal(L.navigationVerdict("https://zvena.app.evil.example/", APP, null), "browser");
-  assert.equal(L.navigationVerdict("https://evilzvena.app/", APP, null), "browser");
-  assert.equal(L.navigationVerdict("http://design.zvena.app/", APP, null), "browser");
+  assert.equal(L.navigationVerdict("https://zvena.example.com.evil.example/", APP, null), "browser");
+  assert.equal(L.navigationVerdict("https://evilzvena.example.com/", APP, null), "browser");
+  assert.equal(L.navigationVerdict("http://design.zvena.example.com/", APP, null), "browser");
   assert.equal(L.navigationVerdict("https://www.youtube.com/watch?v=1", APP, null), "browser");
-  assert.equal(L.navigationVerdict("mailto:hello@zvena.app", APP, null), "browser");
+  assert.equal(L.navigationVerdict("mailto:hello@zvena.example.com", APP, null), "browser");
   assert.equal(L.navigationVerdict("file:///etc/passwd", APP, null), "block");
   assert.equal(L.navigationVerdict("javascript:alert(1)", APP, null), "block");
   assert.equal(L.navigationVerdict("data:text/html,<b>x</b>", APP, null), "block");
@@ -68,12 +75,12 @@ test("navigation: the app and its own subdomains stay, the rest goes to the brow
 });
 
 test("the quick search window hands over results, not its own search", () => {
-  assert.equal(L.quickSearchStays("https://zvena.app/docs#search", APP), true);
-  assert.equal(L.quickSearchStays("https://zvena.app/docs", APP), true);
-  assert.equal(L.quickSearchStays("https://zvena.app/docs#Plan-0123456789abcdef0123456789abcdef", APP), false);
-  assert.equal(L.quickSearchStays("https://zvena.app/projects", APP), false);
-  assert.equal(L.samePage("https://zvena.app/docs#a", "https://zvena.app/docs/#a"), true);
-  assert.equal(L.samePage("https://zvena.app/docs#a", "https://zvena.app/docs#b"), false);
+  assert.equal(L.quickSearchStays("https://zvena.example.com/docs#search", APP), true);
+  assert.equal(L.quickSearchStays("https://zvena.example.com/docs", APP), true);
+  assert.equal(L.quickSearchStays("https://zvena.example.com/docs#Plan-0123456789abcdef0123456789abcdef", APP), false);
+  assert.equal(L.quickSearchStays("https://zvena.example.com/projects", APP), false);
+  assert.equal(L.samePage("https://zvena.example.com/docs#a", "https://zvena.example.com/docs/#a"), true);
+  assert.equal(L.samePage("https://zvena.example.com/docs#a", "https://zvena.example.com/docs#b"), false);
 });
 
 test("global shortcuts: one key with a real modifier", () => {
@@ -125,7 +132,7 @@ test("window state: sane bounds on a real screen, app tabs only", () => {
   const screens = [{ x: 0, y: 0, width: 1920, height: 1080 }];
   assert.equal(L.onSomeDisplay({ x: 100, y: 100, width: 1200, height: 800 }, screens), true);
   assert.equal(L.onSomeDisplay({ x: 5000, y: 100, width: 1200, height: 800 }, screens), false);
-  assert.deepEqual(L.restorableTabs({ tabs: ["https://zvena.app/docs#a", "https://evil.example/", 3, "https://zvena.app/home"], active: 1 }, APP), { tabs: ["https://zvena.app/docs#a", "https://zvena.app/home"], active: 1 });
-  assert.deepEqual(L.restorableTabs({ tabs: ["https://zvena.app/a"], active: 7 }, APP), { tabs: ["https://zvena.app/a"], active: 0 });
+  assert.deepEqual(L.restorableTabs({ tabs: ["https://zvena.example.com/docs#a", "https://evil.example/", 3, "https://zvena.example.com/home"], active: 1 }, APP), { tabs: ["https://zvena.example.com/docs#a", "https://zvena.example.com/home"], active: 1 });
+  assert.deepEqual(L.restorableTabs({ tabs: ["https://zvena.example.com/a"], active: 7 }, APP), { tabs: ["https://zvena.example.com/a"], active: 0 });
   assert.deepEqual(L.restorableTabs(null, APP), { tabs: [], active: 0 });
 });

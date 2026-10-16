@@ -10,7 +10,7 @@ const path = require("node:path");
 const { normalizeAccelerator, serverOrigin } = require("./links");
 
 const DEFAULTS = Object.freeze({
-  /** "" = APP_URL or https://zvena.app. */
+  /** "" = APP_URL; with neither, the app asks for the server on start. */
   serverUrl: "",
   designUrl: "",
   quickSearchShortcut: "Alt+Shift+Space",

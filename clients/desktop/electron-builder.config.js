@@ -66,7 +66,7 @@ module.exports = {
     // x-scheme-handler/zvena comes from "protocols" above.
     // The window's app id / WM_CLASS matches zvena.desktop, so the dock groups it with the launcher.
     syncDesktopName: true,
-    maintainer: "zvena <hello@zvena.app>",
+    maintainer: "zvena <hi@zvena.app>",
     vendor: "zvena",
     desktop: { entry: { StartupWMClass: "zvena", Keywords: "docs;notes;projects;design;" } },
   },
