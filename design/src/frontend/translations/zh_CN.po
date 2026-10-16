@@ -10155,7 +10155,7 @@ msgstr "正在前往 zvena 登录…"
 
 #: zvena
 msgid "blueai.login.note"
-msgstr "一个账号即可使用 zvena 文档和设计。免费。"
+msgstr "一个账号即可使用 zvena 文档和设计。"
 
 #: zvena
 msgid "blueai.menu.chat"

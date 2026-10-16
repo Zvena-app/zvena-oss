@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = publicTemplate((await params).id);
   if (!t) return { title: "Template not found", robots: { index: false, follow: false } };
   const i = info(t);
-  return pageMetadata({ title: `${i.name} template`, description: `${i.lead} A free ${t.kind === "design" ? "zvena Design" : "zvena Docs"} template: preview it, then use it in one click.`, path: templatePath(t.id) });
+  return pageMetadata({ title: `${i.name} template`, description: `${i.lead} A ${t.kind === "design" ? "zvena Design" : "zvena Docs"} template: preview it, then use it in one click.`, path: templatePath(t.id) });
 }
 
 export default async function TemplatePage({ params, searchParams }: Props) {
@@ -85,7 +85,7 @@ export default async function TemplatePage({ params, searchParams }: Props) {
           )}
           <p className="zt-note">
             {i.where}
-            {user ? ` It goes to “${user.ws.name}”.` : t.kind === "doc" ? " Without an account it stays in this browser only." : " Design needs a free account."}
+            {user ? ` It goes to “${user.ws.name}”.` : t.kind === "doc" ? " Without an account it stays in this browser only." : " Design needs an account."}
           </p>
         </div>
         <section className="zt-preview" aria-label={`Preview of ${i.name}`}>

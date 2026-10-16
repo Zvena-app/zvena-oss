@@ -22,7 +22,7 @@ export async function ContentPage({ title, lead, children, cta, eyebrow }: { tit
             <p>{user ? "Pick up where you left off." : "Free for everyone. No credit card, no trial, no ads."}</p>
             <div className="zv-actions">
               <Link className="zv-btn zv-btn-primary zv-btn-lg" href={user ? "/home" : cta?.href ?? "/signin"}>
-                {user ? "Open zvena" : cta?.label ?? "Get started for free"}
+                {user ? "Open zvena" : cta?.label ?? "Get started"}
               </Link>
               {!user && (
                 <Link className="zv-btn zv-btn-lg" href="/docs">

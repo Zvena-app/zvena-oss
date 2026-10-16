@@ -17,7 +17,7 @@ cd web && npm ci
 npm run dev                                     # http://localhost:3100, env variables: deploy/.env.example
 ```
 
-Design (the Penpot fork) builds in Docker: `design/bin/build-frontend.sh` and `design/bin/build-backend.sh`; a full stand starts with `deploy/scripts/up.sh` (README, "Test stand and production"). Use fake data only on test stands.
+Design (the Penpot fork) builds in Docker: `design/bin/build-frontend.sh` and `design/bin/build-backend.sh`; a full stand starts with `deploy/scripts/up.sh` (README, "Everything on your computer" and "Development"). Use fake data only on test stands.
 
 ## Making a change
 
@@ -31,7 +31,7 @@ Design (the Penpot fork) builds in Docker: `design/bin/build-frontend.sh` and `d
    and the browser suites that cover what you touched (`web/tests/e2e/*.mjs`, see README). GitHub runs the same checks, plus `npm run build`, the client apps' tests, shellcheck and the access-log masking test, on every push and pull request (`.github/workflows/ci.yml`); a lint warning fails it.
 4. **Data and privacy.** If the change collects new personal data, sends anything to a new service, or changes what goes to an existing one (for example the decision model behind smart suggestions), say so in the pull request and in `DEPLOY.md` (operators must update their privacy policies), and add a test that pins what is sent.
 5. **Help texts** (`web/src/app/help`) describe what the code does today. A feature behind a flag is not described as available.
-6. Write the commit message as what changed and why. Commits made with an AI coding assistant are marked with a `Co-Authored-By:` line; much of zvena's code has been written that way under the maintainers' direction.
+6. Write the commit message as what changed and why.
 
 ## Reviews and releases
 

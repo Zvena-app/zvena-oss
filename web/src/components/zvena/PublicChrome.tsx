@@ -44,7 +44,7 @@ export function PublicHeader({ signedIn }: { locale?: Locale; signedIn: boolean 
                 Try Docs
               </Link>
               <Link className="zv-btn zv-btn-primary" href="/signin">
-                <span className="zs-long">Get started for free</span>
+                <span className="zs-long">Get started</span>
                 <span className="zs-short">Get started</span>
               </Link>
             </>

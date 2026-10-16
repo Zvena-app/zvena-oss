@@ -10337,7 +10337,7 @@ msgstr "आपको zvena साइन-इन पर ले जा रहे �
 
 #: zvena
 msgid "blueai.login.note"
-msgstr "zvena डॉक्स और डिज़ाइन के लिए एक ही खाता। मुफ़्त।"
+msgstr "zvena डॉक्स और डिज़ाइन के लिए एक ही खाता।"
 
 #: zvena
 msgid "blueai.menu.chat"

@@ -1,5 +1,5 @@
-// Server-Sent Events response with a heartbeat, for the Deep research routes
-// (the chat route keeps its own). Comments (": ping") keep Cloudflare/nginx
+// Server-Sent Events response with a heartbeat for streaming routes.
+// Comments (": ping") keep proxies (a CDN, nginx)
 // from closing an idle stream; the client parser only reads `data:` lines.
 
 export interface SseWriter {

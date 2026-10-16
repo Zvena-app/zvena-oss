@@ -9693,7 +9693,7 @@ msgstr "আপনাকে zvena সাইন-ইনে নিয়ে যা�
 
 #: zvena
 msgid "blueai.login.note"
-msgstr "zvena ডক্স ও ডিজাইনের জন্য একটিই অ্যাকাউন্ট। ফ্রি।"
+msgstr "zvena ডক্স ও ডিজাইনের জন্য একটিই অ্যাকাউন্ট।"
 
 #: zvena
 msgid "blueai.menu.chat"

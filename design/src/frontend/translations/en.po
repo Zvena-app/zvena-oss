@@ -10406,7 +10406,7 @@ msgstr "Taking you to zvena sign-in…"
 
 #: blueai
 msgid "blueai.login.note"
-msgstr "One account for zvena Docs and Design. Free."
+msgstr "One account for zvena Docs and Design."
 
 #: blueai
 msgid "blueai.menu.chat"

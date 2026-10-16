@@ -10112,7 +10112,7 @@ msgstr "Levando você para o login do zvena…"
 
 #: zvena
 msgid "blueai.login.note"
-msgstr "Uma conta para os Documentos e o Design do zvena. Grátis."
+msgstr "Uma conta para os Documentos e o Design do zvena."
 
 #: zvena
 msgid "blueai.menu.chat"

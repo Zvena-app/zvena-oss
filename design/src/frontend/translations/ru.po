@@ -9830,7 +9830,7 @@ msgstr "Переходим ко входу в zvena…"
 
 #: blueai
 msgid "blueai.login.note"
-msgstr "Один аккаунт для Документов и Дизайна zvena. Бесплатно."
+msgstr "Один аккаунт для Документов и Дизайна zvena."
 
 #: blueai
 msgid "blueai.menu.chat"

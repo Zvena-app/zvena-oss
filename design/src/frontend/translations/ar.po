@@ -9955,7 +9955,7 @@ msgstr "جارٍ نقلك إلى تسجيل الدخول في zvena…"
 
 #: zvena
 msgid "blueai.login.note"
-msgstr "حساب واحد لمستندات zvena وتصميمه. مجانًا."
+msgstr "حساب واحد لمستندات zvena وتصميمه."
 
 #: zvena
 msgid "blueai.menu.chat"

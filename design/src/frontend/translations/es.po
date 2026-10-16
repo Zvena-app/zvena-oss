@@ -10465,7 +10465,7 @@ msgstr "Te llevamos al inicio de sesión de zvena…"
 
 #: zvena
 msgid "blueai.login.note"
-msgstr "Una sola cuenta para Documentos y Diseño de zvena. Gratis."
+msgstr "Una sola cuenta para Documentos y Diseño de zvena."
 
 #: zvena
 msgid "blueai.menu.chat"
