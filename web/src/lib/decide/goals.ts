@@ -12,6 +12,7 @@ import { randomBytes } from "node:crypto";
 import { teamFor } from "../eco/actions";
 import { addLink } from "../eco/links";
 import { keyVisible } from "../eco/visibility";
+import { emit } from "../pulse/bus";
 import { ctxFor } from "../projects/core";
 import { createIssue, getIssueBrief } from "../projects/issues";
 import { listStatuses } from "../projects/teams";
@@ -65,7 +66,23 @@ export function setGoal(ws: string, g: GoalInput, by: string): Reaction | { erro
   }
   const metric = visibleMetrics(ws, by, metricsOf(ws)).find((m) => m.key === g.key);
   if (!metric) return { error: "no number" };
-  return saveReaction(ws, goalReaction(g), by);
+  const saved = saveReaction(ws, goalReaction(g), by);
+  if (!("error" in saved)) closeGoalProposals(ws, g.issue, by);
+  return saved;
+}
+
+/**
+ * The issue has its goal now: a proposal for it still waiting (lib/decide/autogoal.ts) has
+ * nothing left to propose, and leaves "Waiting for you". (Accepting one, journal.ts marks it
+ * accepted right after.)
+ */
+export function closeGoalProposals(ws: string, issue: string, by: string): void {
+  const now = Date.now();
+  const rows = sql("SELECT id FROM dz_decisions WHERE ws = ? AND subject = ? AND status = 'pending' AND actions LIKE '{\"kind\":\"goal\"%'").all(ws, `issue:${issue}`) as { id: string }[];
+  for (const r of rows) {
+    sql("UPDATE dz_decisions SET status = 'expired', resolved_by = ?, resolved_at = ? WHERE id = ? AND status = 'pending'").run(by, now, r.id);
+    emit(ws, { type: "decision", ref: r.id, by, data: { mode: "expired" } });
+  }
 }
 
 export interface GoalView {

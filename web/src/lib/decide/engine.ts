@@ -20,6 +20,7 @@ import { sql, store, tx } from "../store";
 import { runAction, subjectsFor, targetsOf, type Subject } from "./adapters";
 import { ask, noul, setWorkspaceGate, smartAvailable, smartDefault } from "./smart";
 import { cleanAction, cleanReaction, compare, MAX_REACTIONS, type Action, type Reaction } from "./model";
+import { metricReadable } from "./sources";
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS dz_reactions (
@@ -213,6 +214,9 @@ export function saveReaction(ws: string, raw: unknown, by: string): Reaction | {
     if ((a.do === "notes.done" || a.do === "notes.set") && a.note !== "$row" && !atLeast(docs.level(a.note), "edit")) return { error: "forbidden" };
     if (a.do === "links.done" && a.from.startsWith("note:") && docs.level(a.from.slice(5)) === null) return { error: "forbidden" };
   }
+  // A rule on a live number reads it as the person who saves it, as a goal set from an issue does:
+  // a number counted from the workspace only while they may see it (never a colleague's mail).
+  if (r.when.type === "metric" && !metricReadable(ws, r.when.key, by)) return { error: "forbidden" };
   tx(() => {
     sql("INSERT INTO dz_reactions (id, ws, json, updated_by, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET json = excluded.json, updated_by = excluded.updated_by, updated_at = excluded.updated_at").run(r.id, ws, JSON.stringify(r), by, Date.now());
     // A changed reaction judges every subject afresh.
@@ -255,9 +259,10 @@ export async function judge(ws: string, r: Reaction, s: Subject): Promise<Verdic
   if (c.kind === "compare") return { hit: compare(s.facts[c.field], c.op, c.value), source: "rule", mode: "auto" };
   if (!settingsOf(ws).smart || !smartAvailable()) return null;
   // Only the chosen fields leave the server, and never one that names a person (an assignee,
-  // a person, e-mail or phone column): a question about those has no answer, nothing happens.
+  // a person, e-mail or phone column, a formula or rollup that may read one; the people a page's
+  // text mentions): a question about those has no answer, nothing happens.
   const state: Record<string, unknown> = {};
-  for (const f of c.fields) if (f in s.facts && !s.personal?.includes(f)) state[f] = s.facts[f];
+  for (const f of c.fields) if (f in s.facts && !s.personal?.includes(f)) state[f] = f === "@body" && s.bodyForModel ? s.bodyForModel() : s.facts[f];
   if (!Object.keys(state).length) return null;
   const out = await ask(ws, state, { yes: noul(c.question) });
   if (!out) return null;
@@ -442,11 +447,22 @@ function purgeOld(now: number): void {
   if (now - st.lastPurge < 3600_000) return;
   st.lastPurge = now;
   try {
-    sql("DELETE FROM dz_decisions WHERE at < ?").run(now - DECISIONS_KEEP);
-    sql("UPDATE dz_decisions SET status = 'expired' WHERE status = 'pending' AND at < ?").run(now - SUGGESTION_TTL);
+    pruneDecisions(now);
   } catch {
     // Retried next hour.
   }
+}
+
+/**
+ * The decision log keeps 90 days (/legal/privacy#retention), and a suggestion nobody answered
+ * expires after 14. Runs hourly from lib/maintenance.ts in every workspace, rules or not
+ * (the hub's and Documents automations' records live here too). Returns how many went.
+ */
+export function pruneDecisions(now = Date.now()): number {
+  ensureSchema();
+  const n = Number(sql("DELETE FROM dz_decisions WHERE at < ?").run(now - DECISIONS_KEEP).changes);
+  sql("UPDATE dz_decisions SET status = 'expired' WHERE status = 'pending' AND at < ?").run(now - SUGGESTION_TTL);
+  return n;
 }
 
 /** Starts hearing the pulse (once per process; src/instrumentation.ts). */

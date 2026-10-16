@@ -31,7 +31,7 @@ import type { Automation } from "../notes/automations";
 import type { DbProperty, Note } from "../notes/types";
 import { notify } from "../eco/inbox";
 import { sql } from "../store";
-import { personalColumns } from "./adapters";
+import { NOT_SENT_TYPES, personalColumns } from "./adapters";
 import { ensureSchema, settingsOf } from "./engine";
 import { ask, noul, smartAvailable } from "./smart";
 import { recordHub, registerHubKind, type HubPayload, type Settle } from "./journal";
@@ -42,11 +42,8 @@ export const SUGGEST = 0.6;
 /** Questions per workspace per hour, and journal lines per workspace per minute. */
 const ASKS_PER_HOUR = 200;
 const LINES_PER_MINUTE = 60;
-/**
- * Columns never sent, whatever the automation lists: files and buttons hold no words; formulas,
- * rollups and relations may read columns that name a person, or pages its author cannot open.
- */
-const NOT_SENT = new Set<DbProperty["type"]>(["button", "files", "formula", "rollup", "relation"]);
+/** Columns never sent, whatever the automation lists (files, buttons, formulas, rollups, relations: adapters.ts). */
+const NOT_SENT = NOT_SENT_TYPES;
 /** Values Undo can put back: ids, numbers, dates, booleans — never text. */
 const UNDOABLE = new Set<DbProperty["type"]>(["select", "status", "multi_select", "checkbox", "number", "date", "person"]);
 

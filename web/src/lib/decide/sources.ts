@@ -43,7 +43,7 @@ import { onChange } from "../projects/events";
 import { goalCountFor } from "../projects/goals";
 import { getProject } from "../projects/planning";
 import { sql, store } from "../store";
-import { ensureSchema, putMetric } from "./engine";
+import { ensureSchema, putMetric, SOURCE_KEY_RE } from "./engine";
 
 export type DocsFn = "count" | "sum" | "average" | "median" | "min" | "max";
 export const DOCS_FNS: readonly DocsFn[] = ["count", "sum", "average", "median", "min", "max"];
@@ -633,6 +633,17 @@ export function visibleMetrics<T extends { key: string }>(ws: string, userId: st
     const s = sources.get(m.key);
     return !s || canSee(ws, s, userId);
   });
+}
+
+/**
+ * Whether a person may read one live number, by its key: a typed or pushed one, as every
+ * member; one counted from the workspace (docs:, project:, calendar:, mail:), only while its
+ * source exists and they may see it (canSee). Rules and goals read numbers through this.
+ */
+export function metricReadable(ws: string, key: string, userId: string | null): boolean {
+  if (!SOURCE_KEY_RE.test(key)) return true;
+  const row = userId ? sourceOf(ws, key) : null;
+  return row !== null && canSee(ws, row, userId as string);
 }
 
 /** Forgets who may see which number (tests; an access change is otherwise picked up within SEEN_MS). */

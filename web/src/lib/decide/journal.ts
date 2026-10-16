@@ -22,7 +22,7 @@ import { resolveSuggestion } from "../projects/autopilot";
 import { sql } from "../store";
 import { decisionsOf, deleteReaction, ensureSchema, metricsOf, reactionsOf, resolveDecision, visibleRules } from "./engine";
 import { cleanReaction, type Reaction } from "./model";
-import { goalIssueOf, setGoal, type GoalOp } from "./goals";
+import { closeGoalProposals, goalIssueOf, setGoal, type GoalOp } from "./goals";
 import { visibleMetrics } from "./sources";
 
 /** What a hub record did or proposes (kept in dz_decisions.actions). */
@@ -189,6 +189,11 @@ export function resolve(ws: string, id: string, accept: boolean, by: string): Se
   const h = handlers.get(p.kind);
   if (h?.accept) return h.accept(ws, id, p, by);
   if (p.kind !== "goal" || p.reaction.when.type !== "metric" || p.reaction.if.kind !== "compare" || typeof p.reaction.if.value !== "number") return "gone";
+  // The issue got its goal another way meanwhile (set by hand): nothing left to accept, and no second goal.
+  if (reactionsOf(ws).some((r) => goalIssueOf(r) === p.issue)) {
+    closeGoalProposals(ws, p.issue, by);
+    return "gone";
+  }
   // The goal is saved as the person who accepts it, through the same checks as one they set by hand:
   // they may edit the issue and see the number; their rights read it and close the issue.
   const saved = setGoal(ws, { issue: p.issue, key: p.reaction.when.key, op: p.reaction.if.op as GoalOp, target: p.reaction.if.value, docs: p.reaction.then.some((a) => a.do === "links.done") }, by);
@@ -352,6 +357,7 @@ export function activityOf(ws: string, userId: string, limit = 50): ActivityItem
   const n = namer(ws, userId);
   const reactions = reactionsOf(ws);
   const goals = new Map(reactions.map((r) => [r.id, goalIssueOf(r)]));
+  const withGoal = new Set([...goals.values()].filter(Boolean));
   const { decisions } = visibleRules(ws, userId, reactions, decisionsOf(ws, 200));
   const payloads = new Map(
     (sql("SELECT id, actions FROM dz_decisions WHERE ws = ? AND actions LIKE '{\"kind\":%' ORDER BY at DESC LIMIT 400").all(ws) as { id: string; actions: string }[]).map((r) => [r.id, payloadOf(r.actions)])
@@ -363,6 +369,8 @@ export function activityOf(ws: string, userId: string, limit = 50): ActivityItem
     let subject = d.subject;
     const detail: ActivityItem["detail"] = {};
     if (p?.kind === "goal") {
+      // A proposal for an issue that has its goal by now (one set by hand) waits for nobody.
+      if (d.status === "pending" && withGoal.has(p.issue)) continue;
       kind = "goal_linked";
       subject = `issue:${p.issue}`;
       if (p.reaction.when.type === "metric" && p.reaction.if.kind === "compare") {

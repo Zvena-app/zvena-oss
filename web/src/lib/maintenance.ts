@@ -2,7 +2,8 @@
 // (src/instrumentation.ts) — no separate cron service to forget about:
 //   hourly  expired sessions/codes/presence, retries of Design deletions
 //           left by account deletion, due-date reminders of Projects, cycles
-//           that ended (their unfinished issues roll over to the next one)
+//           that ended (their unfinished issues roll over to the next one),
+//           suggestions and the decision log past their retention
 //   daily   guest uploads unused for the TTL (people were warned in the
 //           banner), expired invites, the security journal past a year,
 //           map address lookups past 30 days, page history thinning
@@ -14,6 +15,7 @@ import { retryDesignDeletions } from "./account";
 import { sendDueReminders } from "./projects/issues";
 import { rollOverCycles } from "./projects/planning";
 import { pruneSuggestions } from "./projects/autopilot";
+import { pruneDecisions } from "./decide/engine";
 import { pruneConversions } from "./projects/from-doc";
 import { purgeGeoCache, warnMapsContact } from "./maps";
 import { verificationUpkeep } from "./notes/verification-server";
@@ -41,6 +43,7 @@ export async function runMaintenance(now = Date.now()): Promise<Record<string, n
   done.dueReminders = sendDueReminders(now);
   done.cyclesRolledOver = rollOverCycles(now);
   done.suggestionsPruned = pruneSuggestions(now);
+  done.decisionsPruned = pruneDecisions(now);
   done.docConversionsPruned = pruneConversions(now);
   if (now - lastRun("daily") >= DAY - 5 * 60_000) {
     const g = await cleanupGuests(now);

@@ -23,6 +23,7 @@ import type { StatusCategory } from "../projects/types";
 import { backlinksOf, linksOf } from "../eco/links";
 import { sql } from "../store";
 import type { Action, When } from "./model";
+import { metricReadable } from "./sources";
 
 export interface Subject {
   /** Stable id of what is judged ("metric:revenue", "note:<row id>"): the edge is kept per subject. */
@@ -32,12 +33,37 @@ export interface Subject {
   rowId?: string;
   /** The issue that fired (for "$subject" in actions). */
   issueId?: string;
-  /** Facts that name or reach a person (assignee, person, e-mail, phone columns): rules may compare them, the model never gets them. */
+  /**
+   * Facts the model never gets, though rules may compare them: those that name or reach a person
+   * (assignee, person, e-mail, phone columns) and computed ones that may read such a column or a
+   * page the author cannot open (formulas, rollups, relations; files and buttons hold no words).
+   */
   personal?: string[];
+  /** What the model may read of a page's text ("@body"): the text without the people it mentions. */
+  bodyForModel?: () => string;
 }
 
 /** Column types whose values name or reach a person. */
 const PERSONAL_TYPES = new Set(["person", "created_by", "last_edited_by", "email", "phone"]);
+
+/**
+ * Column types never sent to the model, whatever a rule or an automation lists: files and buttons
+ * hold no words; formulas, rollups and relations may read columns that name a person, or pages
+ * the author cannot open.
+ */
+export const NOT_SENT_TYPES: ReadonlySet<DbProperty["type"]> = new Set<DbProperty["type"]>(["button", "files", "formula", "rollup", "relation"]);
+
+/** A page's blocks without the people they mention (@name chips): what the model may read of its text. */
+export function withoutPeople(v: unknown): unknown {
+  if (Array.isArray(v)) return v.filter((x) => !isPersonMention(x)).map(withoutPeople);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, withoutPeople(x)]));
+  return v;
+}
+
+function isPersonMention(x: unknown): boolean {
+  const n = x as { type?: unknown; props?: { userId?: unknown; name?: unknown } } | null;
+  return Boolean(n && typeof n === "object" && n.type === "mention" && (n.props?.userId || n.props?.name));
+}
 
 /** The names of a database's columns that name or reach a person (never sent to the model). */
 export function personalColumns(props: DbProperty[]): string[] {
@@ -52,6 +78,9 @@ export function personalColumns(props: DbProperty[]): string[] {
 export function subjectsFor(ws: string, when: When, e: PulseEvent, ruleId?: string): Subject[] {
   if (when.type === "metric") {
     if (e.type !== "metric" || e.ref !== when.key) return [];
+    // A number counted from the workspace is read as the rule's author: one they may not see
+    // (someone else's mail, pages hidden from them) is no subject of theirs.
+    if (!metricReadable(ws, when.key, ruleId ? ruleAuthor(ws, `rule:${ruleId}`) : null)) return [];
     return [{ key: `metric:${when.key}`, facts: { value: e.data?.value ?? null, key: when.key, label: e.data?.label ?? null } }];
   }
   if (when.type === "notes") {
@@ -66,13 +95,14 @@ export function subjectsFor(ws: string, when: When, e: PulseEvent, ruleId?: stri
     // title, not in a comparison, never sent to the model.
     const hidden = deniedColumns(db.db, { id: reader.userId, groups: reader.groups, full: reader.level(when.db) === "full" });
     const props = db.db.properties.filter((p) => hidden.get(p.id) !== "view");
-    const personal = personalColumns(props);
+    const personal = [...personalColumns(props), ...props.filter((p) => NOT_SENT_TYPES.has(p.type)).map((p) => p.name)];
     const out: Subject[] = [];
     for (const id of ids) {
       const row = loadNote(ws, id);
       if (!row || row.parentId !== when.db || row.template || row.trashedAt !== null) continue;
       if (reader.level(id) === null) continue;
-      out.push({ key: `note:${id}`, facts: rowFacts(row, props), rowId: id, personal });
+      const bodyForModel = () => blocksText(withoutPeople(row.content), 0, 4000).slice(0, 4000);
+      out.push({ key: `note:${id}`, facts: rowFacts(row, props), rowId: id, personal, bodyForModel });
     }
     return out;
   }
