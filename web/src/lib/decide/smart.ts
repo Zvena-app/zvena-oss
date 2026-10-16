@@ -15,13 +15,17 @@
 // registered switch (setWorkspaceGate) nothing is sent at all. Built for speed
 // and for failing safe: a time budget (default 1.5 s; answers take 70–500 ms),
 // one retry on 429/529 while the budget lasts, a short cache of identical
-// questions, and a breaker that stops calling for a minute after repeated
-// failures. Every failure returns null and the caller carries on without a
+// questions, a cap on the answer's size (ZVENA_AI_MAX_RESPONSE_BYTES, read as
+// a stream: a provider cannot make the server buffer more), and a breaker
+// that stops calling for a minute after repeated failures. Every failure returns null and the caller carries on without a
 // decision; nothing waits on the model or breaks because of it.
 //
 // No SDK on purpose: one fetch, no dependency to audit or update.
 
 import { createHash } from "node:crypto";
+import type { DatabaseSync } from "node:sqlite";
+import { readBodyCapped } from "../safe-json";
+import { sql, store, tx } from "../store";
 
 /** Instructions and criteria may be text or structured. */
 export type Instr = string | Record<string, unknown> | unknown[] | null;
@@ -123,46 +127,105 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // The spending budget: every question costs money, so the server asks at most
 // ZVENA_AI_DAILY_QUESTIONS questions a day in all and ZVENA_AI_WS_DAILY_QUESTIONS
 // for one workspace (UTC days), and never sends a state bigger than
-// ZVENA_AI_MAX_BYTES. Over budget, ask() answers null like any other failure:
-// callers already carry on without a decision. Answers from the cache are free.
+// ZVENA_AI_MAX_BYTES. The counts live in the database (smart_budget), so a
+// restart or a second process does not hand out a new day's budget; the check
+// and the take are one transaction. What is charged, per call of ask():
+//   - one per question asked, once: a retry after 429/529 is the same question;
+//   - an answer from the cache is free;
+//   - a request that went out and then failed or timed out stays charged (the
+//     provider may have answered and billed it; refunds would let a failing
+//     provider be asked without end); only a call that sent nothing at all
+//     gives its questions back;
+//   - over budget: null, like any other failure, and nothing is taken —
+//     callers already carry on without a decision.
+// Rows older than a week are pruned (once a day per process).
+const BUDGET_SCHEMA = `
+CREATE TABLE IF NOT EXISTS smart_budget (
+  day TEXT NOT NULL,                 -- UTC, YYYY-MM-DD
+  ws TEXT NOT NULL,
+  used INTEGER NOT NULL,
+  PRIMARY KEY (day, ws)
+);`;
+const BUDGET_KEEP_DAYS = 7;
 interface Budget {
-  day: string;
-  total: number;
-  byWs: Map<string, number>;
+  /** The database handle the table was made on. */
+  db: DatabaseSync | null;
+  /** The last day old rows were pruned. */
+  pruned: string;
 }
 const BUDGET_KEY = Symbol.for("zvena.smart.budget");
 const gb = globalThis as unknown as Record<symbol, Budget | undefined>;
-const budget: Budget = (gb[BUDGET_KEY] ??= { day: "", total: 0, byWs: new Map() });
+const budget: Budget = (gb[BUDGET_KEY] ??= { db: null, pruned: "" });
 
 function limits() {
   const n = (name: string, def: number) => {
     const v = Number(process.env[name]);
     return Number.isFinite(v) && v >= 0 && process.env[name]?.trim() ? Math.floor(v) : def;
   };
-  return { total: n("ZVENA_AI_DAILY_QUESTIONS", 20_000), perWs: n("ZVENA_AI_WS_DAILY_QUESTIONS", 1_000), maxBytes: n("ZVENA_AI_MAX_BYTES", 32_768) };
+  return {
+    total: n("ZVENA_AI_DAILY_QUESTIONS", 20_000),
+    perWs: n("ZVENA_AI_WS_DAILY_QUESTIONS", 1_000),
+    maxBytes: n("ZVENA_AI_MAX_BYTES", 32_768),
+    maxResponseBytes: n("ZVENA_AI_MAX_RESPONSE_BYTES", 262_144),
+  };
+}
+
+const dayOf = (now: number) => new Date(now).toISOString().slice(0, 10);
+
+function budgetTable(now: number): void {
+  const d = store();
+  if (budget.db !== d) {
+    d.exec(BUDGET_SCHEMA);
+    budget.db = d;
+  }
+  const day = dayOf(now);
+  if (budget.pruned !== day) {
+    budget.pruned = day;
+    sql("DELETE FROM smart_budget WHERE day < ?").run(dayOf(now - BUDGET_KEEP_DAYS * 86_400_000));
+  }
 }
 
 /** Takes `n` questions from today's budget for `ws`; false (and nothing taken) when it would go over. */
 function spend(ws: string, n: number, now: number): boolean {
-  const day = new Date(now).toISOString().slice(0, 10);
-  if (budget.day !== day) {
-    budget.day = day;
-    budget.total = 0;
-    budget.byWs.clear();
-  }
+  budgetTable(now);
+  const day = dayOf(now);
   const lim = limits();
-  const used = budget.byWs.get(ws) ?? 0;
-  if (budget.total + n > lim.total || used + n > lim.perWs) return false;
-  budget.total += n;
-  budget.byWs.set(ws, used + n);
-  return true;
+  // BEGIN IMMEDIATE: no other writer between the check and the take.
+  return tx(() => {
+    const c = sql("SELECT COALESCE(SUM(used), 0) AS total, COALESCE(SUM(CASE WHEN ws = ? THEN used END), 0) AS mine FROM smart_budget WHERE day = ?").get(ws, day) as { total: number; mine: number };
+    if (Number(c.total) + n > lim.total || Number(c.mine) + n > lim.perWs) return false;
+    sql("INSERT INTO smart_budget (day, ws, used) VALUES (?, ?, ?) ON CONFLICT(day, ws) DO UPDATE SET used = used + excluded.used").run(day, ws, n);
+    return true;
+  });
+}
+
+/** Gives back what spend() took on `day` when nothing was sent. */
+function refund(ws: string, n: number, day: string): void {
+  sql("UPDATE smart_budget SET used = MAX(0, used - ?) WHERE day = ? AND ws = ?").run(n, day, ws);
 }
 
 /** Today's spending, for /status and tests. */
 export function smartBudget(now = Date.now()) {
-  const day = new Date(now).toISOString().slice(0, 10);
+  budgetTable(now);
+  const day = dayOf(now);
   const lim = limits();
-  return { day, used: budget.day === day ? budget.total : 0, limit: lim.total, perWorkspace: lim.perWs };
+  const used = Number((sql("SELECT COALESCE(SUM(used), 0) AS used FROM smart_budget WHERE day = ?").get(day) as { used: number }).used);
+  return { day, used, limit: lim.total, perWorkspace: lim.perWs };
+}
+
+/** The answer's body as JSON, read with a cap (a lying or missing Content-Length cannot make it bigger); null past it or when it is not JSON. */
+async function answerJson(res: Response, maxBytes: number): Promise<unknown> {
+  const body = await readBodyCapped(res, maxBytes);
+  if (!body.ok) {
+    // Too big by its Content-Length: the body was never read; let the connection go.
+    await res.body?.cancel().catch(() => undefined);
+    return null;
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(body.bytes)) as unknown;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -180,14 +243,18 @@ export async function ask<Qs extends Record<string, Question>>(ws: string, state
   const hash = createHash("sha256").update(body).digest("base64url");
   const hit = cacheMs > 0 ? st.cache.get(hash) : undefined;
   if (hit && t0 - hit.at < cacheMs) return { ...(hit.value as Omit<SmartResult<Qs>, "ms" | "cached">), ms: 0, cached: true };
-  if (Buffer.byteLength(body) > limits().maxBytes) return null;
-  if (!spend(ws, Math.max(1, Object.keys(questions).length), t0)) return null;
+  const lim = limits();
+  if (Buffer.byteLength(body) > lim.maxBytes) return null;
+  const cost = Math.max(1, Object.keys(questions).length);
+  if (!spend(ws, cost, t0)) return null;
+  let sent = 0;
 
   const deadline = t0 + (opts.timeoutMs ?? cfg.timeoutMs);
   for (let attempt = 0; attempt < 2; attempt++) {
     const left = deadline - Date.now();
     if (left < 50) break;
     try {
+      sent++;
       const res = await fetch(cfg.endpoint, {
         method: "POST",
         headers: { authorization: `Bearer ${cfg.key}`, "content-type": "application/json" },
@@ -195,12 +262,17 @@ export async function ask<Qs extends Record<string, Question>>(ws: string, state
         signal: AbortSignal.timeout(left),
       });
       if (res.status === 429 || res.status === 529) {
+        await res.body?.cancel().catch(() => undefined);
         const ra = Number(res.headers.get("retry-after"));
         await sleep(Math.min(Number.isFinite(ra) && ra > 0 ? ra * 1000 : 150, Math.max(0, deadline - Date.now() - 100)));
         continue;
       }
-      if (!res.ok) break;
-      const out = (await res.json()) as { model?: unknown; answers?: unknown; usage?: unknown };
+      if (!res.ok) {
+        await res.body?.cancel().catch(() => undefined);
+        break;
+      }
+      const out = (await answerJson(res, lim.maxResponseBytes)) as { model?: unknown; answers?: unknown; usage?: unknown } | null;
+      if (!out || typeof out !== "object") break;
       const answers = validAnswers(out.answers, questions);
       if (!answers) break;
       const value = {
@@ -220,10 +292,12 @@ export async function ask<Qs extends Record<string, Question>>(ws: string, state
       }
       return { ...value, ms, cached: false };
     } catch {
-      // Timeout or network: give up for this call (the budget is spent).
+      // Timeout or network: give up for this call (the budget stays spent: the request may have been billed).
       break;
     }
   }
+  // Nothing went out at all (the time budget was gone before the first try): the questions are given back.
+  if (!sent) refund(ws, cost, dayOf(t0));
   st.calls++;
   st.errors++;
   st.totalMs += Date.now() - t0;
@@ -285,15 +359,21 @@ function validUsage(u: unknown): { input_tokens: number; output_tokens: number }
   return { input_tokens: n(r.input_tokens), output_tokens: n(r.output_tokens) };
 }
 
-/** Test hook: forget the cache, the counters and the breaker. */
-export function resetSmart(): void {
+/**
+ * Test hook: forget the cache, the counters and the breaker — what a restart
+ * forgets — and, unless `budget: false`, today's spending in the database too.
+ */
+export function resetSmart(opts: { budget?: boolean } = {}): void {
   st.cache.clear();
   st.failures = 0;
   st.openUntil = 0;
   st.calls = 0;
   st.errors = 0;
   st.totalMs = 0;
-  budget.day = "";
-  budget.total = 0;
-  budget.byWs.clear();
+  budget.db = null;
+  budget.pruned = "";
+  if (opts.budget !== false) {
+    budgetTable(Date.now());
+    sql("DELETE FROM smart_budget").run();
+  }
 }

@@ -17,8 +17,9 @@ export type CappedJson =
 /**
  * The request body as bytes, read as a stream and cut off at `maxBytes`:
  * a body without Content-Length (chunked) never grows past the budget.
+ * Works on a fetch Response too (an upstream's answer).
  */
-export async function readBodyCapped(req: Request, maxBytes: number): Promise<{ ok: true; bytes: Uint8Array } | { ok: false; status: 400 | 413 }> {
+export async function readBodyCapped(req: Pick<Request, "headers" | "body">, maxBytes: number): Promise<{ ok: true; bytes: Uint8Array } | { ok: false; status: 400 | 413 }> {
   if (Number(req.headers.get("content-length") ?? "0") > maxBytes) return { ok: false, status: 413 };
   if (!req.body) return { ok: true, bytes: new Uint8Array(0) };
   const reader = req.body.getReader();
