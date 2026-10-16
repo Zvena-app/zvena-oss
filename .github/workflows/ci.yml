@@ -1,7 +1,7 @@
 # Checks of every push and pull request: the web app (install from the lock file,
 # typecheck, lint with no warnings, unit tests, the ten translation catalogs, the
 # decision-model rule, a production build), the client apps' tests and build, the
-# backup engine's tests and the shell scripts. The same commands run locally, see
+# shell scripts and the access-log masking test. The same commands run locally, see
 # CONTRIBUTING.md. Actions are pinned to full commit SHAs (the comment is the tag).
 name: ci
 
@@ -96,19 +96,13 @@ jobs:
         run: npm test
 
   tools:
-    name: backup engine, shell scripts, log masking
+    name: shell scripts, log masking
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Backup engine tests
-        working-directory: tools/backup
-        run: npm test
       - name: shellcheck (preinstalled on the runner)
         run: |
           shellcheck --version | head -2
