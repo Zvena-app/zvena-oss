@@ -71,6 +71,9 @@
   "overrides": {
     "mermaid": {
       "katex": "$katex"
+    },
+    "mammoth": {
+      "argparse": "2.0.1"
     }
   }
 }
