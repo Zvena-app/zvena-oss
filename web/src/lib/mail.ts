@@ -1,12 +1,9 @@
-// Server-only: e-mail. Resend's API when RESEND_API_KEY is set (MAIL_FROM is
-// the sender on a domain verified in Resend), otherwise an SMTP server
-// (SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, SMTP_FROM).
-// Without either, letters are written as .eml files to ZVENA_MAIL_OUTBOX
+// Server-only: e-mail through an SMTP server (SMTP_HOST, SMTP_PORT,
+// SMTP_SECURE, SMTP_USER, SMTP_PASS, SMTP_FROM). Without one, letters are written as .eml files to ZVENA_MAIL_OUTBOX
 // (the test stand) or dropped. Addresses and texts are never written to logs.
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { config } from "./config";
 import { sql } from "./store";
 
 export interface Letter {
@@ -75,9 +72,9 @@ export function lettersLeave(): boolean {
   return mailConfigured() || Boolean(process.env.ZVENA_MAIL_OUTBOX);
 }
 
-/** Letters can actually leave the server (Resend or SMTP). */
+/** Letters can actually leave the server (SMTP). */
 export function mailConfigured(): boolean {
-  return config.resend.enabled || smtpConfigured();
+  return smtpConfigured();
 }
 
 function encodeHeader(v: string): string {
@@ -89,7 +86,7 @@ async function toOutbox(letter: Letter): Promise<"outbox" | "skipped"> {
   if (!dir) return "skipped";
   await mkdir(dir, { recursive: true, mode: 0o700 });
   const name = `${new Date().toISOString().replace(/[:.]/g, "-")}-${Math.random().toString(36).slice(2, 8)}.eml`;
-  const from = config.resend.enabled ? config.resend.from : process.env.SMTP_FROM || "zvena <noreply@zvena.local>";
+  const from = process.env.SMTP_FROM || "zvena <noreply@zvena.local>";
   const head = `From: ${from}\r\nTo: ${letter.to}\r\nSubject: ${encodeHeader(letter.subject)}\r\n`;
   let eml = `${head}Content-Type: text/plain; charset=utf-8\r\n\r\n${letter.text}\r\n`;
   if (letter.attachments?.length) {
@@ -101,30 +98,6 @@ async function toOutbox(letter: Letter): Promise<"outbox" | "skipped"> {
   }
   await writeFile(join(dir, name), eml, { mode: 0o600 });
   return "outbox";
-}
-
-async function viaResend(letter: Letter): Promise<"sent" | "failed"> {
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { authorization: `Bearer ${config.resend.apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({
-        from: config.resend.from,
-        to: [letter.to],
-        subject: letter.subject,
-        text: letter.text,
-        ...(letter.html ? { html: letter.html } : {}),
-        ...(letter.attachments?.length ? { attachments: letter.attachments.map((a) => ({ filename: a.filename, content: Buffer.from(a.content).toString("base64"), content_type: a.contentType })) } : {}),
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (res.ok) return "sent";
-    console.error(`[mail] resend refused the letter (HTTP ${res.status})`);
-    return "failed";
-  } catch (e) {
-    console.error(`[mail] resend unreachable (${e instanceof Error ? e.name : "error"})`);
-    return "failed";
-  }
 }
 
 async function viaSmtp(letter: Letter): Promise<"sent" | "failed"> {
@@ -157,7 +130,6 @@ async function viaSmtp(letter: Letter): Promise<"sent" | "failed"> {
 export async function sendMail(letter: Letter): Promise<"sent" | "outbox" | "skipped" | "failed"> {
   if (!lettersLeave()) return "skipped";
   if (!takeMailBudget(letter.kind)) return "failed";
-  if (config.resend.enabled) return viaResend(letter);
   if (smtpConfigured()) return viaSmtp(letter);
   return toOutbox(letter);
 }

@@ -220,13 +220,12 @@ test("forms on routes without a session are read with a cap", async () => {
 // --- This instance's identity ---------------------------------------------------------------
 
 test("own identity: default addresses and the sites CNAME come from APP_URL, never another install's domain", () => {
-  withEnv({ APP_URL: "https://work.example.org", ZVENA_SITES_CNAME: undefined, ZVENA_SUPPORT_EMAIL: undefined, ZVENA_CONTACT_EMAIL: undefined, MAIL_FROM: undefined }, () => {
+  withEnv({ APP_URL: "https://work.example.org", ZVENA_SITES_CNAME: undefined, ZVENA_SUPPORT_EMAIL: undefined, ZVENA_CONTACT_EMAIL: undefined }, () => {
     assert.equal(sitesCnameTarget(), "sites.work.example.org");
     assert.equal(config.company.email, "admin@work.example.org");
     assert.equal(config.company.supportEmail, "admin@work.example.org", "one inbox unless the operator sets more");
-    assert.equal(config.resend.from, "zvena <noreply@work.example.org>");
   });
-  withEnv({ APP_URL: "https://zvena.app", ZVENA_SITES_CNAME: undefined, ZVENA_SUPPORT_EMAIL: undefined, ZVENA_CONTACT_EMAIL: undefined, MAIL_FROM: undefined }, () => {
+  withEnv({ APP_URL: "https://zvena.app", ZVENA_SITES_CNAME: undefined, ZVENA_SUPPORT_EMAIL: undefined, ZVENA_CONTACT_EMAIL: undefined }, () => {
     assert.equal(sitesCnameTarget(), "sites.zvena.app");
     assert.equal(config.company.email, "admin@zvena.app");
   });

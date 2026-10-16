@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { translate } from "@/lib/i18n";
 import { lettersLeave } from "@/lib/mail";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { pageLocale, requireUser } from "@/lib/page";
 import { Welcome } from "./Welcome";
 import "./welcome.css";

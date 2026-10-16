@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { joinableWorkspaces } from "@/lib/enterprise/join";
 import { translate } from "@/lib/i18n";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { requireUser } from "@/lib/page";
 import { PublicFooter, PublicHeader } from "@/components/zvena/PublicChrome";
 import { JoinDomainList } from "./JoinDomainList";

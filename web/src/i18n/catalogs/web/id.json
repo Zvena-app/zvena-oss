@@ -24,8 +24,6 @@
   "landing.terms": "Dengan melanjutkan, Anda menyetujui {terms} dan menyatakan telah membaca {privacy}.",
   "signin.title": "Masuk ke zvena",
   "signin.lead": "Masuk atau buat akun — tanpa sandi.",
-  "signin.google": "Lanjutkan dengan Google",
-  "signin.github": "Lanjutkan dengan GitHub",
   "signin.email": "Lanjutkan dengan email",
   "signin.emailLabel": "Alamat email",
   "signin.emailPlaceholder": "Alamat email Anda",

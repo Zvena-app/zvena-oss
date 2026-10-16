@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { config } from "@/lib/config";
 import { translate } from "@/lib/i18n";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { pageUser } from "@/lib/page";
 import { legalDate } from "@/components/zvena/LegalPage";
 import { PublicFooter, PublicHeader } from "@/components/zvena/PublicChrome";

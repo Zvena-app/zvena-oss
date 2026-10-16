@@ -2,8 +2,8 @@
 # Health watch for cron (every 5 minutes): the web app's /api/health (it also
 # checks the database, files, Design and mail), the public HTTPS addresses,
 # free disk and the age of the last backup. Mails ALERT_EMAIL when the state
-# changes (problem / recovered) — through Resend's API when RESEND_API_KEY is
-# set, else through the SMTP server from the settings — and logs one line per
+# changes (problem / recovered) through the SMTP server from the settings,
+# and logs one line per
 # run without personal data. The new state is saved only once its alert went
 # out, so a failed alert is tried again on the next run. Secrets reach curl
 # through a config on a file descriptor, never on the command line (which any
@@ -40,18 +40,6 @@ curl_quote() {
   printf '"%s"' "${v//\"/\\\"}"
 }
 
-# Resend's API: the JSON body is built by python3 (subject and text come in
-# through the environment, so no quoting can break it).
-send_resend() {
-  local subject=$1 body=$2
-  MAIL_SUBJECT=$subject MAIL_BODY=$body MAIL_TO=$ALERT_EMAIL MAIL_SENDER=${MAIL_FROM:-zvena <noreply@localhost>} python3 -c '
-import json, os
-print(json.dumps({"from": os.environ["MAIL_SENDER"], "to": [os.environ["MAIL_TO"]], "subject": os.environ["MAIL_SUBJECT"], "text": os.environ["MAIL_BODY"]}))' |
-    curl -sS -f -m 30 https://api.resend.com/emails \
-      -K <(printf 'header = %s\n' "$(curl_quote "Authorization: Bearer $RESEND_API_KEY")") \
-      -H 'Content-Type: application/json' --data-binary @- >/dev/null
-}
-
 send_smtp() {
   local subject=$1 body=$2 from=${SMTP_FROM:-noreply@localhost} addr
   addr=$(echo "$from" | sed -E 's/.*<([^>]+)>.*/\1/')
@@ -67,9 +55,7 @@ send_smtp() {
 # 0: sent, or there is nowhere to send it; 1: it did not go out (retry next run).
 send_mail() {
   [ -n "${ALERT_EMAIL:-}" ] || return 0
-  if [ -n "${RESEND_API_KEY:-}" ]; then
-    send_resend "$1" "$2" || { log "monitor: the alert e-mail was not sent (Resend), trying again next run"; return 1; }
-  elif [ -n "${SMTP_HOST:-}" ]; then
+  if [ -n "${SMTP_HOST:-}" ]; then
     send_smtp "$1" "$2" || { log "monitor: the alert e-mail was not sent (SMTP), trying again next run"; return 1; }
   fi
   return 0

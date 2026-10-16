@@ -3,27 +3,26 @@
 How to run your own zvena server. You run every command yourself on your own server. The repository holds only files — Docker, scripts and this guide. There are no secrets in Git.
 
 > The only outside services the server talks to are:
-> - Google and GitHub — sign-in;
-> - Resend (or your SMTP server) — e-mail;
+> - your SMTP server — e-mail (sign-in links, invitations, alerts);
 > - your model provider — the optional decision model (an RLHF architecture and model) behind smart suggestions and automations, only when `ZVENA_AI_URL` and `ZVENA_AI_KEY` are set. It receives only the fields listed in `web/src/lib/decide/smart.ts` and its callers; a workspace owner can turn it off;
 > - Let's Encrypt — HTTPS certificates;
 > - Figma's API — only when someone imports a Figma file into Design with their own access token (never stored);
 > - Google Fonts — Design's font catalog, fetched by the server and cached (see "Fonts").
 >
-> The visitor's browser loads data only from your own domains: fonts are self-hosted and there is no analytics or tracking. The one exception is Google's sign-in script, which the sign-in page (only) loads when Google sign-in is configured (One Tap).
+> The visitor's browser loads data only from your own domains: fonts are self-hosted and there is no analytics or tracking.
 
 ## Contents
 
 0. [Before launch: legal checklist](#0-before-launch-legal-checklist)
 1. [What you need](#1-what-you-need)
 2. [Preparing the server](#2-preparing-the-server)
-3. [DNS and Cloudflare](#3-dns-and-cloudflare)
+3. [DNS](#3-dns)
 4. [Installing from the package](#4-installing-from-the-package)
 5. [Installing from Git](#5-installing-from-git)
 6. [Settings](#6-settings)
 7. [Images](#7-images)
 8. [First start and HTTPS](#8-first-start-and-https)
-9. [Sign-in: Google, GitHub and e-mail](#9-sign-in-google-github-and-e-mail)
+9. [Sign-in: e-mail and single sign-on](#9-sign-in-e-mail-and-single-sign-on)
 10. [Moderators](#10-moderators)
 11. [Backups](#11-backups)
 12. [Monitoring and logs](#12-monitoring-and-logs)
@@ -40,7 +39,7 @@ This is not legal advice. Go through every item with a lawyer **before** the fir
 
 1. **Who runs the server.** You do. Set `ZVENA_COMPANY_NAME` and the contact addresses (`ZVENA_CONTACT_EMAIL`, optionally `ZVENA_SUPPORT_EMAIL`, `ZVENA_PRIVACY_EMAIL`, `ZVENA_ABUSE_EMAIL`), and make sure someone reads them.
 2. **Your Terms of Service and Privacy Policy.** zvena ships no legal text of its own. Publish yours and set `ZVENA_TERMS_URL` and `ZVENA_PRIVACY_URL`; `/legal/terms` and `/legal/privacy` send people there. `/legal/cookies` describes the cookies the software sets (`web/src/app/legal/cookies/page.tsx`). When your documents change materially, move `ZVENA_CONSENT_VERSION` to that day's date: signed-in people then accept them again.
-3. **Service providers.** List the providers that handle personal data for you (hosting, Cloudflare if used, Resend or your SMTP server, your model provider if you set `ZVENA_AI_URL` and `ZVENA_AI_KEY`) in your Privacy Policy, with the agreements your law requires.
+3. **Service providers.** List the providers that handle personal data for you (hosting, a CDN or proxy if used, your SMTP server, your model provider if you set `ZVENA_AI_URL` and `ZVENA_AI_KEY`) in your Privacy Policy, with the agreements your law requires.
 4. **Smart suggestions (the decision model).** With `ZVENA_AI_URL` and `ZVENA_AI_KEY` set, smart suggestions send issue, comment and document text (which can mention people) to your model provider, on by default in every workspace; `ZVENA_AI_DEFAULT=off` makes it opt-in. What is sent is fixed in `web/src/lib/decide/smart.ts`. Without them nothing is sent.
 5. **Reports and moderation.** The report queue is at `/admin`. Appoint a moderator (section 10) and answer reports within the time your policies promise.
 6. **Source code (AGPL 3.0).** If you change zvena, people who use your server must be able to get the source of the version you run: publish it and set `ZVENA_SOURCE_URL`; the `/source` page links to it.
@@ -51,7 +50,7 @@ This is not legal advice. Go through every item with a lawyer **before** the fir
   - Building Design on the server itself needs about 15 GB more disk and 8 GB of free memory for the build. Without that, build the images on another machine (section 7).
 - **The domain** `example.com` with three names pointing to the server: `example.com`, `www.example.com` and `design.example.com` (section 3).
 - **The source**: `git clone https://github.com/Zvena-app/zvena-oss.git` if you install from Git. Installing from a package needs no GitHub at all (section 4).
-- **Accounts** for the sign-in and e-mail providers: a Google Cloud project, a GitHub account for the OAuth app, and a Resend account (section 9).
+- **An SMTP server** for e-mail: your own or your mail provider's (section 9).
 
 ## 2. Preparing the server
 
@@ -73,7 +72,7 @@ Two more steps:
 - **SSH**: key-only sign-in (`PasswordAuthentication no` in `/etc/ssh/sshd_config`, then `sudo systemctl reload ssh`). Make sure your key works before you switch passwords off.
 - **Docker Hub**: if it is unreachable from the server, configure the registry mirror your hosting provider offers (`/etc/docker/daemon.json` → `"registry-mirrors"`, then `systemctl restart docker`), or install from a package (section 4), which needs no registry.
 
-## 3. DNS and Cloudflare
+## 3. DNS
 
 Create three records, all pointing to the server's IP address (add `AAAA` records as well if the server has IPv6):
 
@@ -85,14 +84,14 @@ Create three records, all pointing to the server's IP address (add `AAAA` record
 
 `www.example.com` redirects to `example.com`; `design.example.com` serves Design.
 
-**With Cloudflare's proxy** (orange cloud), which example.com uses:
+**Behind a CDN proxy** (Cloudflare's orange cloud, for example):
 
 - Set **SSL/TLS → Overview → encryption mode** to **Full (strict)** (or **Full**). Never **Flexible**: Caddy redirects HTTP to HTTPS, and with Flexible Cloudflare talks HTTP to the server, which ends in an endless redirect loop.
 - Let's Encrypt's HTTP-01 check works through the proxy as long as requests to `/.well-known/acme-challenge/` reach the server over plain HTTP. Do not add a Cloudflare rule that blocks or rewrites that path. (Cloudflare's "Always Use HTTPS" leaves the ACME path alone.)
 - All three names must be proxied the same way and point to the same server. If one name points elsewhere, Caddy cannot get its certificate and keeps retrying.
 - After you add or fix a DNS record, Caddy retries on its own; to retry at once, restart it: `cd /opt/zvena/src/deploy && sudo docker compose --env-file /etc/zvena/zvena.env -f docker-compose.yml -f docker-compose.prod.yml restart caddy`.
 
-E-mail DNS records for Resend (SPF/DKIM) also go into Cloudflare DNS — see section 9. Custom domains of published sites need two more records, **not** proxied — see section 17.
+Custom domains of published sites need two more records, **not** proxied — see section 17.
 
 ## 4. Installing from the package
 
@@ -150,7 +149,7 @@ In `zvena.env` fill in:
 
 - the domains and `ACME_EMAIL`;
 - the company details and contact inboxes (section 0);
-- the sign-in keys and Resend (section 9);
+- your SMTP server (section 9);
 - `ZVENA_ADMIN_EMAIL` (new reports) and `ALERT_EMAIL` (outages);
 - `ZVENA_MAPS_CONTACT` (an e-mail or URL of yours) while maps use OpenStreetMap's public servers (the default): their tile and Nominatim policies require a contact, and without one heavy use gets the server's address blocked — the web app's log warns at start-up while it is empty. Tiles fetched from the map server are capped per person and for the whole server per day (`ZVENA_MAPS_TILES_PER_USER_DAY`, 5000; `ZVENA_MAPS_TILES_PER_DAY`, 50000; cached tiles don't count). For heavy use point `ZVENA_TILES_URL` / `ZVENA_GEOCODER_URL` at your own server or a provider.
 
@@ -211,44 +210,28 @@ Check:
 - `https://example.com` — the home page;
 - `https://example.com/status` — every part says "Operational" (web, database, files, Design, e-mail);
 - `https://example.com/source` — the source archives of Design (MPL 2.0);
-- `https://example.com/signin` — the sign-in options that have keys (section 9). Without any keys the page says sign-in is not set up yet.
+- `https://example.com/signin` — e-mail sign-in once SMTP is set (section 9), and single sign-on. Without SMTP the page says e-mail sign-in is not set up yet.
 
-## 9. Sign-in: Google, GitHub and e-mail
+## 9. Sign-in: e-mail and single sign-on
 
-Each method appears on the sign-in page only when its keys are set. After changing keys: `sudo deploy/scripts/up.sh`.
+There are no passwords. A person types their e-mail and gets a letter with a one-time link and a 6-digit code (valid for 15 minutes, used once). Workspaces can add their own identity provider (OIDC or SAML, section 17).
 
-### Google (OAuth and One Tap)
+E-mail goes through any SMTP server — your own or your mail provider's. In `zvena.env`:
 
-1. In the [Google Cloud console](https://console.cloud.google.com/) create (or pick) a project.
-2. **APIs & Services → OAuth consent screen** (Google Auth Platform → Branding / Audience): app name `zvena`, a support e-mail, the logo if you have one, the home page `https://example.com`, links to `https://example.com/legal/privacy` and `https://example.com/legal/terms`, authorized domain `example.com`. Scopes: `openid`, `email`, `profile` (all non-sensitive). User type: External. **Publish the app** (move it from "Testing" to "In production"), otherwise only test users can sign in.
-3. **APIs & Services → Credentials → Create credentials → OAuth client ID**, type **Web application**:
-   - Authorized JavaScript origins: `https://example.com` (One Tap needs this);
-   - Authorized redirect URIs: `https://example.com/api/auth/callback/google`.
-4. Put the client ID and secret into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+```
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=0          # 1 for port 465 (TLS from the start)
+SMTP_USER=…
+SMTP_PASS=…
+SMTP_FROM="zvena <noreply@example.com>"
+```
 
-Google One Tap uses the same client ID: when Google sign-in is configured, signed-out visitors see Google's prompt on the home page and the sign-in page. The site allows Google's sign-in script (`accounts.google.com/gsi/`) on those two pages only.
-
-### GitHub
-
-1. GitHub → **Settings → Developer settings → OAuth Apps → New OAuth App** (create it under the organization if you have one).
-2. Application name `zvena`, homepage URL `https://example.com`, authorization callback URL `https://example.com/api/auth/callback/github`.
-3. Generate a client secret. Put the client ID and secret into `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
-
-zvena asks for the scopes `read:user` and `user:email` and keeps only the name, the GitHub account id and a verified e-mail address.
-
-### E-mail sign-in through Resend
-
-A person types their e-mail and gets a letter with a one-time link and a 6-digit code (valid for 15 minutes, used once).
-
-1. In [Resend](https://resend.com) add the domain `example.com` (Domains → Add domain) and add the DNS records Resend shows (SPF/MX on the `send` subdomain, the DKIM TXT record, optionally DMARC) in Cloudflare DNS. Set those records to **DNS only** (grey cloud). Wait until Resend shows the domain as verified.
-2. Create an API key (API Keys → Create) with **Sending access**, ideally limited to `example.com`.
-3. In `zvena.env`: `RESEND_API_KEY=<the key>` and `MAIL_FROM="zvena <hello@example.com>"` (any address on the verified domain).
-
-The same settings send report notices to moderators (`ZVENA_ADMIN_EMAIL`) and outage alerts (`ALERT_EMAIL`, section 12). Instead of Resend you can use any SMTP server (`SMTP_*`); Resend wins when both are set.
+Then `sudo deploy/scripts/up.sh`. Publish SPF and DKIM records for the sending domain as your mail provider describes, or letters land in spam. The same server sends report notices to moderators (`ZVENA_ADMIN_EMAIL`) and outage alerts (`ALERT_EMAIL`, section 12).
 
 Everything the app mails goes through one budget: `ZVENA_MAIL_PER_HOUR` (500) and `ZVENA_MAIL_PER_DAY` (3000) letters for the whole server, however many accounts there are. Past 80% of either only sign-in letters still go out, so people can sign in while invitations are paused; the log says when the budget is used up. Page invitations by e-mail also have a server-wide daily cap (`ZVENA_INVITE_MAIL_PER_DAY`, 1000) and carry no user text in their subject. Sign-in letters are limited to 5 an hour and 12 a day per address.
 
-Accounts: methods that report the same verified e-mail address lead to one account, so a person who first signed in with Google can later use GitHub or the e-mail link.
+Accounts: the e-mail link and single sign-on that report the same verified address lead to one account.
 
 ## 10. Moderators
 
@@ -313,7 +296,7 @@ Every 5 minutes `monitor.sh` checks:
 - free disk space;
 - the age of the last backup.
 
-When the state changes (outage / back to normal) it e-mails `ALERT_EMAIL` through Resend (or SMTP). The new state is saved only once that letter went out, so an alert that failed is sent again on the next run. The Resend key and the SMTP password reach `curl` through a config on a file descriptor, never on its command line. The public status page is `https://example.com/status`.
+When the state changes (outage / back to normal) it e-mails `ALERT_EMAIL` through SMTP. The new state is saved only once that letter went out, so an alert that failed is sent again on the next run. The SMTP password reaches `curl` through a config on a file descriptor, never on its command line. The public status page is `https://example.com/status`.
 
 Logs:
 
@@ -372,8 +355,8 @@ sudo deploy/scripts/restore.sh /var/backups/zvena/zvena-<time>.tar.gpg
 ## 15. Launch checklist
 
 - [ ] `/status`: every part is "Operational"; the certificates are valid (padlock in the browser) for `example.com`, `www.example.com` (redirects) and `design.example.com`.
-- [ ] Sign in with Google (button and One Tap), GitHub and an e-mail link (both the link and the 6-digit code). The same e-mail through two methods lands in one account.
-- [ ] The sign-in e-mail arrives in the inbox (not spam) and comes from `MAIL_FROM`.
+- [ ] Sign in with an e-mail link (both the link and the 6-digit code).
+- [ ] The sign-in e-mail arrives in the inbox (not spam) and comes from `SMTP_FROM`.
 - [ ] Create a workspace, invite by link, the roles "editor", "commenter" and "viewer".
 - [ ] A design in Design, a live frame inside a doc.
 - [ ] Publish a page, report it, take it down in `/admin`.
@@ -388,7 +371,7 @@ For the Privacy Policy and data-protection requests.
 
 | Data | Where | How long |
 |---|---|---|
-| Account: name, verified e-mail (from Google, GitHub or the e-mail sign-in), the Google/GitHub account id, sign-in times, the Terms version accepted and when. Profile pictures are not stored | web app's SQLite, volume `web-data` | while the account exists; deleted at once from Settings |
+| Account: name, verified e-mail (from the e-mail sign-in or single sign-on), the single sign-on account id, sign-in times, the Terms version accepted and when. Profile pictures are not stored | web app's SQLite, volume `web-data` | while the account exists; deleted at once from Settings |
 | E-mail sign-in links and codes (HMACs only) | SQLite | 15 minutes or until used |
 | Docs, comments, Docs files | SQLite and `web-data/files` | while the workspace or the account exists |
 | Designs and their files | PostgreSQL, volume `assets` (or S3) | while the team exists; after deletion 30 days in Penpot's trash |

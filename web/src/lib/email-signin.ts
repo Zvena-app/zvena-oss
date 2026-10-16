@@ -11,7 +11,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import { mac, safeEqual } from "./auth";
 import { config } from "./config";
 import { sendMail } from "./mail";
-import { safeNext } from "./oauth";
+import { safeNext } from "./safe-next";
 import { sql, sweepExpired } from "./store";
 
 const TTL = 15 * 60 * 1000;

@@ -1,8 +1,8 @@
 "use client";
 
 // "By continuing, you agree to the Terms of Service and acknowledge the
-// Privacy Policy." — shown next to every way to sign in (the buttons, the
-// e-mail form and Google One Tap), so pressing one accepts the Terms version
+// Privacy Policy." — shown next to every way to sign in (the single sign-on
+// button and the e-mail form), so pressing one accepts the Terms version
 // in force (config.consentVersion), which the server records. Server pages
 // can render TermsNoteView with server-side strings instead.
 

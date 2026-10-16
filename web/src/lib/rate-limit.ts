@@ -160,7 +160,6 @@ const SCOPE_LIMITS: Record<string, number> = {
   "auth-start": 20,
   "auth-callback": 30,
   "auth-dev": 10,
-  "auth-onetap": 20,
   "auth-email": 6,
   "auth-email-verify": 20,
   "auth-session": 120,

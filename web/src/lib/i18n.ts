@@ -44,8 +44,6 @@ const ru = {
 
   "signin.title": "Вход в zvena",
   "signin.lead": "Войдите или создайте аккаунт — пароль не нужен.",
-  "signin.google": "Продолжить с Google",
-  "signin.github": "Продолжить с GitHub",
   "signin.email": "Продолжить с почтой",
   "signin.emailLabel": "Адрес электронной почты",
   "signin.emailPlaceholder": "Ваш адрес почты",
@@ -664,8 +662,6 @@ const en: Record<MessageKey, string> = {
 
   "signin.title": "Sign in to zvena",
   "signin.lead": "Sign in or create an account — no password needed.",
-  "signin.google": "Continue with Google",
-  "signin.github": "Continue with GitHub",
   "signin.email": "Continue with email",
   "signin.emailLabel": "Email address",
   "signin.emailPlaceholder": "Your email address",

@@ -24,7 +24,7 @@ const cname = new Map<string, string[]>();
 setDnsForTests({ txt: async (n) => txt.get(n) ?? [], cname: async (n) => cname.get(n) ?? [] });
 
 function person(name: string, email: string): string {
-  const r = signInWith({ provider: "google", subject: `sites-${name}`, name, email, emailVerified: true }, V);
+  const r = signInWith({ provider: "dev", subject: `sites-${name}`, name, email, emailVerified: true }, V);
   assert.ok(r.ok);
   return r.ok ? r.user.id : "";
 }
@@ -217,8 +217,8 @@ test("audit log: the workspace's lines and its members' sign-ins, filters, pagin
   const outsider = person("audit-outsider", "x@other.com");
   audit(owner, "security.update", ws, { setting: "disableGuests", value: true });
   audit(outsider, "security.update", "another-ws");
-  audit(outsider, "signin", "google");
-  audit(owner, "signin", "google");
+  audit(outsider, "signin", "email");
+  audit(owner, "signin", "email");
   for (let i = 0; i < 5; i++) audit(owner, "group.create", ws);
   const all = auditEntries(ws, { limit: 100 });
   assert.ok(all.entries.every((e) => e.target === ws || (["signin", "signup"].includes(e.action) && e.actor === owner)));
@@ -245,9 +245,9 @@ test("audit log: a member's account events only since they joined this workspace
   const ws = createWorkspace(owner, "Audit Two").id;
   const late = person("audit2-late", "late@audit2-co.com");
   // Signed in long before joining: none of the workspace's business.
-  sql("INSERT INTO audit (at, actor, action, target, meta) VALUES (?, ?, 'signin', 'google', NULL)").run(Date.now() - 86_400_000, late);
+  sql("INSERT INTO audit (at, actor, action, target, meta) VALUES (?, ?, 'signin', 'email', NULL)").run(Date.now() - 86_400_000, late);
   sql("INSERT INTO members (ws_id, user_id, role, created_at) VALUES (?, ?, 'editor', ?)").run(ws, late, Date.now() - 1000);
-  audit(late, "signin", "google");
+  audit(late, "signin", "email");
   const mine = auditEntries(ws, { actor: late, limit: 50 }).entries.filter((e) => e.action === "signin");
   assert.equal(mine.length, 1, "only the sign-in after joining");
 });

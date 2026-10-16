@@ -2,7 +2,7 @@
 import "./env";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 
 test("safeNext keeps same-origin paths and refuses everything that could leave zvena", () => {
   for (const ok of ["/home", "/docs?ws=abc#Page-1", "/eco/from-design?team=x&thread=y", "/projects/issue/ABC-1?ws=w"]) assert.equal(safeNext(ok), ok);

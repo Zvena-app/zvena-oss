@@ -10,7 +10,7 @@ export const metadata: Metadata = pageMetadata({ title: "Cookie Policy", descrip
 
 // What zvena keeps in the browser. Keep this list in step with the code:
 // lib/auth.ts (session), lib/storage.ts (guest), lib/i18n.ts (language),
-// lib/session.ts (workspace), the Google One Tap nonce (sign-in), and the
+// lib/session.ts (workspace), lib/enterprise/sso.ts (single sign-on), and the
 // localStorage / IndexedDB keys of the components.
 export default async function CookiesPage() {
   const co = config.company;
@@ -64,23 +64,6 @@ export default async function CookiesPage() {
             </tr>
             <tr>
               <td>
-                <code>zv_otn</code>
-              </td>
-              <td>A one-time security value that protects Google One Tap sign-in against replay (HttpOnly)</td>
-              <td>10 minutes</td>
-            </tr>
-            <tr>
-              <td>
-                <code>zv_oauth</code>
-              </td>
-              <td>
-                Set only while you sign in with Google or GitHub: ties the provider&rsquo;s answer to the browser that started the sign-in, so nobody can sign you in to
-                their account with a link (HttpOnly)
-              </td>
-              <td>10 minutes, removed when the sign-in finishes</td>
-            </tr>
-            <tr>
-              <td>
                 <code>zv_sso</code>
               </td>
               <td>
@@ -93,18 +76,7 @@ export default async function CookiesPage() {
         </table>
       </div>
 
-      <h2 id="google">2. Cookie set by Google on the sign-in prompt</h2>
-      <p>
-        When Sign in with Google is turned on, the sign-in page loads Google&rsquo;s sign-in script from accounts.google.com for signed-out visitors,
-        to show the &ldquo;Sign in with Google&rdquo; (One Tap) prompt. That script may set the <code>g_state</code> cookie on {new URL(config.appUrl).host} to remember that you closed the prompt, so it is not shown again
-        right away. Your browser also talks to Google directly to display the prompt; Google&rsquo;s{" "}
-        <a href="https://policies.google.com/privacy" rel="noopener">
-          privacy policy
-        </a>{" "}
-        applies to that. The script is not loaded on any other page, including the home page, or once you are signed in.
-      </p>
-
-      <h2 id="storage">3. Browser storage</h2>
+      <h2 id="storage">2. Browser storage</h2>
       <ul>
         <li>
           <b>localStorage</b> <code>zvena-settings</code> &mdash; theme and editor settings; <code>nt-*</code> &mdash; Docs panel layout, views and editor preferences;{" "}
@@ -125,7 +97,7 @@ export default async function CookiesPage() {
         </li>
       </ul>
 
-      <h2 id="control">4. Your choices</h2>
+      <h2 id="control">3. Your choices</h2>
       <p>
         You can delete cookies and site data in your browser settings at any time. If you delete the session cookie you will need to sign in again; if you delete
         guest data, documents you created without an account are lost. Because we only use strictly necessary cookies, blocking them may stop zvena from working.

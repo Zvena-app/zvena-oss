@@ -14,7 +14,7 @@ const txt = new Map<string, string[]>();
 setDnsForTests({ txt: async (n) => txt.get(n) ?? [], cname: async () => [] });
 
 function person(name: string, email: string): string {
-  const r = signInWith({ provider: "google", subject: `scim-${name}`, name, email, emailVerified: true }, V);
+  const r = signInWith({ provider: "dev", subject: `scim-${name}`, name, email, emailVerified: true }, V);
   assert.ok(r.ok);
   return r.ok ? r.user.id : "";
 }

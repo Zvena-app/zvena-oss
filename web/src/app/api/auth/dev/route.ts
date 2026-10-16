@@ -3,7 +3,7 @@ import { readCookie, signInWith } from "@/lib/auth";
 import { config } from "@/lib/config";
 import { crossSite, fail, guestId } from "@/lib/http";
 import { parseAcceptLanguage, resolveLocale, translate, UI_LANG_COOKIE } from "@/lib/i18n";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { rateLimited } from "@/lib/rate-limit";
 import { readFormCapped } from "@/lib/safe-json";
 import { finishSignIn, signInError } from "@/lib/signin";

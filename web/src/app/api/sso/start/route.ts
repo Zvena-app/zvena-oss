@@ -4,7 +4,7 @@ import { normalizeEmail } from "@/lib/email-signin";
 import { selfPostingForm } from "@/lib/enterprise/sso-http";
 import { ssoOf, ssoWorkspaceForEmail, startSso } from "@/lib/enterprise/sso";
 import { guestId } from "@/lib/http";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { rateLimited } from "@/lib/rate-limit";
 import { signInError } from "@/lib/signin";
 

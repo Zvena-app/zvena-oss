@@ -24,8 +24,6 @@
   "landing.terms": "চালিয়ে গেলে আপনি {terms} মেনে নিচ্ছেন এবং {privacy} পড়েছেন বলে স্বীকার করছেন।",
   "signin.title": "zvena-তে সাইন ইন করুন",
   "signin.lead": "সাইন ইন করুন বা অ্যাকাউন্ট তৈরি করুন — কোনো পাসওয়ার্ড লাগবে না।",
-  "signin.google": "Google দিয়ে চালিয়ে যান",
-  "signin.github": "GitHub দিয়ে চালিয়ে যান",
   "signin.email": "ইমেল দিয়ে চালিয়ে যান",
   "signin.emailLabel": "ইমেল ঠিকানা",
   "signin.emailPlaceholder": "আপনার ইমেল ঠিকানা",

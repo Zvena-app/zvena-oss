@@ -51,15 +51,6 @@ CREATE TABLE IF NOT EXISTS sessions (
   iat INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
-CREATE TABLE IF NOT EXISTS oauth_state (
-  state TEXT PRIMARY KEY,
-  provider TEXT NOT NULL,
-  verifier TEXT NOT NULL,          -- PKCE code verifier
-  consent TEXT,                    -- Terms version shown next to the button the person pressed
-  next TEXT,                       -- where to return (same-origin path)
-  guest TEXT,                      -- guest id whose files move into the account
-  exp INTEGER NOT NULL
-);
 -- One-time e-mail sign-in: a link token and a 6-digit code, both stored as
 -- HMACs only; a row is deleted when used, after too many wrong codes, or on expiry.
 CREATE TABLE IF NOT EXISTS email_signin (
@@ -534,7 +525,6 @@ export function sweepExpired(now = Date.now()): void {
   if (now - lastSweep < 60_000) return;
   lastSweep = now;
   sql("DELETE FROM sessions WHERE exp < ?").run(now);
-  sql("DELETE FROM oauth_state WHERE exp < ?").run(now);
   sql("DELETE FROM email_signin WHERE exp < ?").run(now);
   sql("DELETE FROM oidc_codes WHERE exp < ?").run(now);
   sql("DELETE FROM presence WHERE at < ?").run(now - 120_000);

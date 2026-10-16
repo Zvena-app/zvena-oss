@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { translate, type MessageKey } from "@/lib/i18n";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { pageUser } from "@/lib/page";
 import { PublicFooter, PublicHeader } from "@/components/zvena/PublicChrome";
 import { TermsNote } from "@/components/zvena/TermsNote";

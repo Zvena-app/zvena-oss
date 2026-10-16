@@ -8,9 +8,7 @@ import { hostOnly, hostRoutingOn, isFirstPartyHost, SITE_HOST_HEADER, siteRoute 
 // 'self' only — the browser itself refuses to send data to any other host,
 // so no tracker or external (AI or any other) service can be reached from
 // the app, even by a bug. Documents may embed https pages (YouTube, maps…)
-// in sandboxed frames and show https images. The one exception is Google
-// One Tap: on the sign-in page only (the home page loads nothing from Google), when Google sign-in is configured,
-// Google's sign-in script and frames (accounts.google.com/gsi/) are allowed.
+// in sandboxed frames and show https images.
 //
 // Hosts (lib/enterprise/hosts.ts): a request for a host that is not zvena's
 // own is a published site's custom domain. It gets that site's pages, its
@@ -23,13 +21,11 @@ import { hostOnly, hostRoutingOn, isFirstPartyHost, SITE_HOST_HEADER, siteRoute 
 const DOC_PATHS = /^\/(docs|n\/|templates)/;
 // Mail shows each message in a sandboxed frame of its own (/api/mail/body/…, with its own CSP).
 const MAIL_PATHS = /^\/mail(\/|$)/;
-const ONETAP_PATHS = /^\/signin\/?$/;
 // Sign-in forms whose answer may redirect to a workspace's identity provider
 // (single sign-on, lib/enterprise/sso.ts): any HTTPS origin, since form-action
 // also governs the redirects after a form is sent (plain HTTP on a test stand,
 // for its mock provider).
 const SSO_PATHS = /^\/(signin(\/.*)?|api\/sso\/start)$/;
-const GSI = "https://accounts.google.com/gsi/";
 
 const designOrigin = (() => {
   try {
@@ -39,20 +35,20 @@ const designOrigin = (() => {
   }
 })();
 
-function policy(nonce: string, o: { dev: boolean; docs: boolean; gsi: boolean; sso?: boolean; mail?: boolean }): string {
+function policy(nonce: string, o: { dev: boolean; docs: boolean; sso?: boolean; mail?: boolean }): string {
   return [
     "default-src 'self'",
     // The host is for browsers without 'strict-dynamic' (with it, the script our code inserts is trusted).
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${o.gsi ? ` ${GSI}client` : ""}${o.dev ? " 'unsafe-eval'" : ""}`,
-    // Style attributes (the editor positions menus with them); no external sheets but Google's One Tap one.
-    `style-src 'self' 'unsafe-inline'${o.gsi ? ` ${GSI}style` : ""}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${o.dev ? " 'unsafe-eval'" : ""}`,
+    // Style attributes (the editor positions menus with them); no external sheets.
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     o.docs ? "media-src 'self' blob: data: https:" : "media-src 'self' blob: data:",
     "worker-src 'self' blob:",
-    `connect-src 'self'${o.gsi ? ` ${GSI}` : ""}${o.dev ? " ws:" : ""}`,
+    `connect-src 'self'${o.dev ? " ws:" : ""}`,
     "font-src 'self' data:",
     // Mail shows each message in a sandboxed frame of its own origin (src/app/api/mail/body).
-    o.docs ? "frame-src 'self' https:" : o.mail ? "frame-src 'self'" : o.gsi ? `frame-src ${GSI}` : "frame-src 'none'",
+    o.docs ? "frame-src 'self' https:" : o.mail ? "frame-src 'self'" : "frame-src 'none'",
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
@@ -63,13 +59,12 @@ function policy(nonce: string, o: { dev: boolean; docs: boolean; gsi: boolean; s
   ].join("; ");
 }
 
-function secure(res: NextResponse, csp: string, o: { dev: boolean; docs: boolean; gsi: boolean; site: boolean }): NextResponse {
+function secure(res: NextResponse, csp: string, o: { dev: boolean; docs: boolean; site: boolean }): NextResponse {
   res.headers.set("Content-Security-Policy", csp);
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  // One Tap may open Google's window in browsers without FedCM (Safari's ITP mode).
-  res.headers.set("Cross-Origin-Opener-Policy", o.gsi ? "same-origin-allow-popups" : "same-origin");
+  res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   // Documents may ask for the location once ("Use current location" of a Place property).
   res.headers.set("Permissions-Policy", `camera=(), microphone=(), geolocation=${o.docs && !o.site ? "(self)" : "()"}, payment=(), usb=(), interest-cohort=(), browsing-topics=()`);
   // A customer's domain gets HSTS for itself only (its other subdomains are not ours to pin).
@@ -86,7 +81,7 @@ function siteProxy(req: NextRequest, host: string, dev: boolean): NextResponse {
     return new NextResponse("Not found\n", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" } });
   }
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const o = { dev, docs: true, gsi: false, site: true };
+  const o = { dev, docs: true, site: true };
   const csp = policy(nonce, o);
   const reqHeaders = new Headers(req.headers);
   // Nothing of a zvena session may reach the app through someone's domain.
@@ -112,8 +107,7 @@ export function proxy(req: NextRequest) {
   if (req.headers.has("next-router-prefetch") || req.headers.get("purpose") === "prefetch") return NextResponse.next({ request: { headers: reqHeaders } });
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const docs = DOC_PATHS.test(req.nextUrl.pathname);
-  const gsi = ONETAP_PATHS.test(req.nextUrl.pathname) && Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
-  const o = { dev, docs, gsi, site: false, sso: SSO_PATHS.test(req.nextUrl.pathname), mail: MAIL_PATHS.test(req.nextUrl.pathname) };
+  const o = { dev, docs, site: false, sso: SSO_PATHS.test(req.nextUrl.pathname), mail: MAIL_PATHS.test(req.nextUrl.pathname) };
   const csp = policy(nonce, o);
   reqHeaders.set("x-nonce", nonce);
   // The root layout styles the public site (lib/site.ts) apart from the app.

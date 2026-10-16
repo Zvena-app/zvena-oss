@@ -4,7 +4,7 @@ import { config } from "@/lib/config";
 import { createEmailSignIn, normalizeEmail, sendSignInLetter } from "@/lib/email-signin";
 import { ssoStartForEmail } from "@/lib/enterprise/gate";
 import { crossSite, guestId } from "@/lib/http";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { rateLimited } from "@/lib/rate-limit";
 import { readFormCapped } from "@/lib/safe-json";
 import { signInError } from "@/lib/signin";

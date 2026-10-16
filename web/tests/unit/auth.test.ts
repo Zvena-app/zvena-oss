@@ -2,7 +2,7 @@ import "./env";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { getUser, issueSession, readSession, recordConsent, sessionCookieName, signInWith, destroySession, safeEqual } from "@/lib/auth";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { sql } from "@/lib/store";
 
 const cookie = (token: string) => `${sessionCookieName()}=${token}`;

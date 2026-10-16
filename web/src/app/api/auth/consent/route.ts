@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { recordConsent } from "@/lib/auth";
 import { config } from "@/lib/config";
 import { crossSite, currentUser, fail } from "@/lib/http";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { rateLimited } from "@/lib/rate-limit";
 import { readFormCapped } from "@/lib/safe-json";
 

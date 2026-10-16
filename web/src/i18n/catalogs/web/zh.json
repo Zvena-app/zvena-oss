@@ -24,8 +24,6 @@
   "landing.terms": "继续即表示你同意{terms}，并确认已阅读{privacy}。",
   "signin.title": "登录 zvena",
   "signin.lead": "登录或创建账户，无需密码。",
-  "signin.google": "使用 Google 继续",
-  "signin.github": "使用 GitHub 继续",
   "signin.email": "使用电子邮件继续",
   "signin.emailLabel": "电子邮件地址",
   "signin.emailPlaceholder": "你的电子邮件地址",

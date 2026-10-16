@@ -1,10 +1,9 @@
 // zvena accounts and sessions.
 //
-// An account is an internal id. People sign in with Google (OAuth or One
-// Tap) or GitHub (src/lib/oauth.ts, src/lib/google.ts), or with a one-time
-// e-mail link (src/lib/email-signin.ts); each method is a row in
-// `identities`, and methods that share a verified e-mail meet in one
-// account. On a test stand only, a test sign-in creates fake accounts.
+// An account is an internal id. People sign in with a one-time e-mail link
+// (src/lib/email-signin.ts) or their workspace's single sign-on
+// (src/lib/enterprise/sso.ts); each method is a row in `identities`, and
+// methods that share a verified e-mail meet in one account. On a test stand only, a test sign-in creates fake accounts.
 // Sessions are random tokens in an HttpOnly cookie; the database keeps only
 // their HMAC, so a leaked database cannot be replayed as cookies.
 
@@ -15,7 +14,7 @@ import { mailConfigured } from "./mail";
 import { audit, sql, sweepExpired, tx } from "./store";
 
 /** sso: a workspace's identity provider (lib/enterprise/sso.ts), subject "<workspace>:<its id>". */
-export type Provider = "google" | "github" | "email" | "dev" | "sso";
+export type Provider = "email" | "dev" | "sso";
 
 export interface AuthUser {
   id: string;
@@ -113,7 +112,7 @@ export type SignInResult =
  * pass the Terms version shown there; without one (an old link) a new
  * person is not registered and a returning person with an outdated version
  * is asked again. An unknown identity whose verified e-mail belongs to an
- * account joins that account (Google, GitHub and the e-mail link all prove
+ * account joins that account (the e-mail link and single sign-on both prove
  * the address), so one person keeps one account whichever button they use.
  */
 export function signInWith(p: ProviderProfile, consentVersion: string | null): SignInResult {
@@ -267,13 +266,9 @@ export function refreshSession(cookieHeader: string | null): { user: AuthUser; s
 }
 
 /** Which sign-in methods to offer (a method without keys stays hidden). */
-export function authStatus(): { google: boolean; googleClientId: string; github: boolean; email: boolean; dev: boolean } {
-  const g = config.google;
+export function authStatus(): { email: boolean; dev: boolean } {
   return {
-    google: g.enabled,
-    googleClientId: g.enabled ? g.clientId : "",
-    github: config.github.enabled,
-    // The link needs a way to send letters (Resend or SMTP), or the stand's outbox.
+    // The link needs a way to send letters (SMTP), or the stand's outbox.
     email: mailConfigured() || (config.isTestStand && Boolean(process.env.ZVENA_MAIL_OUTBOX)),
     dev: config.devLogin,
   };

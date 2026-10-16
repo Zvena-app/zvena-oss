@@ -17,7 +17,7 @@
 import { randomBytes } from "node:crypto";
 import { cookieSecure, getUser, mac, safeEqual, signInWith, type AuthUser } from "../auth";
 import { config } from "../config";
-import { safeNext } from "../oauth";
+import { safeNext } from "../safe-next";
 import { audit, sql, tx } from "../store";
 import { LimitError, roleIn, type Role } from "../workspaces";
 import { isWorkspaceEmail, workspaceOfEmailDomain, emailDomain } from "./domains";

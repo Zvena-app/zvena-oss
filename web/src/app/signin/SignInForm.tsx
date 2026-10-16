@@ -1,18 +1,15 @@
 "use client";
 
-// The ways in: Google, GitHub and a one-time e-mail link (each shown only
-// when its keys are set), the test sign-in on a test stand, and the Terms
-// line every one of them sits next to.
+// The ways in: a workspace's single sign-on, a one-time e-mail link (shown
+// when the server can send mail), the test sign-in on a test stand, and the
+// Terms line every one of them sits next to.
 
 import { useState } from "react";
 import { KeyRound, Mail } from "lucide-react";
-import { GitHubIcon, GoogleIcon } from "@/components/zvena/BrandIcons";
 import { TermsNote } from "@/components/zvena/TermsNote";
 import { useI18n } from "@/lib/i18n-react";
 
 export interface Providers {
-  google: boolean;
-  github: boolean;
   email: boolean;
   dev: boolean;
 }
@@ -20,22 +17,9 @@ export interface Providers {
 export function SignInForm({ providers, next, email: initialEmail = "" }: { providers: Providers; next: string; email?: string }) {
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
-  const href = (p: "google" | "github") => `/api/auth/start?provider=${p}&next=${encodeURIComponent(next)}`;
-  const none = !providers.google && !providers.github && !providers.email && !providers.dev;
+  const none = !providers.email && !providers.dev;
   return (
     <div className="zv-stack">
-      {providers.google && (
-        <a className="zv-btn zv-btn-lg zv-btn-block zv-btn-provider" href={href("google")}>
-          <GoogleIcon />
-          {t("signin.google")}
-        </a>
-      )}
-      {providers.github && (
-        <a className="zv-btn zv-btn-lg zv-btn-block zv-btn-provider" href={href("github")}>
-          <GitHubIcon />
-          {t("signin.github")}
-        </a>
-      )}
       {/* A workspace's identity provider, found by the work address (app/signin/sso). */}
       <a className="zv-btn zv-btn-lg zv-btn-block zv-btn-provider" href={`/signin/sso?next=${encodeURIComponent(next)}`}>
         <KeyRound />

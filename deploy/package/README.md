@@ -41,13 +41,10 @@ Everything needed to install zvena on a clean server. The server needs neither G
 
 3. Fill in `/etc/zvena/zvena.env`:
    - the company details (`ZVENA_COMPANY_*`, `ZVENA_GOVERNING_LAW`);
-   - e-mail through Resend (`RESEND_API_KEY`, `MAIL_FROM`);
-   - `ZVENA_ADMIN_EMAIL`, `ALERT_EMAIL`;
-   - the sign-in keys for Google and GitHub (`GOOGLE_CLIENT_*`, `GITHUB_CLIENT_*`). **Without sign-in keys nobody can sign in.**
+   - your SMTP server (`SMTP_*`). **Without it nobody can sign in by e-mail** (`DEPLOY.md`, section 9);
+   - `ZVENA_ADMIN_EMAIL`, `ALERT_EMAIL`.
 
-   How to get the keys: `DEPLOY.md`, section 9.
-
-4. In DNS, point the A records `example.com`, `design.example.com` and `www.example.com` to the server's IP (with Cloudflare's proxy, use SSL mode Full (strict), never Flexible — `DEPLOY.md`, section 3). Open ports 80 and 443:
+4. In DNS, point the A records `example.com`, `design.example.com` and `www.example.com` to the server's IP (behind a CDN proxy, use full TLS to the server — `DEPLOY.md`, section 3). Open ports 80 and 443:
 
    ```bash
    sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 443/udp

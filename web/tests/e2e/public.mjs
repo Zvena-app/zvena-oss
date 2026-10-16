@@ -48,7 +48,7 @@ try {
   const robots = await (await fetch(`${BASE}/robots.txt`)).text();
   check("robots.txt answers (a stand disallows all)", /Disallow: \//.test(robots), robots.slice(0, 80));
   check("sitemap.xml answers", (await fetch(`${BASE}/sitemap.xml`)).status === 200);
-  check("no Google script without Google keys", !(await (await fetch(`${BASE}/signin`)).headers.get("content-security-policy")).includes("accounts.google.com"));
+  check("no third-party script on the sign-in page", !(await (await fetch(`${BASE}/signin`)).headers.get("content-security-policy")).includes("accounts.google.com"));
 
   // E-mail sign-in by link: the page asks to continue, the link works once.
   const email = `link-${RUN}@example.com`;

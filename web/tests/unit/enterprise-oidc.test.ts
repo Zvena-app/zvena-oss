@@ -21,7 +21,7 @@ before(() => idp.start());
 after(() => idp.stop());
 
 function person(name: string, email: string): string {
-  const r = signInWith({ provider: "google", subject: `oidc-${name}`, name, email, emailVerified: true }, V);
+  const r = signInWith({ provider: "dev", subject: `oidc-${name}`, name, email, emailVerified: true }, V);
   assert.ok(r.ok);
   return r.ok ? r.user.id : "";
 }

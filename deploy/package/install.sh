@@ -181,9 +181,8 @@ cat <<DONE
 
 Done. zvena $(git -C "$SRC" rev-parse --short HEAD) in $SRC.
   Settings: $ENV_FILE
-    fill in the company details (ZVENA_COMPANY_*, ZVENA_GOVERNING_LAW), e-mail through Resend
-    (RESEND_API_KEY, MAIL_FROM), the sign-in keys (GOOGLE_CLIENT_*, GITHUB_CLIENT_*),
-    ZVENA_ADMIN_EMAIL and ALERT_EMAIL — without sign-in keys nobody can sign in.
+    fill in the company details (ZVENA_COMPANY_*, ZVENA_GOVERNING_LAW), your SMTP server
+    (SMTP_*), ZVENA_ADMIN_EMAIL and ALERT_EMAIL — without SMTP nobody can sign in by e-mail.
   Backup passphrase: $BACKUP_PASSPHRASE_FILE — keep a copy away from the server.
 DONE
 if [ "$start" = 1 ]; then

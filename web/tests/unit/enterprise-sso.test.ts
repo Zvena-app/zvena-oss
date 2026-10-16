@@ -20,7 +20,7 @@ const count = (q: string) => Number((sql(q).get() as { n: number }).n);
 const reason = (ws: string) => String((JSON.parse((sql("SELECT meta FROM audit WHERE action = 'sso.reject' AND target = ? ORDER BY rowid DESC LIMIT 1").get(ws) as { meta: string }).meta) as { reason: string }).reason);
 
 function person(name: string, email?: string): string {
-  const r = signInWith({ provider: "google", subject: `sso-${name}`, name, ...(email ? { email, emailVerified: true } : {}) }, V);
+  const r = signInWith({ provider: "dev", subject: `sso-${name}`, name, ...(email ? { email, emailVerified: true } : {}) }, V);
   assert.ok(r.ok, String(!r.ok && r.error));
   return r.ok ? r.user.id : "";
 }
@@ -207,29 +207,29 @@ test("SSO: without just-in-time provisioning only members get in", async () => {
   assert.equal(count("SELECT COUNT(*) AS n FROM users WHERE email = 'fay@acme-seven.com'"), 0);
 });
 
-test("SSO enforcement: Google, e-mail and the test sign-in refuse the domain's people; owners keep a way in", async () => {
+test("SSO enforcement: the e-mail link and the test sign-in refuse the domain's people; owners keep a way in", async () => {
   const { ws, owner } = await setup("acme-eight.com", { enforced: true });
   assert.equal(ssoOf(ws)?.enforced, true);
-  const google = signInWith({ provider: "google", subject: "g-gus", name: "Gus", email: "gus@acme-eight.com", emailVerified: true }, V);
-  assert.equal(!google.ok && google.error, "sso-required");
+  const dev = signInWith({ provider: "dev", subject: "g-gus", name: "Gus", email: "gus@acme-eight.com", emailVerified: true }, V);
+  assert.equal(!dev.ok && dev.error, "sso-required");
   const email = signInWith({ provider: "email", subject: "gus@acme-eight.com", name: "", email: "gus@acme-eight.com", emailVerified: true }, V);
   assert.equal(!email.ok && email.error, "sso-required");
   // The e-mail sign-in sends the address to SSO instead of sending a letter…
   assert.match(String(ssoStartForEmail("gus@acme-eight.com", "/docs")), /^\/api\/sso\/start\?email=gus%40acme-eight\.com&next=%2Fdocs$/);
-  // …but the owner gets the letter (break-glass) and signs in with Google too.
+  // …but the owner gets the letter (break-glass) and signs in the other ways too.
   assert.equal(ssoStartForEmail("owner@acme-eight.com", "/docs"), null);
-  assert.equal(ssoRequired("google", owner, ["owner@acme-eight.com"]), null);
-  const back = signInWith({ provider: "google", subject: "sso-owner-acme-eight.com", name: "Owner", email: "owner@acme-eight.com", emailVerified: true }, V);
+  assert.equal(ssoRequired("dev", owner, ["owner@acme-eight.com"]), null);
+  const back = signInWith({ provider: "dev", subject: "sso-owner-acme-eight.com", name: "Owner", email: "owner@acme-eight.com", emailVerified: true }, V);
   assert.ok(back.ok);
   // Another domain is not affected; SSO itself is.
-  assert.ok(signInWith({ provider: "google", subject: "g-hal", name: "Hal", email: "hal@other-co.com", emailVerified: true }, V).ok);
+  assert.ok(signInWith({ provider: "dev", subject: "g-hal", name: "Hal", email: "hal@other-co.com", emailVerified: true }, V).ok);
   assert.equal(ssoRequired("sso", null, ["gus@acme-eight.com"]), null);
-  // A GitHub login without an e-mail, linked to a company account, is still that account.
-  const gh = signInWith({ provider: "github", subject: "gh-ivy", name: "Ivy" }, V);
+  // A sign-in without an e-mail, linked to a company account, is still that account.
+  const gh = signInWith({ provider: "dev", subject: "gh-ivy", name: "Ivy" }, V);
   assert.ok(gh.ok);
   if (gh.ok) {
     sql("UPDATE users SET email = 'ivy@acme-eight.com' WHERE id = ?").run(gh.user.id);
-    const again = signInWith({ provider: "github", subject: "gh-ivy", name: "Ivy" }, V);
+    const again = signInWith({ provider: "dev", subject: "gh-ivy", name: "Ivy" }, V);
     assert.equal(!again.ok && again.error, "sso-required");
   }
 });

@@ -24,8 +24,6 @@
   "landing.terms": "Ao continuar, você concorda com os {terms} e reconhece a {privacy}.",
   "signin.title": "Entrar no zvena",
   "signin.lead": "Entre ou crie uma conta — sem senha.",
-  "signin.google": "Continuar com Google",
-  "signin.github": "Continuar com GitHub",
   "signin.email": "Continuar com e-mail",
   "signin.emailLabel": "Endereço de e-mail",
   "signin.emailPlaceholder": "Seu endereço de e-mail",

@@ -24,8 +24,6 @@
   "landing.terms": "بالمتابعة، فإنك توافق على {terms} وتقرّ باطّلاعك على {privacy}.",
   "signin.title": "تسجيل الدخول إلى zvena",
   "signin.lead": "سجّل الدخول أو أنشئ حسابًا، دون الحاجة إلى كلمة مرور.",
-  "signin.google": "المتابعة باستخدام Google",
-  "signin.github": "المتابعة باستخدام GitHub",
   "signin.email": "المتابعة بالبريد الإلكتروني",
   "signin.emailLabel": "عنوان البريد الإلكتروني",
   "signin.emailPlaceholder": "عنوان بريدك الإلكتروني",

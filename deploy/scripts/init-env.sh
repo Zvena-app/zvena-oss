@@ -25,5 +25,5 @@ else
   log "kept the existing $BACKUP_PASSPHRASE_FILE"
 fi
 echo "Next: open $ENV_FILE and fill in the domains, ACME_EMAIL, the operator details (ZVENA_COMPANY_NAME, ZVENA_CONTACT_EMAIL),"
-echo "  your legal pages (ZVENA_TERMS_URL, ZVENA_PRIVACY_URL), Resend (RESEND_API_KEY, MAIL_FROM) and the sign-in keys (GOOGLE_*, GITHUB_*)."
+echo "  your legal pages (ZVENA_TERMS_URL, ZVENA_PRIVACY_URL) and your SMTP server (SMTP_*) for sign-in links and invitations."
 echo "Keep a copy of $BACKUP_PASSPHRASE_FILE away from the server (a password manager): backups cannot be restored without it."

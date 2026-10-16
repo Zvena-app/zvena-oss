@@ -24,8 +24,6 @@
   "landing.terms": "जारी रखकर, आप {terms} से सहमत होते हैं और {privacy} को स्वीकार करते हैं।",
   "signin.title": "zvena में साइन इन करें",
   "signin.lead": "साइन इन करें या खाता बनाएं — पासवर्ड की ज़रूरत नहीं।",
-  "signin.google": "Google से जारी रखें",
-  "signin.github": "GitHub से जारी रखें",
   "signin.email": "ईमेल से जारी रखें",
   "signin.emailLabel": "ईमेल पता",
   "signin.emailPlaceholder": "आपका ईमेल पता",

@@ -4,13 +4,12 @@ import { redirect } from "next/navigation";
 import { authStatus } from "@/lib/auth";
 import { config } from "@/lib/config";
 import { translate, type MessageKey } from "@/lib/i18n";
-import { safeNext } from "@/lib/oauth";
+import { safeNext } from "@/lib/safe-next";
 import { pageUser } from "@/lib/page";
-import { GoogleOneTap } from "@/components/zvena/GoogleOneTap";
 import { PublicFooter, PublicHeader } from "@/components/zvena/PublicChrome";
 import { SignInForm } from "./SignInForm";
 
-export const metadata: Metadata = pageMetadata({ title: "Sign in", description: "Sign in to zvena with Google, GitHub or a one-time email link. No password needed.", path: "/signin", robots: { index: false, follow: true } });
+export const metadata: Metadata = pageMetadata({ title: "Sign in", description: "Sign in to zvena with a one-time email link or your workspace's single sign-on. No password needed.", path: "/signin", robots: { index: false, follow: true } });
 
 type Props = { searchParams: Promise<{ next?: string; error?: string }> };
 
@@ -58,10 +57,9 @@ export default async function SignInPage({ searchParams }: Props) {
               {error}
             </p>
           )}
-          <SignInForm providers={{ google: providers.google, github: providers.github, email: providers.email, dev: providers.dev }} next={next} />
+          <SignInForm providers={{ email: providers.email, dev: providers.dev }} next={next} />
         </div>
       </main>
-      {providers.google && <GoogleOneTap clientId={providers.googleClientId} next={next} />}
       <PublicFooter locale={locale} />
     </>
   );

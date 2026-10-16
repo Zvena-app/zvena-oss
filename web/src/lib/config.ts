@@ -157,21 +157,4 @@ export const config = {
     };
     return { termsUrl: link("ZVENA_TERMS_URL"), privacyUrl: link("ZVENA_PRIVACY_URL") };
   },
-  /** Sign-in with Google (OAuth 2.0 + One Tap): the client id is public, the secret is not. */
-  get google() {
-    const clientId = (process.env.GOOGLE_CLIENT_ID || "").trim();
-    const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || "").trim();
-    return { clientId, clientSecret, enabled: Boolean(clientId && clientSecret) };
-  },
-  /** Sign-in with GitHub (OAuth app). */
-  get github() {
-    const clientId = (process.env.GITHUB_CLIENT_ID || "").trim();
-    const clientSecret = (process.env.GITHUB_CLIENT_SECRET || "").trim();
-    return { clientId, clientSecret, enabled: Boolean(clientId && clientSecret) };
-  },
-  /** E-mail through Resend (https://resend.com): sign-in links, moderation notes. */
-  get resend() {
-    const apiKey = (process.env.RESEND_API_KEY || "").trim();
-    return { apiKey, from: (process.env.MAIL_FROM || "").trim() || `zvena <noreply@${ownHost()}>`, enabled: Boolean(apiKey) };
-  },
 };

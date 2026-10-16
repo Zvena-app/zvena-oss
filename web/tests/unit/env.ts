@@ -17,6 +17,6 @@ Object.assign(process.env, {
   ZVENA_MAINTENANCE: "off",
   ZVENA_MAX_WORKSPACES: "3",
 });
-for (const k of ["PENPOT_MGMT_URL", "PENPOT_MGMT_KEY", "SMTP_HOST", "RESEND_API_KEY", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "ZVENA_ADMIN_IDS", "ZVENA_STAND", "ZVENA_DEV_LOGIN"]) delete process.env[k];
+for (const k of ["PENPOT_MGMT_URL", "PENPOT_MGMT_KEY", "SMTP_HOST", "ZVENA_ADMIN_IDS", "ZVENA_STAND", "ZVENA_DEV_LOGIN"]) delete process.env[k];
 
 export const TEST_DIR = dir;
