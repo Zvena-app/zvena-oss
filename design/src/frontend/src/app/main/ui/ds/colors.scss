@@ -1,0 +1,183 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "sass:color";
+
+$mint-150: #7efff5;
+$mint-250: #00d1b8;
+$mint-700: #426158;
+$mint-150-60: #7efff599;
+$mint-250-10: #00d1b81a;
+$mint-250-70: #00d1b8b3;
+$green-200: #a7e8d9;
+$green-500: #2d9f8f;
+$green-950: #0a2927;
+$orange-200: #fedeac;
+$orange-500: #fe9c07;
+$orange-950: #3d2501;
+$red-200: #ffcada;
+$red-400: #c80857;
+$red-500: #ff3277;
+$red-950: #500124;
+$pink-400: #ff6fe0;
+$purple-200: #e1d2f5;
+$purple-400: #bb97d8;
+$purple-500: #a977d1;
+$purple-600: #8c33eb;
+$purple-700: #6911d4;
+$purple-600-10: #8c33eb1a;
+$purple-600-70: #8c33ebb3;
+$purple-700-60: #6911d499;
+$aqua-200: #ddf7ff;
+$aqua-400: #77e1f3;
+$aqua-600: #59acbb;
+$aqua-800: #1d4464;
+$violet-300: #a7a9ff;
+$violet-600: #6c6dad;
+$violet-700: #484c74;
+$violet-800: #272941;
+$blue-200: #bae3fd;
+$blue-500: #0e9be9;
+$blue-950: #082c49;
+$cobalt-700: #1345aa;
+$black: #000;
+$gray-950: #18181a;
+$gray-950-60: #18181a99;
+$gray-950-90: #18181ae6;
+$gray-900: #212426;
+$gray-800: #2e3434;
+$gray-200: #e8eaee;
+$gray-100: #eef0f2;
+$gray-50: #f3f4f6;
+$white: #fff;
+$white-60: #fff9;
+$white-90: #ffffffe6;
+$blue-teal-700: #495e74;
+$grayish-blue-500: #8f9da3;
+$grayish-red: #bfbfbf;
+
+:global(.light) {
+  --color-accent-primary: #0d99ff;
+  --color-accent-primary-muted: #bde3ff;
+  --color-accent-secondary: #9747ff;
+  --color-accent-tertiary: #0d99ff;
+  --color-accent-quaternary: #f24822;
+  --color-accent-overlay: #0d99ff99;
+  --color-accent-select: #0d99ff1a;
+  --color-accent-background-select: #0d99ffb3;
+  --color-accent-action: #0d99ff;
+  --color-accent-action-hover: #007be5;
+  --color-accent-off: #f5f5f5;
+  --color-accent-success: #14ae5c;
+  --color-background-success: #dcf5e7;
+  --color-accent-warning: #e8a317;
+  --color-background-warning: #fff1c2;
+  --color-accent-error: #f24822;
+  --color-background-error: #ffe2e0;
+  --color-foreground-error: #dc3412;
+  --color-accent-info: #0d99ff;
+  --color-background-info: #e5f4ff;
+  --color-background-default: #ffffff;
+  --color-accent-default: #f5f5f5;
+  --color-icon-default: #6e6e6e;
+  --color-background-disabled: #d9d9d9;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #e6e6e6;
+  --color-background-tertiary: #f5f5f5;
+  --color-background-quaternary: #e6e6e6;
+  --color-foreground-primary: #1e1e1e;
+  --color-foreground-secondary: #6e6e6e;
+  --color-static-white: #{$white};
+  --color-static-black: #{$black};
+  --color-shadow-dark: #{color.change($gray-200, $alpha: 0.6)};
+  --color-shadow-light: #{color.change($black, $alpha: 0.3)};
+  --color-overlay-default: #{$white-60};
+  --color-overlay-onboarding: #{$white-90};
+  --color-canvas: #f5f5f5;
+  --color-token-background: #{$aqua-200};
+  --color-token-border: #{$aqua-400};
+  --color-token-accent: #{$aqua-600};
+  --color-token-foreground: #{$aqua-800};
+  --color-badge-premium: #{$orange-500};
+  // zvena Design: Figma UI3 light palette (figma-color-* tokens).
+  --color-accent-primary-hover: #007be5;
+  --color-on-accent: #ffffff;
+  --blueai-bg-selected: #e5f4ff;
+  --blueai-bg-selected-secondary: #f2f9ff;
+  --blueai-bg-selected-hover: #bde3ff;
+  --blueai-bg-hover: #f5f5f5;
+  --blueai-text-component: #8638e5;
+  --blueai-border: #e6e6e6;
+}
+
+:global(.default) {
+  --color-accent-primary: #0d99ff;
+  --color-accent-primary-muted: #394360;
+  --color-accent-secondary: #8a38f5;
+  --color-accent-tertiary: #0d99ff;
+  --color-accent-quaternary: #f24822;
+  --color-accent-overlay: #0d99ff99;
+  --color-accent-select: #0d99ff1a;
+  --color-accent-background-select: #0d99ffb3;
+  --color-accent-action: #0d99ff;
+  --color-accent-action-hover: #0a6dc2;
+  --color-accent-off: #383838;
+  --color-accent-success: #14ae5c;
+  --color-background-success: #1b3a2a;
+  --color-accent-warning: #f3c11b;
+  --color-background-warning: #3d3415;
+  --color-accent-error: #e03e1a;
+  --color-background-error: #4a1d14;
+  --color-foreground-error: #fca397;
+  --color-accent-info: #0d99ff;
+  --color-background-info: #0f3456;
+  --color-background-default: #2c2c2c;
+  --color-accent-default: #383838;
+  --color-icon-default: #b3b3b3;
+  --color-background-disabled: #444444;
+  --color-background-primary: #2c2c2c;
+  --color-background-secondary: #1e1e1e;
+  --color-background-tertiary: #383838;
+  --color-background-quaternary: #444444;
+  --color-foreground-primary: #ffffff;
+  --color-foreground-secondary: #b3b3b3;
+  --color-static-white: #{$white};
+  --color-static-black: #{$black};
+  --color-shadow-dark: #{color.change($black, $alpha: 0.6)};
+  --color-shadow-light: #{color.change($black, $alpha: 0.3)};
+  --color-overlay-default: #{$gray-950-60};
+  --color-overlay-onboarding: #{$gray-950-90};
+  --color-canvas: #1e1e1e;
+  --color-token-background: #{$violet-800};
+  --color-token-border: #{$violet-700};
+  --color-token-accent: #{$violet-600};
+  --color-token-foreground: #{$violet-300};
+  --color-badge-premium: #{$orange-200};
+  // zvena Design: Figma UI3 dark palette (figma-color-* tokens).
+  --color-accent-primary-hover: #0a6dc2;
+  --color-on-accent: #ffffff;
+  --blueai-bg-selected: #4a5878;
+  --blueai-bg-selected-secondary: #394360;
+  --blueai-bg-selected-hover: #536383;
+  --blueai-bg-hover: #383838;
+  --blueai-text-component: #d1a8ff;
+  --blueai-border: #444444;
+}
+
+// zvena: Figma's "Enhanced contrast" preference (html.zv-contrast)
+:global(html.zv-contrast .light) {
+  --color-foreground-secondary: #3b3b3b;
+  --color-icon-default: #3b3b3b;
+  --color-background-quaternary: #bdbdbd;
+  --color-background-secondary: #d6d6d6;
+}
+
+:global(html.zv-contrast .default) {
+  --color-foreground-secondary: #e6e6e6;
+  --color-icon-default: #e6e6e6;
+  --color-background-quaternary: #5e5e5e;
+  --color-background-secondary: #141414;
+}

@@ -1,0 +1,960 @@
+/* zvena Documents — Map, Place, Dashboard and Feed views and database page
+   layouts (Notion's). Tokens only (--nt-*), so the theme restyles them too.
+   Loaded with the database code (DatabaseView, RowProps). */
+
+/* Map view */
+.nt-map-view {
+  position: relative;
+  padding-bottom: 12px;
+}
+.nt-map {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--nt-border-2);
+  background: var(--nt-hover);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  outline: none;
+}
+.nt-map:active {
+  cursor: grabbing;
+}
+.nt-map:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--nt-blue);
+}
+.nt-map-tiles img {
+  position: absolute;
+  width: 256px;
+  height: 256px;
+  max-width: none;
+  pointer-events: none;
+}
+.dark .nt-map-tiles img {
+  filter: brightness(0.82) contrast(1.05) saturate(0.85);
+}
+.nt-map-pin {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -100%);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.nt-map-pin-head {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--nt-bg);
+  box-shadow: var(--nt-card-shadow), 0 2px 6px rgba(15, 15, 15, 0.16);
+  color: var(--nt-red);
+  font-size: 16px;
+  line-height: 1;
+}
+.nt-map-pin-head > * {
+  transform: rotate(45deg);
+}
+.nt-map-pin-head svg {
+  width: 16px;
+  height: 16px;
+}
+.nt-map-pin:hover .nt-map-pin-head,
+.nt-map-pin:focus-visible .nt-map-pin-head {
+  box-shadow: 0 0 0 2px var(--nt-blue), 0 2px 6px rgba(15, 15, 15, 0.2);
+}
+.nt-map-cluster {
+  transform: translate(-50%, -50%);
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 16px;
+  background: var(--nt-text);
+  color: var(--nt-bg);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6), 0 2px 6px rgba(15, 15, 15, 0.2);
+}
+.nt-map-ctrl {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--nt-menu-bg, var(--nt-bg));
+  box-shadow: var(--nt-menu-shadow);
+}
+.nt-map-ctrl button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: var(--nt-text-2);
+}
+.nt-map-ctrl button + button {
+  box-shadow: 0 -1px 0 var(--nt-divider);
+}
+.nt-map-ctrl button:hover {
+  background: var(--nt-hover);
+}
+.nt-map-ctrl svg {
+  width: 16px;
+  height: 16px;
+}
+.nt-map-attr {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  padding: 1px 6px;
+  border-start-start-radius: 4px;
+  font-size: 11px;
+  color: var(--nt-text-2);
+  background: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+}
+.dark .nt-map-attr {
+  background: rgba(25, 25, 25, 0.8);
+}
+.nt-map-note,
+.nt-map-banner {
+  font-size: 13px;
+  color: var(--nt-text-2);
+}
+.nt-map-note {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--nt-menu-bg, var(--nt-bg));
+  box-shadow: var(--nt-menu-shadow);
+}
+.nt-map-banner {
+  padding: 6px 2px 8px;
+}
+.nt-map-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 48px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--nt-text-2);
+}
+.nt-map-empty svg {
+  width: 28px;
+  height: 28px;
+  color: var(--nt-text-3);
+}
+.nt-map-empty b {
+  color: var(--nt-text);
+  font-weight: 600;
+}
+.nt-map-empty .nt-btn {
+  margin-top: 8px;
+}
+.nt-map-card {
+  width: 260px;
+  cursor: pointer;
+}
+
+/* Place cells and the Place editor */
+.nt-cell-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.nt-cell-place svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--nt-text-3);
+}
+.nt-cell-place span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-place-editor {
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 6px 0;
+}
+.nt-place-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nt-place-search svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--nt-text-3);
+}
+.nt-place-hint {
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--nt-text-3);
+}
+.nt-place-result .nt-mi-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.nt-place-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-place-address {
+  font-size: 12px;
+  color: var(--nt-text-3);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+.nt-place-map {
+  padding: 6px 10px;
+}
+.nt-place-current {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 14px 8px;
+}
+.nt-place-label {
+  font-size: 12px;
+  color: var(--nt-text-2);
+}
+
+/* Dashboard view */
+.nt-dash {
+  padding: 8px 0 16px;
+}
+.nt-dash-empty {
+  padding: 32px 16px 8px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--nt-text-3);
+}
+.nt-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.nt-dash-widget {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--nt-border-2);
+  background: var(--nt-bg);
+  overflow: hidden;
+}
+.nt-dash-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 6px 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nt-text);
+}
+.nt-dash-icon {
+  display: grid;
+  place-items: center;
+  color: var(--nt-text-3);
+}
+.nt-dash-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-dash-rename {
+  flex: 1;
+  min-width: 0;
+}
+.nt-dash-more {
+  opacity: 0;
+  transition: opacity 80ms ease-in;
+}
+.nt-dash-widget:hover .nt-dash-more,
+.nt-dash-more:focus-visible {
+  opacity: 1;
+}
+.nt-dash-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  max-height: 420px;
+  overflow: auto;
+  padding: 0 12px 8px;
+}
+/* A chart widget shows its chart (Notion's); its settings float over it on hover or focus. */
+.nt-dash-body .nt-chart-bar {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--nt-menu-bg);
+  box-shadow: var(--nt-menu-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms;
+}
+.nt-dash-widget:hover .nt-dash-body .nt-chart-bar,
+.nt-dash-body .nt-chart-bar:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+.nt-db[data-widget] .nt-db-bar {
+  justify-content: flex-end;
+  min-height: 0;
+  margin-top: -32px;
+  pointer-events: none;
+}
+.nt-db[data-widget] .nt-db-tools {
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 80ms ease-in;
+  margin-inline-end: 28px;
+}
+.nt-dash-widget:hover .nt-db[data-widget] .nt-db-tools,
+.nt-db[data-widget] .nt-db-tools:focus-within {
+  opacity: 1;
+}
+.nt-dash-add {
+  grid-column: span 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--nt-border-2);
+  font-size: 14px;
+  color: var(--nt-text-3);
+}
+.nt-dash-add:hover {
+  background: var(--nt-hover);
+  color: var(--nt-text-2);
+}
+.nt-dash-add svg {
+  width: 16px;
+  height: 16px;
+}
+@media (max-width: 767px) {
+  .nt-dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nt-dash-widget,
+  .nt-dash-add {
+    grid-column: auto !important;
+  }
+}
+
+/* Feed view */
+.nt-feed {
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  padding: 4px 0 24px;
+}
+.nt-feed-post {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 0 16px;
+  box-shadow: 0 1px 0 var(--nt-divider);
+}
+.nt-feed-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--nt-text-2);
+}
+.nt-feed-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--nt-text);
+  text-align: start;
+}
+.nt-feed-title:hover span {
+  text-decoration: underline;
+  text-decoration-color: var(--nt-border-2);
+}
+.nt-feed-body {
+  position: relative;
+}
+.nt-feed-content {
+  max-height: 240px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  pointer-events: none;
+}
+/* Notion's post: the properties in one wrapping row, the body as it reads (no editor minimum height). */
+.nt-feed-post .nt-card-props {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+.nt-feed-content .bn-editor {
+  min-height: 0;
+  padding-inline: 0;
+}
+.nt-feed-more {
+  font-size: 14px;
+  color: var(--nt-text-2);
+  padding: 2px 0;
+}
+.nt-feed-more:hover {
+  color: var(--nt-text);
+}
+.nt-feed-foot {
+  padding-top: 4px;
+}
+.nt-feed-comment,
+.nt-feed-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--nt-text-3);
+}
+.nt-feed-comment:hover {
+  color: var(--nt-text-2);
+}
+.nt-feed-comment svg,
+.nt-feed-count svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Database page layouts */
+.nt-props-pinned {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 2px 0 6px;
+}
+.nt-props-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--nt-text);
+  cursor: pointer;
+}
+.nt-props-pin:hover {
+  background: var(--nt-hover);
+}
+.nt-props-pin > svg {
+  flex: none;
+  color: var(--nt-text-3);
+}
+.nt-props-section {
+  margin-top: 6px;
+}
+.nt-props-section-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nt-text-2);
+}
+.nt-props-section-head:hover {
+  background: var(--nt-hover);
+}
+.nt-props-section-head svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 100ms ease;
+}
+.nt-props-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.nt-props-actions .nt-prop-add {
+  width: auto;
+  padding: 0 8px 0 6px;
+}
+.nt-props[data-side] {
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+}
+.nt-props[data-side] .nt-prop {
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  margin-bottom: 4px;
+}
+.nt-props[data-side] .nt-prop-name {
+  width: auto;
+  min-height: 24px;
+  font-size: 12px;
+}
+.nt-props[data-side] .nt-prop-value {
+  width: 100%;
+  min-height: 30px;
+}
+.nt-row-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 32px;
+  align-items: start;
+}
+.nt-row-main {
+  min-width: 0;
+}
+.nt-row-aside {
+  position: sticky;
+  top: 12px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--nt-border-2);
+}
+@media (max-width: 1023px) {
+  .nt-row-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .nt-row-aside {
+    position: static;
+    order: -1;
+  }
+}
+
+/* "Customize layout" */
+.nt-layout-editor {
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  max-height: min(640px, calc(100vh - 32px));
+  overflow: auto;
+  padding: 8px 0;
+}
+.nt-layout-title {
+  padding: 2px 14px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nt-text);
+}
+.nt-layout-hint {
+  padding: 0 14px 4px;
+  font-size: 12px;
+  color: var(--nt-text-3);
+}
+.nt-layout-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 2px 14px 10px;
+}
+.nt-layout-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--nt-border-2);
+  font-size: 12px;
+  color: var(--nt-text-2);
+}
+.nt-layout-option svg {
+  width: 20px;
+  height: 20px;
+}
+.nt-layout-option[data-on] {
+  box-shadow: inset 0 0 0 2px var(--nt-blue);
+  color: var(--nt-text);
+}
+.nt-layout-list {
+  padding-bottom: 8px;
+}
+.nt-layout-row {
+  cursor: pointer;
+}
+.nt-layout-select {
+  max-width: 132px;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+.nt-layout-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 14px;
+}
+.nt-layout-section-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.nt-layout-section-head .nt-input {
+  flex: 1;
+  min-width: 0;
+}
+.nt-layout-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--nt-text-2);
+  cursor: pointer;
+}
+.nt-layout-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 14px 2px;
+}
+
+/* Conditional color (Notion): a rule colors a row, a card or one cell. */
+.nt-tr-body[data-ccolor="gray"] > .nt-td,
+.nt-td[data-ccolor="gray"],
+.nt-list-row[data-ccolor="gray"],
+.nt-card[data-ccolor="gray"],
+.nt-card-prop-text[data-ccolor="gray"],
+.nt-list-prop[data-ccolor="gray"],
+.nt-ccolor-swatch[data-color="gray"] {
+  background: var(--nt-b-gray);
+}
+.nt-tr-body[data-ccolor="brown"] > .nt-td,
+.nt-td[data-ccolor="brown"],
+.nt-list-row[data-ccolor="brown"],
+.nt-card[data-ccolor="brown"],
+.nt-card-prop-text[data-ccolor="brown"],
+.nt-list-prop[data-ccolor="brown"],
+.nt-ccolor-swatch[data-color="brown"] {
+  background: var(--nt-b-brown);
+}
+.nt-tr-body[data-ccolor="orange"] > .nt-td,
+.nt-td[data-ccolor="orange"],
+.nt-list-row[data-ccolor="orange"],
+.nt-card[data-ccolor="orange"],
+.nt-card-prop-text[data-ccolor="orange"],
+.nt-list-prop[data-ccolor="orange"],
+.nt-ccolor-swatch[data-color="orange"] {
+  background: var(--nt-b-orange);
+}
+.nt-tr-body[data-ccolor="yellow"] > .nt-td,
+.nt-td[data-ccolor="yellow"],
+.nt-list-row[data-ccolor="yellow"],
+.nt-card[data-ccolor="yellow"],
+.nt-card-prop-text[data-ccolor="yellow"],
+.nt-list-prop[data-ccolor="yellow"],
+.nt-ccolor-swatch[data-color="yellow"] {
+  background: var(--nt-b-yellow);
+}
+.nt-tr-body[data-ccolor="green"] > .nt-td,
+.nt-td[data-ccolor="green"],
+.nt-list-row[data-ccolor="green"],
+.nt-card[data-ccolor="green"],
+.nt-card-prop-text[data-ccolor="green"],
+.nt-list-prop[data-ccolor="green"],
+.nt-ccolor-swatch[data-color="green"] {
+  background: var(--nt-b-green);
+}
+.nt-tr-body[data-ccolor="blue"] > .nt-td,
+.nt-td[data-ccolor="blue"],
+.nt-list-row[data-ccolor="blue"],
+.nt-card[data-ccolor="blue"],
+.nt-card-prop-text[data-ccolor="blue"],
+.nt-list-prop[data-ccolor="blue"],
+.nt-ccolor-swatch[data-color="blue"] {
+  background: var(--nt-b-blue);
+}
+.nt-tr-body[data-ccolor="purple"] > .nt-td,
+.nt-td[data-ccolor="purple"],
+.nt-list-row[data-ccolor="purple"],
+.nt-card[data-ccolor="purple"],
+.nt-card-prop-text[data-ccolor="purple"],
+.nt-list-prop[data-ccolor="purple"],
+.nt-ccolor-swatch[data-color="purple"] {
+  background: var(--nt-b-purple);
+}
+.nt-tr-body[data-ccolor="pink"] > .nt-td,
+.nt-td[data-ccolor="pink"],
+.nt-list-row[data-ccolor="pink"],
+.nt-card[data-ccolor="pink"],
+.nt-card-prop-text[data-ccolor="pink"],
+.nt-list-prop[data-ccolor="pink"],
+.nt-ccolor-swatch[data-color="pink"] {
+  background: var(--nt-b-pink);
+}
+.nt-tr-body[data-ccolor="red"] > .nt-td,
+.nt-td[data-ccolor="red"],
+.nt-list-row[data-ccolor="red"],
+.nt-card[data-ccolor="red"],
+.nt-card-prop-text[data-ccolor="red"],
+.nt-list-prop[data-ccolor="red"],
+.nt-ccolor-swatch[data-color="red"] {
+  background: var(--nt-b-red);
+}
+.nt-card-prop-text[data-ccolor],
+.nt-list-prop[data-ccolor] {
+  border-radius: 4px;
+  padding: 0 4px;
+  margin: 0 -4px;
+}
+.nt-list-prop {
+  display: inline-flex;
+  min-width: 0;
+}
+.nt-ccolor {
+  width: 460px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nt-ccolor-rule {
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--nt-border-2);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nt-ccolor-head,
+.nt-ccolor-cond {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.nt-ccolor-cond .nt-advf-rule {
+  flex: 1;
+  min-width: 0;
+}
+.nt-ccolor-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex: none;
+  box-shadow: inset 0 0 0 1px var(--nt-border-2);
+}
+.nt-ccolor-when,
+.nt-ccolor-and {
+  font-size: 12px;
+  color: var(--nt-text-2);
+}
+.nt-ccolor-and {
+  flex: none;
+  min-width: 24px;
+}
+
+/* Data sources (Notion, 2025): each tab says which source it shows; the panel lists them. */
+.nt-db-tab-src {
+  font-size: 12px;
+  color: var(--nt-text-3);
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-db-nosource {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+.nt-db-nosource svg {
+  width: 16px;
+  height: 16px;
+}
+.nt-srcpanel {
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 6px 0;
+}
+.nt-srcpanel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  min-height: 32px;
+  font-size: 14px;
+}
+.nt-srcpanel-row:hover {
+  background: var(--nt-hover);
+}
+.nt-srcpanel-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  flex: none;
+  color: var(--nt-text-2);
+}
+.nt-srcpanel-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-srcpanel-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--nt-text-2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: var(--nt-b-gray);
+  flex: none;
+}
+.nt-srcpanel-count {
+  font-size: 12px;
+  color: var(--nt-text-3);
+  flex: none;
+}
+.nt-srcpick {
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  padding: 6px 0;
+}
+.nt-srcpick-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 6px;
+  color: var(--nt-text-3);
+}
+.nt-srcpick-search svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.nt-srcpick-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+.nt-srcpick-db {
+  font-size: 12px;
+  color: var(--nt-text-2);
+  padding: 6px 12px 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-srcpick .nt-mi[data-indent] {
+  padding-inline-start: 22px;
+}
+
+/* Numbers shown as a bar or a ring (Notion's number "Show as"). */
+.nt-numshow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+.nt-numshow[data-as="ring"] {
+  width: auto;
+}
+.nt-numshow-bar {
+  flex: 1;
+  min-width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--nt-border-2);
+  overflow: hidden;
+}
+.nt-numshow-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--nt-numshow);
+}
+.nt-numshow-ring {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.nt-numshow-track {
+  fill: none;
+  stroke: var(--nt-border-2);
+  stroke-width: 2.5;
+}
+.nt-numshow-fill {
+  fill: none;
+  stroke: var(--nt-numshow);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.nt-numshow-divide {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 10px;
+  font-size: 13px;
+  color: var(--nt-text-2);
+}
+.nt-numshow-divide .nt-input {
+  width: 90px;
+}
+.nt-numshow[data-color="gray"] {
+  --nt-numshow: var(--nt-c-gray);
+}
+.nt-numshow[data-color="brown"] {
+  --nt-numshow: var(--nt-c-brown);
+}
+.nt-numshow[data-color="orange"] {
+  --nt-numshow: var(--nt-c-orange);
+}
+.nt-numshow[data-color="yellow"] {
+  --nt-numshow: var(--nt-c-yellow);
+}
+.nt-numshow[data-color="green"] {
+  --nt-numshow: var(--nt-c-green);
+}
+.nt-numshow[data-color="blue"] {
+  --nt-numshow: var(--nt-c-blue);
+}
+.nt-numshow[data-color="purple"] {
+  --nt-numshow: var(--nt-c-purple);
+}
+.nt-numshow[data-color="pink"] {
+  --nt-numshow: var(--nt-c-pink);
+}
+.nt-numshow[data-color="red"] {
+  --nt-numshow: var(--nt-c-red);
+}

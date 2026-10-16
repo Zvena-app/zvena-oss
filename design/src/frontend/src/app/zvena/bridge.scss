@@ -1,0 +1,101 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "../main/ui/workspace/sidebar/common/sidebar.scss" as sidebar;
+
+// A frame's "Related" section: rows like Figma's layer list.
+.element-set {
+  @include sidebar.option-grid-structure;
+}
+
+.element-title {
+  grid-column: span 8;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  padding-block: var(--sp-xs) var(--sp-s);
+  color: var(--color-foreground-secondary);
+  font-size: px2rem(11);
+  line-height: px2rem(16);
+}
+
+.list {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--sp-s);
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+  block-size: px2rem(28);
+  padding-inline: var(--sp-xs);
+  border-radius: $br-4;
+  color: var(--color-foreground-primary);
+  font-size: px2rem(11);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-background-tertiary);
+    outline: none;
+  }
+}
+
+.item-title {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-sub {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+// An issue's workflow status: an outlined circle in its color, filled when done.
+.status {
+  flex-shrink: 0;
+  inline-size: px2rem(10);
+  block-size: px2rem(10);
+  border: $b-2 solid var(--status-color);
+  border-radius: 50%;
+
+  &.done {
+    background-color: var(--status-color);
+  }
+
+  &.canceled {
+    opacity: 0.5;
+  }
+}
+
+.dot {
+  flex-shrink: 0;
+  inline-size: px2rem(8);
+  block-size: px2rem(8);
+  margin-inline: px2rem(1);
+  border-radius: 50%;
+  background-color: var(--status-color);
+}
+
+.emoji {
+  flex-shrink: 0;
+  inline-size: px2rem(12);
+  font-size: px2rem(11);
+  line-height: 1;
+  text-align: center;
+}

@@ -1,0 +1,42 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// Figma's file browser empty states — centered, plain, no frame or artwork.
+.empty-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-block-size: $sz-160;
+  max-width: $sz-964;
+  padding: $sz-32 $sz-16;
+  background: none;
+  color: var(--color-foreground-secondary);
+  text-align: center;
+}
+
+.text-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: px2rem(4);
+  max-width: $sz-400;
+  font-size: $sz-12;
+  line-height: 1.4;
+}
+
+.placeholder-title {
+  color: var(--color-foreground-primary);
+  font-weight: 600;
+}
+
+.svg-decor {
+  display: none;
+}

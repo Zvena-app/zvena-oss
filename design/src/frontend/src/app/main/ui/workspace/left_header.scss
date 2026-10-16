@@ -1,0 +1,145 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// Figma UI3 left panel header (logo menu, file name, project).
+.workspace-header-left {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-block-end: px2rem(12);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  block-size: px2rem(48);
+  padding-inline: var(--sp-s);
+}
+
+.menu-section {
+  display: flex;
+  align-items: center;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--sp-s);
+  min-inline-size: 0;
+}
+
+.file-name {
+  @include t.use-typography("title-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  max-inline-size: 100%;
+  block-size: px2rem(24);
+  padding-inline: var(--sp-s) var(--sp-xs);
+  border: none;
+  border-radius: $br-8;
+  background: none;
+  color: var(--color-foreground-primary);
+  font-weight: 550;
+  cursor: pointer;
+
+  &:hover,
+  &.open {
+    background-color: var(--color-background-tertiary);
+  }
+}
+
+.file-name-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.file-name-arrow {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.file-name-input {
+  @include t.use-typography("title-small");
+
+  inline-size: 100%;
+  block-size: px2rem(24);
+  margin: 0;
+  padding-inline: var(--sp-s);
+  border: $b-1 solid var(--color-accent-primary);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+  font-weight: 550;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.project-row {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  padding-inline: var(--sp-l);
+  margin-block-start: px2rem(2);
+  color: var(--color-foreground-secondary);
+  min-inline-size: 0;
+}
+
+.project-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.shared-badge {
+  padding: 0 var(--sp-xs);
+  border-radius: $br-4;
+  background-color: var(--color-background-info, #e5f4ff);
+  color: var(--color-accent-primary);
+  white-space: nowrap;
+}
+
+.status-notification {
+  flex-shrink: 0;
+  inline-size: px2rem(6);
+  block-size: px2rem(6);
+  border-radius: 50%;
+
+  &.pending-status {
+    background-color: var(--status-widget-background-color-warning);
+  }
+
+  &.saving-status {
+    background-color: var(--status-widget-background-color-pending);
+  }
+
+  // Saved is the normal state: no dot, as in Figma.
+  &.saved-status {
+    display: none;
+  }
+
+  &.error-status {
+    background-color: var(--status-widget-background-color-error);
+  }
+}

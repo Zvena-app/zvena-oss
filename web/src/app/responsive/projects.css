@@ -1,0 +1,537 @@
+/* zvena on phones and tablets: projects. Breakpoints and rules: responsive/shell.css.
+ *
+ * Linear's iOS / iPad / mobile-web behaviour is the reference:
+ *   ≤ 860  the screen header is one 48 px bar (menu button, icon, title, count,
+ *          actions) and a second row with the tabs and the layout switcher;
+ *          the issue page stacks: title, description, properties, activity.
+ *   ≤ 640  phone: list rows keep priority, ID, status, title and avatar; the
+ *          board shows one column at a time (85vw, snapping); popovers and
+ *          dialogs are bottom sheets.
+ *   touch  44 px rows, 36–40 px controls, nothing that needs hover.
+ *
+ * This sheet loads before components/projects/projects.css: selectors are
+ * doubled (.x.x) or rooted in .pj-app to win.
+ */
+
+/* ------------------------------------------------------------------ header: one bar + a second row */
+
+@media (max-width: 860px) {
+  .pj-app .pj-screen > .pj-head.pj-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-rows: var(--rs-bar-h);
+    grid-auto-rows: auto;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 0;
+    min-height: calc(var(--rs-bar-h) + var(--rs-safe-t));
+    padding-top: var(--rs-safe-t);
+    padding-bottom: 0;
+    padding-inline-end: calc(12px + var(--rs-safe-r));
+    flex-wrap: nowrap;
+  }
+  .pj-app .pj-head > .pj-head-title { grid-area: 1 / 1 / 2 / 3; min-width: 0; height: var(--rs-bar-h); }
+  .pj-app .pj-head > .pj-head-actions { grid-area: 1 / 3 / 2 / 4; min-width: 0; }
+  .pj-app .pj-head > .pj-search-box { grid-area: 1 / 1 / 2 / -1; max-width: none; }
+  /* Row 2 starts at the page's gutter, under the menu button (52 px reserved, 12 px gutter). */
+  .pj-app .pj-head > .pj-tabs.pj-tabs {
+    grid-area: 2 / 1 / 3 / 3;
+    margin-inline-start: -40px;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 2px 0 8px;
+  }
+  .pj-app .pj-head > .pj-tabs::-webkit-scrollbar { display: none; }
+  .pj-app .pj-head > .ds-views { grid-area: 2 / 3 / 3 / 4; margin-bottom: 6px; justify-self: end; }
+  .pj-app .pj-head:not(:has(> .ds-views)) > .pj-tabs.pj-tabs { grid-column: 1 / -1; }
+  .pj-app .pj-head:not(:has(> .pj-tabs)) > .ds-views { grid-column: 1 / -1; justify-self: start; margin-inline-start: -40px; }
+
+  /* The title: icon, name, count on one line; a breadcrumb gives way first. */
+  .pj-app .pj-head-title.pj-head-title { overflow: hidden; }
+  .pj-app .pj-head-title > * { flex-shrink: 0; }
+  .pj-app .pj-head-title > h1 { flex-shrink: 1; min-width: 0; }
+  .pj-app .pj-head-title > .pj-crumb { flex-shrink: 4; min-width: 24px; max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
+  .pj-app .pj-head-title > .pj-small { flex-shrink: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pj-app .pj-head-actions.pj-head-actions { gap: 4px; }
+
+  /* Filter / Display: one row; the filter chips scroll sideways. */
+  .pj-app .pj-toolbar-row.pj-toolbar-row { flex-wrap: nowrap; min-height: 44px; padding: 4px calc(12px + var(--rs-safe-r)) 4px calc(12px + var(--rs-safe-l)); gap: 6px; }
+  .pj-app .pj-toolbar-row > .pj-chips { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .pj-app .pj-toolbar-row > .pj-chips::-webkit-scrollbar { display: none; }
+  .pj-app .pj-toolbar-row > .pj-chips > * { flex-shrink: 0; }
+  .pj-app .pj-toolbar-row > .pj-toolbar-end { flex-shrink: 0; }
+}
+
+/* Phone landscape: there is width but no height, so the tabs and the switcher
+   stay on the bar (one 48 px row), as on a laptop. */
+@media (min-width: 641px) and (max-width: 860px) and (max-height: 500px) {
+  .pj-app .pj-screen > .pj-head.pj-head { display: flex; height: calc(var(--rs-bar-h) + var(--rs-safe-t)); }
+  .pj-app .pj-head > .pj-head-title { flex: 0 1 auto; }
+  .pj-app .pj-head > .pj-tabs.pj-tabs { margin-inline-start: 0; padding: 0; flex: 0 1 auto; }
+  .pj-app .pj-head > .ds-views,
+  .pj-app .pj-head:not(:has(> .pj-tabs)) > .ds-views { margin: 0; flex-shrink: 0; }
+  .pj-app .pj-head > .pj-head-actions { flex-shrink: 0; }
+}
+
+/* Phones: the layout switcher shows its icons only (names stay as titles). */
+@media (max-width: 640px) {
+  .pj-app :is(.pj-head, .pj-toolbar-row) .ds-view { font-size: 0; gap: 0; width: 36px; padding: 0; justify-content: center; }
+  .pj-app .pj-head-title > .pj-small { display: none; }
+  /* Roadmap: the zoom switch goes to the second row, Today stays on the bar. */
+  .pj-app .pj-screen > .pj-head:has(> .pj-head-actions > .pj-seg) > .pj-head-actions { display: contents; }
+  .pj-app .pj-head > .pj-head-actions > .pj-seg { grid-area: 2 / 1 / 3 / -1; justify-self: start; margin: 0 0 8px -40px; }
+  .pj-app .pj-head > .pj-head-actions > .pj-seg ~ .pj-btn { grid-area: 1 / 3 / 2 / 4; }
+}
+
+/* Narrow phones: a cycle's or project's own name beats its breadcrumb
+   (the drawer and the back gesture lead back up). */
+@media (max-width: 480px) {
+  .pj-app .pj-head-title > .pj-crumb.pj-crumb,
+  .pj-app .pj-head-title > .pj-crumb + .pj-muted-icon { display: none; }
+}
+
+/* ------------------------------------------------------------------ touch sizes */
+
+@media (pointer: coarse) {
+  .pj-app .pj-btn.pj-btn-sm,
+  .pj-popover .pj-btn.pj-btn-sm,
+  .pj-modal .pj-btn.pj-btn-sm { height: 36px; padding: 0 12px; }
+  .pj-app .pj-btn.pj-btn,
+  .pj-modal .pj-btn.pj-btn { min-height: 36px; }
+  .pj-app .pj-icon-btn.pj-icon-btn { width: 36px; height: 36px; }
+  .pj-app .pj-icon-btn.pj-icon-xs { width: 32px; height: 32px; }
+  .pj-app .pj-tab.pj-tab { height: 32px; padding: 0 12px; }
+  .pj-app .ds-views .ds-view { height: 32px; }
+  .pj-app .pj-chip.pj-chip { height: 32px; }
+  .pj-app .pj-chip-x.pj-chip-x { width: 32px; }
+  .pj-app .pj-seg.pj-seg button { height: 32px; }
+  .pj-app .ds-pill.ds-pill { min-height: 28px; }
+  .pj-app .pj-link.pj-small { display: inline-flex; align-items: center; min-height: 28px; }
+  .pj-app .pj-crumb.pj-crumb { display: inline-flex; align-items: center; min-height: 32px; }
+
+  /* Lists people tap: Linear's 44 px rows. */
+  .pj-app .ds-row.pj-issue-row { height: 44px; gap: 8px; }
+  .pj-app .pj-issue-row .pj-prop-btn { min-width: 32px; height: 32px; }
+  .pj-app .pj-group-head.pj-group-head { height: 40px; }
+  .pj-app .pj-group-head .pj-group-add { width: 36px; height: 36px; }
+  .pj-app .pj-table-row.pj-table-row { min-height: 44px; }
+  .pj-app .pj-search-hit.pj-search-hit { min-height: 44px; }
+  .pj-app .pj-mini-row.pj-mini-row { height: 44px; }
+  .pj-app .pj-notif.pj-notif { min-height: 56px; }
+
+  /* Controls that show on hover are always there. */
+  .pj-app .pj-col-add.pj-col-add { opacity: 1; }
+  .pj-app .pj-col-head .pj-group-add { opacity: 1; width: 36px; height: 36px; }
+  .pj-app .pj-comment-actions.pj-comment-actions { opacity: 1; }
+  .pj-app .pj-comment-actions .pj-link.pj-small { padding-inline: 6px; min-height: 32px; }
+  .pj-app .pj-colors .pj-color.pj-color { width: 28px; height: 28px; }
+  .pj-app .pj-colors.pj-colors { gap: 6px; }
+  .pj-app .pj-crumbs > a { padding-block: 10px; }
+  .pj-app .ds-row.pj-issue-row .pj-row-title { line-height: 44px; }
+  .pj-app .pj-ptable-name > a,
+  .pj-app .pj-rm-name > a { padding-block: 12px; }
+  /* Editable text at 16 px: iOS zooms into anything smaller. */
+  .pj-app .pj-prose.pj-prose[contenteditable="true"],
+  .pj-app .pj-issue .pj-prose.pj-prose,
+  .pj-modal .pj-prose.pj-prose { font-size: 16px; }
+  .pj-app .pj-composer-foot > .pj-small:first-child { display: none; }
+}
+
+@media (hover: none) {
+  /* A tap marks the row as focused (mouseenter): its properties stay, no hover swap. */
+  .pj-app .ds-row.pj-issue-row[data-focused] .ds-row-props[data-hide-on-hover],
+  .pj-app .ds-row.pj-issue-row:hover .ds-row-props[data-hide-on-hover] { display: inline-flex; }
+  /* Of the quick actions only "…" stays (the issue's menu); the others are the row's own pills. */
+  .pj-app .ds-row.pj-issue-row .ds-row-quick { display: inline-flex; }
+  .pj-app .ds-row.pj-issue-row .ds-row-quick > :not(:last-child) { display: none; }
+  .pj-app .ds-row.pj-issue-row .ds-row-check { opacity: 1; }
+}
+
+/* ------------------------------------------------------------------ list rows on tablets */
+
+/* The title keeps its room: the row drops its least useful properties as it
+   narrows (as Linear does), instead of pushing the title to nothing. */
+@media (max-width: 1180px), (pointer: coarse) {
+  .pj-app .ds-row.pj-issue-row { container: pj-row / inline-size; }
+  .pj-app .pj-issue-row .ds-row-props > .ds-pill { max-width: 168px; }
+}
+@container pj-row (max-width: 900px) {
+  /* labels (dot), "+2", milestone (◆), estimate; comment and file counts */
+  .pj-issue-row .ds-row-props > .ds-pill:is(:has(> .ds-pill-dot), :not(:has(> svg, > span[aria-hidden])), :has(> span[aria-hidden]:not(.ds-pill-dot)), :has(> .lucide-gauge)),
+  .pj-issue-row .ds-row-props > .pj-meta-txt:has(> :is(.lucide-message-square, .lucide-paperclip)) { display: none; }
+}
+@container pj-row (max-width: 720px) {
+  .pj-issue-row .ds-row-props > .ds-pill:has(> .pj-cycle-glyph),
+  .pj-issue-row .ds-row-props > .pj-meta-date { display: none; }
+  .pj-issue-row .ds-row-props > .ds-pill { max-width: 132px; }
+}
+
+/* ------------------------------------------------------------------ list rows on phones */
+
+@media (max-width: 760px) {
+  /* Priority, ID, status, title, avatar: labels, project, dates and counts give way. */
+  .pj-app .pj-issue-row .ds-row-props.ds-row-props { display: inline-flex; gap: 0; }
+  .pj-app .pj-issue-row .ds-row-props > :not(span.pj-prop-btn) { display: none; }
+  .pj-app .pj-issue-row .ds-row-id { min-width: 44px; }
+  .pj-app .ds-row.pj-issue-row { padding-inline: calc(8px + var(--rs-safe-l)) calc(12px + var(--rs-safe-r)); }
+}
+@media (max-width: 640px) {
+  .pj-app .ds-row.pj-issue-row .ds-row-quick { display: none; }
+  .pj-app .pj-group-head.pj-group-head { padding-inline: 8px 12px; }
+}
+
+/* A tapped title takes focus: its row must not scroll sideways under the
+   ellipsis (the status icon would slide out); the link truncates itself. */
+@media (max-width: 860px), (pointer: coarse) {
+  .pj-app .pj-issue-row .ds-row-title.ds-row-title { display: flex; align-items: center; gap: 6px; overflow: clip; }
+  .pj-app .pj-issue-row .ds-row-title > .pj-row-title { flex: 0 1 auto; min-width: 0; }
+  .pj-app .pj-issue-row .ds-row-title > .pj-prop-btn,
+  .pj-app .pj-issue-row .ds-row-title > .pj-row-parent { flex-shrink: 0; }
+}
+
+/* RTL: a title in a left-to-right script keeps its own direction, so the
+   ellipsis cuts its end, not its first word. */
+[dir="rtl"] .pj-app :is(.pj-row-title, .pj-card-title > a, .pj-notif-title, .pj-search-title, .pj-mini-title, .pj-ptable-name > a, .pj-rm-name > a) { unicode-bidi: plaintext; }
+
+/* ------------------------------------------------------------------ board */
+
+/* Pills in a card never run past its edge (nor make the column scroll sideways). */
+.pj-app .pj-card.pj-card { grid-template-columns: minmax(0, 1fr); }
+.pj-app .pj-card-meta > * { min-width: 0; max-width: 100%; }
+.pj-app .pj-col-body.pj-col-body { overflow-x: hidden; }
+
+@media (max-width: 640px) {
+  /* One column at a time, as on Linear's phone app: 85vw, snapping, the next one peeking. */
+  .pj-app .pj-board.pj-board {
+    gap: 8px;
+    padding: 8px calc(12px + var(--rs-safe-r)) calc(12px + var(--rs-safe-b)) calc(12px + var(--rs-safe-l));
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 12px;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pj-app .pj-board > .pj-col { width: 85vw; max-width: 360px; scroll-snap-align: start; scroll-snap-stop: always; }
+  .pj-app .pj-col-body.pj-col-body { overscroll-behavior-y: contain; }
+  /* While a card is dragged the board scrolls under it freely (snapping would pull it back). */
+  .pj-drag-active .pj-app .pj-board.pj-board { scroll-snap-type: none; }
+}
+@media (pointer: coarse) {
+  .pj-app .pj-card.pj-card { cursor: default; gap: 8px; padding: 12px 12px 10px 14px; }
+  .pj-app .pj-card-title { font-size: 14px; }
+  /* The status icon in a card's title: a 32 px target around the 18 px glyph. */
+  .pj-app .pj-card-title .pj-prop-btn.pj-prop-btn { min-width: 32px; height: 32px; margin: -7px -7px -7px -8px; }
+  .pj-app .pj-card-top .pj-prop-btn,
+  .pj-app .pj-card-meta .pj-prop-btn { min-width: 32px; height: 32px; margin: -4px; }
+  .pj-app .pj-col-add.pj-col-add { height: 40px; }
+  .pj-app .pj-cal-issue.pj-cal-issue { min-height: 26px; }
+}
+/* Long press (drag.ts): the pressed row or card sinks a little; no iOS link
+   callout or text selection under the finger. */
+@media (pointer: coarse) {
+  .pj-app :is(.pj-row-drag, .pj-card, .pj-cal-issue) { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .pj-app :is(.pj-row-drag, .pj-card) a { -webkit-touch-callout: none; }
+  .pj-app .pj-row-drag.pj-pressed .ds-row { background: var(--ui-hover); }
+  .pj-app .pj-row-drag, .pj-app .pj-card.pj-card { transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.18s; }
+  .pj-app .pj-row-drag.pj-pressed { transform: scale(0.985); }
+  .pj-app .pj-card.pj-card.pj-pressed { transform: scale(0.97); box-shadow: var(--ui-shadow-3); }
+  .pj-drag-ghost.pj-card { box-shadow: var(--ui-shadow-3) !important; }
+}
+
+/* RTL: the project's colour runs along the card's start edge. */
+[dir="rtl"] .pj-app .pj-card.pj-card[data-project] { box-shadow: inset -3px 0 0 var(--pj-card-accent), var(--zv-shadow); }
+[dir="rtl"] .pj-app .pj-card.pj-card[data-project]:is(:hover, [data-focused]) { box-shadow: inset -3px 0 0 var(--pj-card-accent), var(--zv-shadow-lg); }
+
+/* ------------------------------------------------------------------ calendar layout */
+
+@media (max-width: 640px) {
+  .pj-app .pj-cal.pj-cal { padding: 8px calc(8px + var(--rs-safe-r)) 24px calc(8px + var(--rs-safe-l)); }
+  .pj-app .pj-cal-head h2 { min-width: 0; flex: 1; }
+  .pj-app .pj-cal-wd { padding: 6px 2px; text-align: center; }
+  .pj-app .pj-cal-cell.pj-cal-cell { min-height: 68px; padding: 2px; }
+  .pj-app .pj-cal-day { text-align: center; }
+  .pj-app .pj-cal-cell[data-today] .pj-cal-day { margin: 0 auto; }
+  .pj-app .pj-cal-issue.pj-cal-issue { justify-content: center; min-height: 24px; padding: 2px; box-shadow: none; background: var(--ui-bg-2); }
+}
+
+/* ------------------------------------------------------------------ issue page and peek */
+
+/* The issue page grows with its content (it is a flex item of the scroller):
+   the sticky header holds to the end and the side panel's ground runs the
+   whole height (every size; the page used to stop at one screen). */
+.pj-app .pj-screen.pj-issue-page,
+.pj-app .pj-issue-page > .pj-issue { flex-shrink: 0; }
+.pj-app .pj-issue-page .pj-issue-body.pj-issue-body { flex: 1 0 auto; }
+
+@media (max-width: 860px) {
+  /* The page's header is the bar next to the menu button (it carries .pj-head for the shell). */
+  .pj-app .pj-issue-head.pj-head {
+    height: calc(var(--rs-bar-h) + var(--rs-safe-t));
+    padding-block: var(--rs-safe-t) 0;
+    padding-inline: calc(52px + var(--rs-safe-l)) calc(8px + var(--rs-safe-r));
+  }
+  .pj-app .pj-issue-head.pj-issue-head,
+  .pj-peek .pj-issue-head.pj-issue-head { height: calc(var(--rs-bar-h) + var(--rs-safe-t)); padding-top: var(--rs-safe-t); gap: 4px; }
+  .pj-peek .pj-issue-head.pj-issue-head { padding-inline: calc(14px + var(--rs-safe-l)) calc(6px + var(--rs-safe-r)); }
+  .pj-app .pj-crumbs.pj-crumbs { overflow: hidden; flex: 1 1 auto; }
+  .pj-app .pj-crumbs > a { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .pj-app .pj-crumbs > :not(a) { flex-shrink: 0; }
+  .pj-app .pj-issue-head-actions.pj-issue-head-actions { flex-shrink: 0; }
+
+  /* Title, description, then the properties, then the rest (Linear's order):
+     the main column dissolves into the stack so the side panel can sit in it. */
+  .pj-app .pj-issue-body.pj-issue-body { display: flex; flex-direction: column; flex: 1 0 auto; min-height: auto; }
+  .pj-app .pj-issue-body > .pj-issue-main { display: contents; }
+  .pj-app .pj-issue-body > .pj-issue-main > *,
+  .pj-app .pj-issue-body > .pj-issue-side { flex-shrink: 0; }
+  .pj-app .pj-issue-body > .pj-issue-main > * { margin-inline: calc(16px + var(--rs-safe-l)) calc(16px + var(--rs-safe-r)); }
+  .pj-app .pj-issue-body > .pj-issue-main > :first-child { margin-top: 16px; }
+  .pj-app .pj-issue-body > .pj-issue-main > .pj-issue-title { width: auto; }
+  .pj-app .pj-issue-body > .pj-issue-main > .pj-description ~ * { order: 2; }
+  .pj-app .pj-issue-body > .pj-issue-main > :last-child { margin-bottom: 0; padding-bottom: 24px; }
+  .pj-app .pj-issue-body > .pj-issue-side.pj-issue-side {
+    order: 1;
+    width: auto;
+    margin: 4px 0 8px;
+    padding: 8px calc(16px + var(--rs-safe-r)) 12px calc(16px + var(--rs-safe-l));
+    border: 0;
+    border-block: 1px solid var(--ui-border);
+    background: transparent;
+    overflow: visible;
+  }
+  .pj-app .pj-issue-side .pj-prop-row { grid-template-columns: 104px minmax(0, 1fr); }
+  .pj-app .pj-issue-side .pj-assign-me { margin-inline-start: 110px; }
+  .pj-app .pj-issue-side .pj-props-foot { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+
+  /* The comment box stays at the bottom while the activity is on screen. */
+  .pj-app .pj-timeline > .pj-composer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    margin: 12px calc(-16px - var(--rs-safe-r)) 0 calc(-16px - var(--rs-safe-l));
+    padding: 8px calc(16px + var(--rs-safe-r)) calc(8px + var(--rs-safe-b)) calc(16px + var(--rs-safe-l));
+    background: var(--ui-bg);
+    border-top: 1px solid var(--ui-border);
+  }
+  .pj-app .pj-timeline > .pj-composer .pj-composer-box .pj-prose { max-height: 30dvh; overflow-y: auto; }
+  .pj-app .pj-issue-body > .pj-issue-main > .pj-timeline:last-child { padding-bottom: 0; }
+
+  .pj-app .pj-issue-title.pj-issue-title { font-size: 20px; }
+  .pj-app .pj-prose.pj-prose { font-size: 15px; }
+  .pj-app .pj-reply.pj-reply { margin-inline-start: 12px; }
+  .pj-app .pj-comment-head.pj-comment-head { min-width: 0; white-space: nowrap; }
+  .pj-app .pj-comment-head > :is(b, time) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .pj-app .pj-comment-actions.pj-comment-actions { gap: 2px; flex-shrink: 0; }
+
+  /* Peek: a full screen sheet on phones and tablets in portrait. */
+  .pj-peek.pj-peek { padding-bottom: 0; overscroll-behavior: contain; }
+  .pj-peek .pj-issue[data-mode="peek"] .pj-issue-main { padding: 14px calc(16px + var(--rs-safe-r)) 0 calc(16px + var(--rs-safe-l)); }
+  .pj-peek .pj-timeline > .pj-composer,
+  .pj-inbox-detail .pj-timeline > .pj-composer {
+    position: sticky; bottom: 0; z-index: 3;
+    margin: 12px -16px 0; padding: 8px 16px calc(8px + var(--rs-safe-b));
+    background: var(--ui-bg); border-top: 1px solid var(--ui-border);
+  }
+}
+/* iPad landscape with the rail docked: a slimmer property panel keeps the
+   issue's text column at 560 px or more. */
+@media (min-width: 861px) and (max-width: 1100px) {
+  .pj-app .pj-issue-side.pj-issue-side { width: 220px; padding-inline: 12px; }
+  .pj-app .pj-issue-side .pj-prop-row { grid-template-columns: 80px minmax(0, 1fr); }
+  .pj-app .pj-issue-side .pj-assign-me { margin-inline-start: 86px; }
+  .pj-app .pj-issue-main.pj-issue-main { padding-inline: 28px; }
+}
+
+/* Tablets in portrait: the properties in two columns under the description. */
+@media (min-width: 641px) and (max-width: 860px) {
+  .pj-app .pj-issue-side .pj-props.pj-props { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row dense; column-gap: 24px; }
+  .pj-app .pj-issue-side .pj-props > :is(.pj-props-sub, .pj-props-foot, .pj-assign-me) { grid-column: 1 / -1; }
+  .pj-app .pj-issue-side .pj-props > .pj-assign-me { margin-top: -4px; }
+}
+/* iOS keyboard (keyboard.ts): the comment box being typed in rides on top of it. */
+@media (max-width: 860px) {
+  .pj-kb-open .pj-app .pj-timeline > .pj-composer:focus-within {
+    position: fixed;
+    inset-inline: 0;
+    bottom: var(--pj-kb, 0px);
+    z-index: 40;
+    margin: 0;
+    padding-bottom: 8px;
+    box-shadow: var(--ui-shadow-2);
+  }
+}
+@media (max-width: 640px) {
+  .pj-app .pj-crumbs > .pj-small { display: none; }
+  .pj-app .pj-issue-side .pj-prop-row { grid-template-columns: 92px minmax(0, 1fr); }
+  .pj-app .pj-issue-side .pj-assign-me { margin-inline-start: 98px; }
+  .pj-app .pj-section-head.pj-section-head { flex-wrap: wrap; }
+  .pj-app .pj-attachment.pj-attachment { gap: 8px; }
+}
+@media (pointer: coarse) {
+  .pj-app .pj-prop-value.pj-prop-value { min-height: 36px; }
+  .pj-app .pj-prop-row.pj-prop-row { min-height: 38px; }
+}
+
+/* ------------------------------------------------------------------ inbox and triage: list, then the item */
+
+@media (min-width: 641px) and (max-width: 860px) {
+  .pj-app .pj-inbox-body.pj-inbox-body { flex-direction: row; }
+  .pj-app .pj-inbox-list.pj-inbox-list { width: 300px; max-height: none; border-inline-end: 1px solid var(--ui-border); }
+}
+@media (max-width: 640px) {
+  .pj-app .pj-inbox-list.pj-inbox-list { max-height: none; flex: 1; border: 0; }
+  /* Nothing picked: the list fills the screen. One picked: the item does, with a way back. */
+  .pj-app .pj-inbox-body:not([data-picked]) > .pj-inbox-detail { display: none; }
+  .pj-app .pj-inbox-body[data-picked] > .pj-inbox-list { display: none; }
+  .pj-app .pj-inbox:has(> .pj-inbox-body[data-picked]) .pj-inbox-back { display: inline-grid; margin-inline-start: -8px; }
+}
+.pj-app .pj-inbox-back { display: none; }
+
+/* ------------------------------------------------------------------ projects, project page, roadmap, cycles */
+
+@media (max-width: 640px) {
+  .pj-app .pj-ptable-row.pj-ptable-row { grid-template-columns: minmax(0, 1fr) auto 92px; gap: 8px; height: 48px; padding: 0 calc(12px + var(--rs-safe-r)) 0 calc(12px + var(--rs-safe-l)); }
+  .pj-app .pj-ptable-row > :nth-child(2) .pj-small { display: none; }
+  .pj-app .pj-ptable-row .pj-progress-bar { width: 40px !important; }
+
+  .pj-app .pj-project.pj-project { padding: 16px calc(16px + var(--rs-safe-r)) 40px calc(16px + var(--rs-safe-l)); gap: 16px; }
+  .pj-app .pj-project-title input { font-size: 20px; text-overflow: ellipsis; }
+  .pj-app .pj-project-summary.pj-project-summary { text-overflow: ellipsis; }
+
+  .pj-app .pj-search-hit .pj-row-id { white-space: nowrap; flex-shrink: 0; color: var(--ui-text-3); }
+  .pj-app .pj-search-hit .pj-search-title { min-width: 0; flex: 1; }
+  .pj-app .pj-search-hit .pj-search-snippet { display: none; }
+  .pj-app .pj-search-box.pj-search-box { height: 36px; }
+  .pj-app .pj-updates.pj-updates { gap: 10px; }
+
+  .pj-app .pj-cycle-row.pj-cycle-row { height: auto; min-height: 52px; flex-wrap: wrap; padding: 8px 12px; row-gap: 4px; }
+  .pj-app .pj-cycle-row-end { flex-wrap: wrap; }
+  .pj-app .pj-cycle-top.pj-cycle-top { padding: 12px 16px; }
+  .pj-app .pj-stats.pj-stats { gap: 14px 20px; }
+
+  .pj-app .pj-rm-names.pj-rm-names { width: 112px; }
+  .pj-app .pj-rm-name.pj-rm-name { padding-inline: 10px 6px; }
+
+  .pj-app .pj-pad.pj-pad { padding: 16px calc(16px + var(--rs-safe-r)) 24px calc(16px + var(--rs-safe-l)); }
+  .pj-app .pj-settings .pj-label-form .pj-input { width: 100%; }
+  .pj-app .pj-wf-row.pj-wf-row { flex-wrap: wrap; }
+  .pj-app .pj-wf-name.pj-wf-name { max-width: none; flex: 1 1 140px; }
+}
+
+/* Insights: one column of cards that never grows past the screen. */
+@media (max-width: 860px) {
+  .pj-app .pj-insights .pj-screen-body.pj-screen-body { grid-template-columns: minmax(0, 1fr); }
+  .pj-app .pj-ins-tiles.pj-ins-tiles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+@media (max-width: 640px) {
+  .pj-app .pj-insights .pj-screen-body.pj-screen-body { padding: 12px calc(16px + var(--rs-safe-r)) 40px calc(16px + var(--rs-safe-l)); }
+  .pj-app .pj-ins-tiles.pj-ins-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .pj-app .pj-ins-tile.pj-ins-tile { padding: 12px; }
+  .pj-app .pj-ins-tile-value.pj-ins-tile-value { font-size: 22px; }
+  .pj-app .pj-ins-filters > .pj-select { flex: 1 1 140px; }
+}
+
+/* ------------------------------------------------------------------ popovers and dialogs */
+
+/* Anchored menus never leave the screen (Popover clamps to its measured width). */
+.pj-popover.pj-popover { max-width: calc(100vw - 16px - var(--rs-safe-l) - var(--rs-safe-r)); }
+
+@media (max-width: 640px) {
+  /* Phones: pickers and menus are bottom sheets (Linear's iOS app), whatever
+     the anchor. Popover writes left/top/width/maxHeight inline. */
+  .pj-popover.pj-popover {
+    left: 0 !important;
+    right: 0;
+    top: auto !important;
+    bottom: 0;
+    width: auto !important;
+    max-width: none;
+    max-height: min(78dvh, calc(100dvh - 56px)) !important;
+    border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
+    border-width: 1px 0 0;
+    padding-bottom: var(--rs-safe-b);
+    padding-inline: var(--rs-safe-l) var(--rs-safe-r);
+    box-shadow: var(--ui-shadow-3);
+    animation: rs-sheet 0.2s cubic-bezier(0.2, 0, 0, 1);
+    overscroll-behavior: contain;
+  }
+  .pj-popover.pj-popover::before {
+    content: ""; display: block; width: 36px; height: 4px; margin: 6px auto 2px; border-radius: 99px; background: var(--ui-border-2);
+  }
+  .pj-popover .pj-menu-list.pj-menu-list { max-height: none; }
+  .pj-popover .pj-menu-item.pj-menu-item { min-height: 44px; padding: 6px 12px; font-size: 15px; }
+  .pj-popover .pj-menu-search input { height: 40px; }
+  .pj-popover .pj-date.pj-date { width: auto; padding: 8px 12px 12px; }
+  .pj-popover .pj-date-day.pj-date-day { height: 40px; font-size: 14px; }
+  .pj-popover .pj-date-quick button { height: 36px; }
+  .pj-popover .pj-display.pj-display { padding: 8px 16px 16px; gap: 12px; }
+  .pj-popover .pj-prop-chip.pj-prop-chip { height: 32px; padding: 0 10px; }
+  .pj-popover .pj-ask.pj-ask { padding: 8px 12px 12px; }
+  .pj-popover .pj-ask-input { height: 44px; }
+  .pj-pop-scrim.pj-pop-scrim { display: block; }
+
+  /* Dialogs: bottom sheets; the create dialog nearly fills the screen. */
+  .pj-scrim.pj-scrim { place-items: end stretch; padding: calc(8px + var(--rs-safe-t)) 0 0; }
+  .pj-scrim > .pj-modal.pj-modal {
+    max-width: none !important;
+    max-height: 92dvh;
+    border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
+    border-width: 1px 0 0;
+    padding-bottom: var(--rs-safe-b);
+    animation: rs-sheet 0.22s cubic-bezier(0.2, 0, 0, 1);
+    overscroll-behavior: contain;
+  }
+  .pj-scrim > .pj-modal.pj-create { height: calc(var(--pj-vh, 100dvh) - 8px - var(--rs-safe-t)); max-height: none; display: flex; flex-direction: column; }
+  /* iOS keyboard (keyboard.ts): the sheet ends where the keyboard begins. */
+  .pj-scrim.pj-scrim:has(> .pj-create) { padding-bottom: var(--pj-kb, 0px); }
+  .pj-modal.pj-create > form { flex: 1; min-height: 0; overflow-y: auto; }
+  .pj-modal.pj-create .pj-create-desc { max-height: none; flex: 1 0 120px; }
+  .pj-modal.pj-create .pj-create-foot { position: sticky; bottom: 0; background: var(--ui-bg); margin-top: auto; }
+  .pj-modal.pj-create .pj-create-title { font-size: 20px; }
+  .pj-modal .pj-form.pj-form,
+  .pj-modal .pj-confirm.pj-confirm { padding: 16px; }
+  .pj-modal .pj-row-end.pj-row-end { flex-wrap: wrap-reverse; }
+  .pj-palette.pj-palette .pj-menu-list { max-height: none; }
+  .pj-scrim > .pj-modal.pj-palette { height: calc(100dvh - 8px - var(--rs-safe-t)); max-height: none; display: flex; flex-direction: column; }
+  .pj-palette .pj-menu-item.pj-menu-item { min-height: 44px; font-size: 15px; }
+}
+@keyframes rs-sheet { from { transform: translateY(24px); opacity: 0.6; } }
+.pj-pop-scrim { display: none; position: fixed; inset: 0; z-index: 999; background: var(--ui-scrim); animation: rs-fade 0.18s ease; }
+
+/* Tablets and landscape phones: dialogs fit under short screens. */
+@media (max-height: 500px) {
+  .pj-scrim.pj-scrim { padding-top: 12px; padding-bottom: 12px; }
+  .pj-scrim > .pj-modal.pj-modal { max-height: calc(100dvh - 24px); }
+  .pj-modal.pj-create .pj-create-desc { max-height: 22dvh; min-height: 48px; }
+  .pj-popover .pj-menu-list.pj-menu-list { max-height: none; }
+}
+@media (pointer: coarse) {
+  .pj-popover .pj-menu-item.pj-menu-item { min-height: 40px; }
+  .pj-create-pills .ds-pill, .pj-create-pills .pj-pill { min-height: 32px; }
+}
+
+/* The selection bar sits above the home indicator (ds.css), spans a phone's
+   width (ds.css ≤ 760) and scrolls its actions; no shortcut hints on touch. */
+@media (pointer: coarse) {
+  .pj-app .ds-selbar .ds-selbar-btn { height: 40px; padding: 0 10px; }
+  .pj-app .ds-selbar .ds-selbar-count { height: 40px; }
+  .pj-app .ds-selbar .ds-selbar-count .ds-icon-btn { width: 36px; height: 36px; }
+  .pj-app .ds-selbar .ds-selbar-btn > .ds-kbd-group { display: none; }
+}
+
+/* Touch: keyboard shortcuts in menus mean nothing without a keyboard (Linear iOS shows none). */
+@media (pointer: coarse) {
+  .pj-menu-kbd.pj-menu-kbd { display: none; }
+}
+
+/* Touch: a row's checkbox is a 16 px target, so selection starts with a long press
+   (Select in the issue's menu); the boxes show only while issues are being picked. */
+@media (pointer: coarse) {
+  .pj-app .ds-row.pj-issue-row:not([data-selecting]) .ds-row-check { display: none; }
+  .pj-app .ds-row.pj-issue-row[data-selecting] .ds-row-check { width: 20px; height: 20px; }
+}
+@media (pointer: coarse) {
+  .ds-nav-title > a.pj-rail-action.pj-rail-action { width: 32px; height: 32px; }
+}

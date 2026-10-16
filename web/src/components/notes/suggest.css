@@ -1,0 +1,136 @@
+/* zvena Documents: suggested edits (components/notes/suggest.ts) — the
+   suggester's color on their text (--nt-sug, set per suggestion), struck
+   text suggested for removal, their face in the page's margin, the
+   "Suggesting" switch and the suggestion's card. */
+
+.nt-sins {
+  color: var(--nt-sug, var(--nt-c-green));
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--nt-sug, var(--nt-c-green)) 75%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  background: color-mix(in srgb, var(--nt-sug, var(--nt-c-green)) 9%, transparent);
+  border-radius: 2px;
+}
+.nt-sdel {
+  color: var(--nt-text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--nt-sug, var(--nt-c-red));
+  text-decoration-thickness: 1.5px;
+}
+/* A suggested line: a bar in the suggester's color beside it. */
+.nt-editor .bn-block-outer[data-id^="sg~"] > .bn-block > .bn-block-content {
+  box-shadow: inset 2px 0 0 var(--nt-sug, var(--nt-c-green));
+  padding-inline-start: 8px;
+}
+
+/* The margin: one face per open suggestion, beside the line it starts on. */
+.nt-sug-gutter {
+  position: absolute;
+  top: 0;
+  right: -40px;
+  width: 34px;
+  pointer-events: none;
+}
+.nt-sug-row {
+  position: absolute;
+  right: 0;
+  display: flex;
+  gap: 2px;
+  pointer-events: auto;
+}
+.nt-sug-face {
+  display: inline-flex;
+  border-radius: 50%;
+  padding: 1px;
+  background: var(--nt-bg);
+  box-shadow: 0 0 0 2px var(--nt-sug, var(--nt-c-green));
+  cursor: pointer;
+}
+.nt-sug-face:hover {
+  box-shadow: 0 0 0 3px var(--nt-sug, var(--nt-c-green));
+}
+@media (max-width: 900px) {
+  .nt-sug-gutter {
+    right: -30px;
+  }
+}
+@media (max-width: 600px) {
+  .nt-sug-gutter {
+    right: -6px;
+  }
+  .nt-sug-face .nt-avatar {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Someone who may only comment: the page's controls stay as they are. */
+.nt-editor[data-suggest="only"] .bn-block-content input,
+.nt-editor[data-suggest="only"] .bn-block-content select,
+.nt-editor[data-suggest="only"] .bn-block-content button {
+  pointer-events: none;
+}
+
+/* The switch at the top of the page. */
+.nt-sug-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+  color: var(--nt-c-green);
+  background: color-mix(in srgb, var(--nt-c-green) 12%, transparent);
+}
+button.nt-sug-chip:hover {
+  background: color-mix(in srgb, var(--nt-c-green) 20%, transparent);
+}
+.nt-mi-2 {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.nt-mi-2 small {
+  color: var(--nt-text-3);
+  font-size: 12px;
+  white-space: normal;
+}
+.nt-fmt-wide {
+  gap: 6px;
+  padding: 0 8px;
+}
+
+/* The card: who suggested what, Accept / Reject. */
+.nt-sug-card {
+  padding: 0 0 6px;
+  margin-bottom: 4px;
+  box-shadow: 0 1px 0 var(--nt-border);
+}
+.nt-sug-line {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.nt-sug-what {
+  color: var(--nt-text-2);
+  font-weight: 500;
+}
+.nt-sug-acts {
+  margin-inline-start: auto;
+  opacity: 1;
+}
+.nt-sug-accept {
+  color: var(--nt-c-green);
+}
+.nt-sug-reject {
+  color: var(--nt-c-red);
+}
+.nt-discuss-sug {
+  color: var(--nt-c-green);
+  font-weight: 500;
+}

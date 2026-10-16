@@ -1,0 +1,276 @@
+# zvena — the whole service in one compose project: the web app (home,
+# Documents, account, OIDC for Design) and Design (the Penpot fork: backend,
+# frontend, exporter) with their PostgreSQL and Valkey.
+#
+# Used as is on the test stand (ports on 127.0.0.1, a host nginx in front);
+# docker-compose.prod.yml adds TLS (Caddy) and the production settings.
+# Settings come from the env file (see .env.example); secrets never
+# live in git.
+#
+#   docker compose --env-file .env up -d
+
+name: ${COMPOSE_PROJECT_NAME:-zvena}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 20m
+    max-file: "5"
+
+x-design-flags: &design-flags
+  # Sign-in only through zvena (OIDC), no passwords or self-registration;
+  # no telemetry, onboarding, Penpot e-mails, webhooks, REPLs or API docs.
+  # Google Fonts stay on, as in Figma: Design fetches them on the server and
+  # keeps them on the fonts-cache volume, so the browser talks only to zvena.
+  # `zvena` switches on this fork's behaviour (app.zvena.*); `zvena-bridge` links
+  # Design with Docs and Projects (comment → issue, mentions, resolve → close).
+  PENPOT_FLAGS: >-
+    enable-zvena enable-login-with-oidc enable-oidc-registration disable-registration
+    disable-login-with-password disable-email-verification disable-smtp disable-log-emails
+    disable-telemetry disable-onboarding disable-dashboard-templates-section
+    disable-webhooks disable-access-tokens disable-user-feedback
+    disable-prepl-server disable-urepl-server disable-backend-api-doc disable-backend-openapi-doc
+    enable-rpc-rlimit enable-sec-fetch-metadata-middleware enable-auto-file-snapshot
+    enable-stroke-per-side enable-background-blur enable-custom-shortcuts disable-render-wasm-info
+    enable-zvena-bridge
+    ${DESIGN_EXTRA_FLAGS:-}
+
+networks:
+  zvena:
+
+volumes:
+  postgres:
+  assets:
+  web-data:
+  fonts-cache:
+
+services:
+  postgres:
+    image: postgres:15
+    logging: *logging
+    restart: unless-stopped
+    networks: [zvena]
+    environment:
+      POSTGRES_DB: penpot
+      POSTGRES_USER: penpot
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?set PG_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    command: ["postgres", "-c", "max_connections=100", "-c", "shared_buffers=256MB"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U penpot -d penpot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: ${PG_MEM:-1g}
+
+  valkey:
+    image: valkey/valkey:8.1
+    logging: *logging
+    restart: unless-stopped
+    networks: [zvena]
+    command: ["valkey-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "volatile-lfu"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 192m
+
+  design-backend:
+    image: ${DESIGN_BACKEND_IMAGE:?set DESIGN_BACKEND_IMAGE}
+    logging: *logging
+    restart: unless-stopped
+    networks: [zvena]
+    depends_on:
+      postgres: { condition: service_healthy }
+      valkey: { condition: service_healthy }
+    ports:
+      # The management API (zvena web → Design) on the host's loopback only.
+      - 127.0.0.1:${DESIGN_BACKEND_PORT:-3111}:6060
+    volumes:
+      - assets:/opt/data/assets
+    environment:
+      <<: *design-flags
+      JAVA_OPTS: ${DESIGN_JAVA_OPTS:--Xms256m -Xmx1g -XX:+UseG1GC -XX:MaxMetaspaceSize=320m}
+      PENPOT_PUBLIC_URI: ${DESIGN_URL:?set DESIGN_URL}
+      PENPOT_SECRET_KEY: ${DESIGN_SECRET_KEY:?set DESIGN_SECRET_KEY}
+      PENPOT_DATABASE_URI: postgresql://postgres/penpot
+      PENPOT_DATABASE_USERNAME: penpot
+      PENPOT_DATABASE_PASSWORD: ${PG_PASSWORD}
+      PENPOT_DATABASE_MAX_POOL_SIZE: 30
+      PENPOT_REDIS_URI: redis://valkey/0
+      # Files on the assets volume; docker-compose.s3.yml switches to S3.
+      PENPOT_OBJECTS_STORAGE_BACKEND: fs
+      PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: /opt/data/assets
+      PENPOT_TELEMETRY_ENABLED: "false"
+      PENPOT_DELETION_DELAY: 720h
+      PENPOT_AUTO_FILE_SNAPSHOT_EVERY: 200
+      PENPOT_AUTO_FILE_SNAPSHOT_TIMEOUT: 30m
+      PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
+      PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
+      PENPOT_MANAGEMENT_API_KEY: ${DESIGN_MGMT_KEY:?set DESIGN_MGMT_KEY}
+      # Sign-in through zvena: the browser goes to the public authorize URL,
+      # the token/userinfo calls stay inside the docker network.
+      PENPOT_OIDC_CLIENT_ID: ${DESIGN_OIDC_CLIENT_ID:?set DESIGN_OIDC_CLIENT_ID}
+      PENPOT_OIDC_CLIENT_SECRET: ${DESIGN_OIDC_CLIENT_SECRET:?set DESIGN_OIDC_CLIENT_SECRET}
+      PENPOT_OIDC_BASE_URI: ${APP_URL}/
+      PENPOT_OIDC_AUTH_URI: ${APP_URL}/api/oidc/authorize
+      PENPOT_OIDC_TOKEN_URI: ${WEB_INTERNAL_URL:-http://web:3100}/api/oidc/token
+      PENPOT_OIDC_USER_URI: ${WEB_INTERNAL_URL:-http://web:3100}/api/oidc/userinfo
+      PENPOT_OIDC_USER_INFO_SOURCE: userinfo
+      PENPOT_OIDC_SCOPES: openid profile email
+      PENPOT_SSRF_ALLOWED_HOSTS: ${WEB_INTERNAL_HOST:-web}
+      # The account's storage quota lives in zvena (app.zvena.limits).
+      PENPOT_ZVENA_INTERNAL_URI: ${WEB_INTERNAL_URL:-http://web:3100}
+      PENPOT_ZVENA_INTERNAL_KEY: ${ZVENA_INTERNAL_KEY:?set ZVENA_INTERNAL_KEY}
+      PENPOT_ZVENA_IMAGE_MAX_SIDE: ${DESIGN_IMAGE_MAX_SIDE:-4096}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    mem_limit: ${DESIGN_BACKEND_MEM:-1536m}
+
+  design-exporter:
+    image: penpotapp/exporter:2.18.3
+    logging: *logging
+    restart: unless-stopped
+    networks: [zvena]
+    depends_on:
+      valkey: { condition: service_healthy }
+    environment:
+      <<: *design-flags
+      PENPOT_SECRET_KEY: ${DESIGN_SECRET_KEY}
+      PENPOT_PUBLIC_URI: ${DESIGN_URL}
+      PENPOT_INTERNAL_URI: http://design-frontend:8080
+      PENPOT_REDIS_URI: redis://valkey/0
+    mem_limit: ${DESIGN_EXPORTER_MEM:-1g}
+
+  design-frontend:
+    image: ${DESIGN_FRONTEND_IMAGE:?set DESIGN_FRONTEND_IMAGE}
+    logging: *logging
+    restart: unless-stopped
+    networks: [zvena]
+    depends_on: [design-backend, design-exporter]
+    ports:
+      - 127.0.0.1:${DESIGN_PORT:-3110}:8080
+    volumes:
+      - assets:/opt/data/assets
+      - fonts-cache:/opt/data/gfonts
+    environment:
+      <<: *design-flags
+      PENPOT_PUBLIC_URI: ${DESIGN_URL}
+      PENPOT_BACKEND_URI: http://design-backend:6060
+      PENPOT_EXPORTER_URI: http://design-exporter:6061
+      PENPOT_OIDC_NAME: zvena
+      PENPOT_ZVENA_URI: ${APP_URL}
+      PENPOT_ZVENA_SUPPORT_EMAIL: ${ZVENA_SUPPORT_EMAIL:-}
+      PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
+      PENPOT_DISABLE_IPV6_LISTEN: "true"
+    mem_limit: 256m
+
+  web:
+    image: ${WEB_IMAGE:?set WEB_IMAGE}
+    profiles: ["web"]
+    logging: *logging
+    restart: unless-stopped
+    networks: [zvena]
+    depends_on: [design-backend]
+    ports:
+      - 127.0.0.1:${WEB_PORT:-3100}:3100
+    volumes:
+      - web-data:/data
+    environment:
+      NODE_ENV: production
+      APP_URL: ${APP_URL:?set APP_URL}
+      DESIGN_URL: ${DESIGN_URL}
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET}
+      ZVENA_DB_PATH: /data/zvena.db
+      ZVENA_FILES_DIR: /data/files
+      ZVENA_MAIL_OUTBOX: ${ZVENA_MAIL_OUTBOX:-}
+      ZVENA_STAND: ${ZVENA_STAND:-}
+      ZVENA_DEV_LOGIN: ${ZVENA_DEV_LOGIN:-0}
+      ZVENA_ADMIN_IDS: ${ZVENA_ADMIN_IDS:-}
+      ZVENA_ADMIN_EMAIL: ${ZVENA_ADMIN_EMAIL:-}
+      ZVENA_STORAGE_QUOTA_BYTES: ${ZVENA_STORAGE_QUOTA_BYTES:-2147483648}
+      ZVENA_MAX_EDITORS_PER_DOC: ${ZVENA_MAX_EDITORS_PER_DOC:-0}
+      # Documents: the zone scheduled automations default to, maps (tiles and
+      # address search through the server; OSM asks for a contact), page history.
+      ZVENA_TZ: ${ZVENA_TZ:-UTC}
+      ZVENA_TILES_URL: ${ZVENA_TILES_URL:-}
+      ZVENA_GEOCODER_URL: ${ZVENA_GEOCODER_URL:-}
+      ZVENA_MAPS_CONTACT: ${ZVENA_MAPS_CONTACT:-}
+      ZVENA_MAPS_TILES_PER_USER_DAY: ${ZVENA_MAPS_TILES_PER_USER_DAY:-5000}
+      ZVENA_MAPS_TILES_PER_DAY: ${ZVENA_MAPS_TILES_PER_DAY:-50000}
+      ZVENA_VERSIONS_KEEP_DAYS: ${ZVENA_VERSIONS_KEEP_DAYS:-30}
+      ZVENA_VERSIONS_WORKSPACE_BYTES: ${ZVENA_VERSIONS_WORKSPACE_BYTES:-268435456}
+      # The phone apps (clients/mobile): universal links and App Links.
+      ZVENA_IOS_APP_ID: ${ZVENA_IOS_APP_ID:-}
+      ZVENA_ANDROID_PACKAGE: ${ZVENA_ANDROID_PACKAGE:-app.zvena.mobile}
+      ZVENA_ANDROID_CERT_SHA256: ${ZVENA_ANDROID_CERT_SHA256:-}
+      # Custom domains of published sites (DEPLOY.md, section 17): the CNAME target,
+      # other first-party host names, and the switch that turns host routing off.
+      ZVENA_SITES_CNAME: ${ZVENA_SITES_CNAME:-}
+      ZVENA_APP_HOSTS: ${ZVENA_APP_HOSTS:-}
+      ZVENA_SITES_HOST_ROUTING: ${ZVENA_SITES_HOST_ROUTING:-on}
+      ZVENA_SITES_CUSTOM_DOMAINS: ${ZVENA_SITES_CUSTOM_DOMAINS:-off}
+      # Mail: the sync workers (in this process) and what they keep.
+      ZVENA_MAIL_SYNC: ${ZVENA_MAIL_SYNC:-on}
+      ZVENA_MAIL_SYNC_DAYS: ${ZVENA_MAIL_SYNC_DAYS:-90}
+      ZVENA_MAIL_MAX_PER_FOLDER: ${ZVENA_MAIL_MAX_PER_FOLDER:-2000}
+      ZVENA_MAIL_BODY_DAYS: ${ZVENA_MAIL_BODY_DAYS:-30}
+      ZVENA_MAIL_BODY_QUOTA_BYTES: ${ZVENA_MAIL_BODY_QUOTA_BYTES:-536870912}
+      ZVENA_MAIL_UPLOADS_BYTES: ${ZVENA_MAIL_UPLOADS_BYTES:-209715200}
+      ZVENA_MAIL_OUTBOX_BYTES: ${ZVENA_MAIL_OUTBOX_BYTES:-209715200}
+      ZVENA_MAX_MEMBERS: ${ZVENA_MAX_MEMBERS:-0}
+      ZVENA_GUEST_FILE_TTL_DAYS: ${ZVENA_GUEST_FILE_TTL_DAYS:-30}
+      # Guests upload pictures only, within these allowances (MB); what the server downloads per person a day.
+      ZVENA_GUEST_UPLOAD_MB: ${ZVENA_GUEST_UPLOAD_MB:-20}
+      ZVENA_GUEST_UPLOAD_MB_PER_IP: ${ZVENA_GUEST_UPLOAD_MB_PER_IP:-60}
+      ZVENA_GUEST_UPLOAD_MB_PER_DAY: ${ZVENA_GUEST_UPLOAD_MB_PER_DAY:-1000}
+      ZVENA_MAIL_IMG_MB_PER_DAY: ${ZVENA_MAIL_IMG_MB_PER_DAY:-500}
+      ZVENA_CLIP_MB_PER_DAY: ${ZVENA_CLIP_MB_PER_DAY:-500}
+      ZVENA_IMAGE_MAX_SIDE: ${ZVENA_IMAGE_MAX_SIDE:-2560}
+      ZVENA_INVITE_DAYS: ${ZVENA_INVITE_DAYS:-14}
+      ZVENA_MIN_FREE_BYTES: ${ZVENA_MIN_FREE_BYTES:-1073741824}
+      ZVENA_CONSENT_VERSION: ${ZVENA_CONSENT_VERSION:-2026-10-15}
+      # The optional decision model (smart suggestions and automations): off unless both the URL and the key are set.
+      ZVENA_AI_URL: ${ZVENA_AI_URL:-}
+      ZVENA_AI_KEY: ${ZVENA_AI_KEY:-}
+      ZVENA_AI_MODEL: ${ZVENA_AI_MODEL:-}
+      ZVENA_AI_TIMEOUT_MS: ${ZVENA_AI_TIMEOUT_MS:-1500}
+      ZVENA_AI_DAILY_QUESTIONS: ${ZVENA_AI_DAILY_QUESTIONS:-20000}
+      ZVENA_AI_WS_DAILY_QUESTIONS: ${ZVENA_AI_WS_DAILY_QUESTIONS:-1000}
+      ZVENA_AI_DAILY_PER_OWNER: ${ZVENA_AI_DAILY_PER_OWNER:-}
+      ZVENA_AI_MAX_BYTES: ${ZVENA_AI_MAX_BYTES:-32768}
+      ZVENA_AI_MAX_RESPONSE_BYTES: ${ZVENA_AI_MAX_RESPONSE_BYTES:-262144}
+      ZVENA_AI_DEFAULT: ${ZVENA_AI_DEFAULT:-on}
+      ZVENA_COMPANY_NAME: ${ZVENA_COMPANY_NAME:-}
+      ZVENA_TERMS_URL: ${ZVENA_TERMS_URL:-}
+      ZVENA_PRIVACY_URL: ${ZVENA_PRIVACY_URL:-}
+      ZVENA_SOURCE_URL: ${ZVENA_SOURCE_URL:-https://github.com/Zvena-app/zvena-oss}
+      ZVENA_CONTACT_EMAIL: ${ZVENA_CONTACT_EMAIL:-}
+      ZVENA_SUPPORT_EMAIL: ${ZVENA_SUPPORT_EMAIL:-}
+      ZVENA_PRIVACY_EMAIL: ${ZVENA_PRIVACY_EMAIL:-}
+      ZVENA_ABUSE_EMAIL: ${ZVENA_ABUSE_EMAIL:-}
+      ZVENA_INTERNAL_KEY: ${ZVENA_INTERNAL_KEY}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-0}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      # The server's mail budget (lib/mail.ts) and the daily cap on page invitations.
+      ZVENA_MAIL_PER_HOUR: ${ZVENA_MAIL_PER_HOUR:-500}
+      ZVENA_MAIL_PER_DAY: ${ZVENA_MAIL_PER_DAY:-3000}
+      ZVENA_INVITE_MAIL_PER_DAY: ${ZVENA_INVITE_MAIL_PER_DAY:-1000}
+      PENPOT_MGMT_URL: http://design-backend:6060
+      PENPOT_MGMT_KEY: ${DESIGN_MGMT_KEY}
+      DESIGN_OIDC_CLIENT_ID: ${DESIGN_OIDC_CLIENT_ID}
+      DESIGN_OIDC_CLIENT_SECRET: ${DESIGN_OIDC_CLIENT_SECRET}
+      DESIGN_OIDC_REDIRECT_URIS: ${DESIGN_URL}/api/auth/oidc/callback
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3100/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    mem_limit: ${WEB_MEM:-768m}

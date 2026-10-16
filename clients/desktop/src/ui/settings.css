@@ -1,0 +1,20 @@
+.settings { display: flex; flex-direction: column; gap: 16px; padding: 24px; }
+.settings header { display: flex; align-items: center; gap: 10px; }
+.settings header img { border-radius: var(--ui-radius); }
+.settings h1 { margin: 0; font-size: var(--ui-text-lg); font-weight: 600; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > span { font-weight: 500; }
+.field small { color: var(--ui-text-2); font-size: var(--ui-text-sm); }
+.field small.err { color: var(--ui-danger-text); }
+.field small.err:empty { display: none; }
+.field input {
+  height: var(--ui-control-h);
+  padding: 0 10px;
+  border: 1px solid var(--ui-border-2);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-2);
+}
+.field input:focus { border-color: var(--ui-brand); outline: none; box-shadow: none; background: var(--ui-bg); }
+.check { display: flex; align-items: flex-start; gap: 8px; }
+.check input { margin: 2px 0 0; accent-color: var(--ui-brand); }
+.settings footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }

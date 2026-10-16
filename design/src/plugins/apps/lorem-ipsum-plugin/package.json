@@ -1,0 +1,17 @@
+{
+  "name": "lorem-ipsum-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "ng build lorem-ipsum-plugin && pnpm run build:plugin",
+    "build:dev": "ng build lorem-ipsum-plugin --configuration development",
+    "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=lorem-ipsum-plugin",
+    "watch": "node ../../tools/scripts/build-plugin.mjs --plugin=lorem-ipsum-plugin --watch",
+    "serve": "ng serve lorem-ipsum-plugin",
+    "init": "concurrently --kill-others --names plugin,serve \"pnpm run watch\" \"pnpm run serve\"",
+    "lint": "eslint .",
+    "test": "vitest"
+  },
+  "packageManager": "pnpm@12.5.1+sha512.e3f305bc784a2bc89f5ad3b6138889470fae8d2af5f36b61216ec91c2c3d64089775f9de38aac331044ea40f245cb0d5666392dfdf65824e1907ef6a2c62de5f"
+}

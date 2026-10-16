@@ -1,0 +1,151 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/mixins.scss" as *;
+
+.sitemap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  inline-size: 100%;
+  block-size: var(--height, $sz-200);
+}
+
+// Figma UI3 pages list — 40px header, 32px rows with an inset
+// 24px pill for the current page.
+.sitemap-title {
+  padding-inline: 0 var(--sp-s);
+  margin-block: var(--sp-xs) 0;
+}
+
+.sitemap-content {
+  display: flex;
+  flex-direction: column;
+  inline-size: var(--left-sidebar-width);
+  overflow: hidden auto;
+  scrollbar-gutter: stable;
+}
+
+.page-item {
+  @include t.use-typography("body-small");
+
+  min-block-size: $sz-32;
+  inline-size: 100%;
+  padding: var(--sp-xs) var(--sp-s);
+
+  &.dnd-over-top {
+    border-block-start: $b-1 solid var(--layer-row-foreground-color-drag);
+  }
+
+  &.dnd-over-bot {
+    border-block-end: $b-1 solid var(--layer-row-foreground-color-drag);
+  }
+
+  .page-item-body {
+    display: flex;
+    align-items: center;
+    block-size: $sz-24;
+    inline-size: 100%;
+    padding: 0 0 0 var(--sp-s);
+    border-radius: $br-8;
+    transition: none;
+    color: var(--color-foreground-primary);
+    user-select: none;
+
+    &.separator {
+      block-size: auto;
+      min-block-size: var(--sp-xxl);
+      padding: 0;
+    }
+  }
+
+  .page-item-label {
+    @include text-ellipsis;
+
+    flex-grow: 1;
+  }
+
+  .page-item-icon {
+    display: none;
+  }
+
+  .page-item-actions {
+    block-size: $sz-24;
+    display: flex;
+    align-items: center;
+  }
+
+  .page-item-input {
+    @include text-ellipsis;
+    @include t.use-typography("body-small");
+
+    background: var(--color-background-primary);
+    outline: none;
+    flex-grow: 1;
+    block-size: $sz-24;
+    padding-inline-start: var(--sp-s);
+    margin: 0 0 0 calc(-1 * var(--sp-s));
+    border-radius: $br-8;
+    border: $b-1 solid var(--color-accent-primary);
+    color: var(--color-foreground-primary);
+  }
+
+  &:active .page-item-body {
+    background-color: var(--color-background-tertiary);
+  }
+
+  &:hover .page-item-body,
+  &.hover .page-item-body {
+    background-color: var(--color-background-tertiary);
+  }
+
+  &.selected .page-item-body,
+  &.selected:hover .page-item-body {
+    color: var(--color-foreground-primary);
+    background-color: var(--color-background-tertiary);
+    font-weight: 550;
+  }
+
+  &:hover .page-delete-btn,
+  &.hover .page-delete-btn {
+    --delete-button-display: initial;
+  }
+
+  &:focus .page-item-body {
+    outline: none;
+  }
+
+  &:focus-within .page-item-body {
+    outline: none;
+  }
+
+  &.separator:hover .page-item-body,
+  &.separator.hover .page-item-body {
+    background-color: transparent;
+  }
+}
+
+.page-divider {
+  inline-size: 100%;
+  block-size: $b-1;
+  margin: var(--sp-s);
+  background-color: var(--color-background-quaternary);
+}
+
+.page-delete-btn {
+  --delete-button-display: none;
+}
+
+.page-delete-icon {
+  display: var(--delete-button-display);
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The mark of clients/brand/logo.svg, white (status bar icons are drawn as a silhouette). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="185"
+    android:viewportHeight="185">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M46.5 54.3H156L98.4 94H86C64.2 94 46.5 76.2 46.5 54.3Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M98.4 94C126 94 149 111.9 149 134H39Z" />
+</vector>

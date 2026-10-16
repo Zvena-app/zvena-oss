@@ -1,0 +1,95 @@
+/* zvena on phones and tablets: site (the public website, lib/site.ts puts
+ * `zs` on <body>). Breakpoints and rules: responsive/shell.css and
+ * the comments there. The public pages' own sheets (site.css,
+ * content.css, legal.css) load after this one,
+ * so selectors are rooted in :root and doubled. The test-stand badge and the
+ * cookie notice are shared with the app: responsive/workspace.css. */
+
+/* ------------------------------------------------------------------ tap targets */
+
+@media (pointer: coarse) {
+  /* The logo is the way home: as tall as the header's buttons. */
+  :root:root .zs.zs .zs-header-logo { min-height: 44px; }
+  /* Footer links: 40 px rows instead of 23 px lines with 14 px gaps. */
+  :root:root .zs.zs .zs-footer-col { gap: 0; }
+  :root:root .zs.zs .zs-footer-col h2 { margin-bottom: 4px; }
+  :root:root .zs.zs .zs-footer-col a { display: flex; align-items: center; min-height: 40px; }
+  :root:root .zs.zs .zs-footer-bottom a { display: inline-flex; align-items: center; min-height: 40px; }
+  /* The menu's rows. */
+  :root:root .zs.zs .zs-mobile a { min-height: 44px; display: flex; align-items: center; }
+}
+
+/* ------------------------------------------------------------------ the mobile menu */
+
+@media (max-width: 1080px) {
+  /* Open, it is the whole screen under the header: the page behind does
+     not scroll, the list clears the home indicator. */
+  html:has(.zs-mobile[data-open]) { overflow: hidden; }
+  :root:root .zs.zs .zs-mobile[data-open] {
+    height: calc(100dvh - 64px);
+    overscroll-behavior: contain;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (max-height: 500px) and (max-width: 1080px) {
+  /* Landscape phone: the sections side by side, so the list is not 6 screens tall. */
+  :root:root .zs.zs .zs-mobile[data-open] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 32px; align-content: start; }
+  :root:root .zs.zs .zs-mobile[data-open] .zs-mobile-actions { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :root:root .zs.zs .zs-mobile a { font-size: 18px; padding: 6px 0; }
+}
+
+/* ------------------------------------------------------------------ tables in long reads */
+
+@media (max-width: 560px) {
+  /* Three-column tables (Cookies: name, purpose, duration; Privacy's
+     processors…) become one block per row: the first cell as its title,
+     the others under it. Two-column tables still fit as tables. */
+  :root:root .zs.zs .zv-prose table:has(tr > :nth-child(3)) thead { display: none; }
+  :root:root .zs.zs .zv-prose table:has(tr > :nth-child(3)),
+  :root:root .zs.zs .zv-prose table:has(tr > :nth-child(3)) tbody { display: block; }
+  :root:root .zs.zs .zv-prose table:has(tr > :nth-child(3)) tr {
+    display: grid;
+    gap: 2px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  :root:root .zs.zs .zv-prose table:has(tr > :nth-child(3)) tr:first-child { border-top: 1px solid #000; }
+  :root:root .zs.zs .zv-prose table:has(tr > :nth-child(3)) td { display: block; padding: 0; border: 0; }
+  :root:root .zs.zs .zv-prose table:has(tr > :nth-child(3)) td:first-child { font-weight: 500; margin-bottom: 2px; }
+  :root:root .zs.zs .zv-prose table:has(tr > :nth-child(3)) td:nth-child(n + 3) { color: rgba(0, 0, 0, 0.54); font-size: 14px; }
+  /* /developers' endpoints: the method and path on one line, what it does under them. */
+  :root:root .zs.zs .zv-prose [role="region"] > table:has(tr > :nth-child(3)) tr { grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; align-items: baseline; }
+  :root:root .zs.zs .zv-prose [role="region"] > table:has(tr > :nth-child(3)) td:first-child { margin: 0; }
+  :root:root .zs.zs .zv-prose [role="region"] > table:has(tr > :nth-child(3)) td:nth-child(2) code { overflow-wrap: anywhere; white-space: normal; }
+  :root:root .zs.zs .zv-prose [role="region"] > table:has(tr > :nth-child(3)) td:nth-child(3) { grid-column: 1 / -1; color: rgba(0, 0, 0, 0.7); font-size: 15px; }
+  /* Long inline code (cookie names, paths) wraps instead of pushing the column. */
+  :root:root .zs.zs .zv-legal td code { white-space: normal; overflow-wrap: anywhere; }
+}
+
+/* ------------------------------------------------------------------ code blocks */
+
+@media (max-width: 640px) {
+  /* /developers' examples scroll inside themselves, edge to edge. */
+  :root:root .zs.zs .zv-prose pre {
+    max-width: none;
+    margin-inline: calc(-1 * var(--zs-gutter));
+    border-radius: 0 !important;
+    padding-inline: var(--zs-gutter) !important;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    font-size: 12.5px;
+  }
+}
+
+/* ------------------------------------------------------------------ single forms (sign-in, consent, invite) */
+
+@media (max-width: 480px) {
+  /* The form starts near the top, so the on-screen keyboard (half of a
+     375 × 667 screen) leaves the field and its button in view. */
+  :root:root .zs.zs .zv-center { min-height: 0; place-items: start center; padding-top: 24px; padding-bottom: 48px; }
+  :root:root .zs.zs .zv-panel { padding: 28px 20px; }
+}
+@media (max-height: 500px) {
+  /* Landscape phone: no vertical centring under a 64 px header. */
+  :root:root .zs.zs .zv-center { min-height: 0; place-items: start center; padding-top: 20px; padding-bottom: 40px; }
+}

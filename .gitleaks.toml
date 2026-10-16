@@ -1,0 +1,12 @@
+# Secret scanning (gitleaks): the default rules.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Message ids (modals.some-dialog.hint1) in translation files are not keys"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(^|/)i18n/[^/]+\.json$''']
+regexTarget = "secret"
+regexes = ['''^[a-z][a-z0-9-]*(\.[a-z0-9-]+)+$''']

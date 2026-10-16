@@ -1,0 +1,49 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Prototype tab, Scroll behavior (Figma)
+
+@use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
+
+.element-set {
+  margin-block-end: var(--sp-s);
+  // aligned with the Flow and Interactions sections above
+  padding-inline: var(--sp-m) var(--sp-s);
+}
+
+.element-title {
+  display: block;
+}
+
+.title-spacing {
+  padding-inline-start: 0;
+  margin: 0;
+}
+
+.element-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.row {
+  @include t.use-typography("body-small");
+
+  display: grid;
+  grid-template-columns: px2rem(72) 1fr;
+  align-items: center;
+  gap: var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.label {
+  padding-inline-start: 0;
+}
+
+.select {
+  inline-size: 100%;
+}

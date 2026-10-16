@@ -1,0 +1,30 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+.element-set {
+  max-width: var(--options-width);
+}
+
+.title-spacing {
+  padding-left: var(--sp-xxs);
+  margin: 0;
+}
+
+.element-content {
+  display: flex;
+  gap: var(--sp-xs);
+  margin-bottom: var(--sp-s);
+}
+
+.field {
+  display: flex;
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.numeric-input {
+  flex: 1;
+}

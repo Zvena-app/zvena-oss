@@ -1,0 +1,85 @@
+/* The tab strip: the window's title bar. Empty space drags the window;
+   buttons and tabs don't. macOS leaves room for the traffic lights,
+   Windows and Linux for the window buttons drawn over the right side. */
+
+.strip {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  padding: 0 8px;
+  background: var(--ui-chrome);
+  border-bottom: 1px solid var(--ui-border);
+  overflow: hidden;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+.strip.mac { padding-inline-start: 80px; }
+.strip.mac.full { padding-inline-start: 8px; }
+.strip.overlay { padding-inline-end: 144px; }
+[dir="rtl"] .strip.overlay { padding-inline-end: 8px; padding-inline-start: 144px; }
+
+.nav { display: flex; gap: 2px; margin-inline-end: 6px; }
+.drag { flex: 1 0 24px; align-self: stretch; }
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius);
+  background: transparent;
+  color: var(--ui-text-2);
+  -webkit-app-region: no-drag;
+}
+.icon:hover:not(:disabled) { background: var(--ui-hover); color: var(--ui-text); }
+.icon:active:not(:disabled) { background: var(--ui-active); }
+.icon:disabled { opacity: 0.4; }
+.icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+[dir="rtl"] .flip { transform: scaleX(-1); transform-origin: center; }
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 200px;
+  width: 200px;
+  min-width: 56px;
+  height: 28px;
+  padding-inline: 10px 4px;
+  border-radius: var(--ui-radius);
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-md);
+  -webkit-app-region: no-drag;
+}
+.tab:hover { background: var(--ui-hover); color: var(--ui-text); }
+.tab.active { background: var(--ui-bg); color: var(--ui-text); box-shadow: var(--ui-shadow-1); }
+.tab.dragging { opacity: 0.5; }
+.tab .title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tab .spin {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--ui-border-2);
+  border-top-color: var(--ui-brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.tab .x { width: 20px; height: 20px; border-radius: 4px; visibility: hidden; }
+.tab:hover .x, .tab.active .x { visibility: visible; }
+.tab .x svg { width: 12px; height: 12px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .tab .spin { animation: none; } }

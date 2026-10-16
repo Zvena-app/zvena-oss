@@ -1,0 +1,51 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Figma's Effects section (see zvena_effects.cljs)
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.effects-section {
+  @include sidebar.option-grid-structure;
+}
+
+.effects-title {
+  grid-column: span 8;
+}
+
+.title-spacing {
+  padding-inline-start: var(--sp-xxs);
+}
+
+.effects-content {
+  grid-column: span 8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
+}
+
+.effects-mixed {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.effects-mixed-label {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  block-size: $sz-24;
+  padding: var(--sp-s);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+}

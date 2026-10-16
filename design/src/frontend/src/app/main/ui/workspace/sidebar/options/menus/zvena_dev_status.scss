@@ -1,0 +1,76 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+
+.element-set {
+  max-inline-size: var(--options-width);
+}
+
+.element-title {
+  inline-size: 100%;
+}
+
+.dev-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-end: var(--sp-s);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-block-size: $sz-32;
+  min-inline-size: 0;
+}
+
+.status-meta {
+  @include t.use-typography("body-small");
+
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}
+
+// Figma: a full-width secondary button ("Mark as ready for dev").
+.status-button {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xs);
+  inline-size: 100%;
+  block-size: $sz-32;
+  padding-inline: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: transparent;
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+
+  &.primary {
+    border-color: transparent;
+    background-color: var(--color-accent-success, #14ae5c);
+    color: #fff;
+
+    &:hover {
+      filter: brightness(0.95);
+    }
+  }
+}

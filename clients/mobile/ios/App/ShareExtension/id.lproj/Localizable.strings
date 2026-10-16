@@ -1,0 +1,5 @@
+/* Written by scripts/strings.mjs. */
+"share" = "Simpan ke zvena";
+"saving" = "Menyimpan ke zvena…";
+"opening" = "Membuka zvena…";
+"empty" = "Tidak ada yang bisa disimpan: bagikan tautan atau teks.";

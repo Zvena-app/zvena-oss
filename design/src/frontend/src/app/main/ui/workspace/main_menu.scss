@@ -1,0 +1,219 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "ds/z-index.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// Figma UI3 main menu — dark, opens under the logo; submenus open
+// next to the hovered item (anchored by .sub-menu-anchor, top set inline).
+.base-menu {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--sp-s);
+  border-radius: $br-12;
+  z-index: var(--z-index-dropdown);
+  background-color: var(--menu-background-color);
+  border: none;
+  box-shadow:
+    0 5px 17px rgba(0, 0, 0, 0.2),
+    0 2px 7px rgba(0, 0, 0, 0.15),
+    inset 0 0 0 0.5px #000000,
+    0 0 0 0.5px rgba(0, 0, 0, 0.1);
+}
+
+.menu {
+  top: px2rem(44);
+  left: var(--sp-s);
+  inline-size: px2rem(200);
+}
+
+.sub-menu-anchor {
+  position: absolute;
+  left: px2rem(204);
+  inline-size: 0;
+  block-size: 0;
+  margin-block-start: px2rem(44);
+  z-index: var(--z-index-dropdown);
+}
+
+.sub-menu {
+  top: calc(-1 * var(--sp-s));
+  left: 0;
+  min-width: px2rem(240);
+  inline-size: max-content;
+
+  &.plugins {
+    max-height: calc(100vh - $sz-200);
+    overflow: hidden auto;
+  }
+}
+
+.file-name-menu {
+  top: px2rem(76);
+  left: var(--sp-s);
+  min-width: px2rem(224);
+  inline-size: max-content;
+}
+
+.logo-menu-button {
+  display: flex;
+  align-items: center;
+  gap: px2rem(2);
+  block-size: px2rem(32);
+  padding-inline: var(--sp-xs) px2rem(6);
+  border: none;
+  border-radius: $br-8;
+  background: none;
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+
+  &[aria-pressed="true"] {
+    background-color: var(--color-background-info);
+    color: var(--color-accent-primary);
+  }
+}
+
+.logo-menu-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: px2rem(24);
+  block-size: px2rem(24);
+
+  svg {
+    inline-size: px2rem(22);
+    block-size: px2rem(22);
+    fill: currentcolor;
+  }
+}
+
+.logo-menu-arrow {
+  color: var(--color-foreground-secondary);
+}
+
+.base-menu-item {
+  font-family: "inter", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  line-height: px2rem(16);
+
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto $sz-16 $sz-16;
+  grid-template-areas: "name indicator arrow";
+  block-size: $sz-24;
+  inline-size: 100%;
+  padding: 0 var(--sp-s) 0 var(--sp-l);
+  border-radius: $br-8;
+  white-space: nowrap;
+  cursor: default;
+  color: var(--menu-foreground-color);
+  background-color: var(--menu-background-color);
+
+  &:hover {
+    --menu-foreground-color: var(--menu-foreground-color-hover);
+    --menu-background-color: var(--menu-background-color-hover);
+    --menu-shortcut-foreground-color: var(--menu-shortcut-foreground-color-hover);
+    --menu-icon-foreground-color: var(--menu-foreground-color-hover);
+  }
+
+  &.disabled {
+    --menu-foreground-color: var(--color-foreground-secondary);
+
+    pointer-events: none;
+  }
+}
+
+.menu-item {
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto $sz-16 $sz-16;
+  grid-template-areas: "name indicator arrow";
+}
+
+.submenu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: px2rem(24);
+}
+
+.item-name {
+  grid-area: name;
+}
+
+.item-indicator {
+  --menu-indicator-color: var(--color-foreground-secondary);
+
+  grid-area: indicator;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: px2rem(8);
+  block-size: px2rem(8);
+  border-radius: $br-circle;
+  background-color: var(--menu-indicator-color);
+
+  &.active {
+    --menu-indicator-color: var(--color-accent-primary);
+  }
+
+  &.failed {
+    --menu-indicator-color: var(--color-foreground-error);
+  }
+}
+
+.item-arrow {
+  grid-area: arrow;
+  color: var(--menu-icon-foreground-color);
+}
+
+.item-icon {
+  color: var(--menu-icon-foreground-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.separator {
+  flex-shrink: 0;
+  block-size: $b-1;
+  inline-size: 100%;
+  margin-block: var(--sp-s);
+  background-color: var(--menu-separator-color, #383838);
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xxs);
+  color: var(--menu-shortcut-foreground-color);
+}
+
+// Figma shows shortcuts as plain dimmed text, not key caps.
+.shortcut-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: px2rem(16);
+  padding: 0;
+  font-size: px2rem(12);
+  background-color: transparent;
+}
+
+.customized-key {
+  background-color: var(--color-background-info);
+  color: var(--color-foreground-primary);
+}

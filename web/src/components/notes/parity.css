@@ -1,0 +1,257 @@
+/* zvena Documents: Notion parity, round 3 — find in page, a linked block
+   highlighted, Follow, the media toolbar, Home's extra sections and the
+   Trash filters. */
+
+/* A link to a block: the block glows for a moment (Notion); a box over it (block-link.ts). */
+.nt-block-flash {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: 4px;
+  animation: nt-block-flash 2.4s ease-out forwards;
+}
+@keyframes nt-block-flash {
+  0%,
+  45% {
+    background: color-mix(in srgb, var(--nt-blue-text) 16%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* Find in page. */
+.nt-find {
+  position: fixed;
+  z-index: 1100;
+  top: 52px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--nt-menu-bg, var(--nt-bg));
+  box-shadow: var(--nt-shadow-popover, rgba(15, 15, 15, 0.05) 0 0 0 1px, rgba(15, 15, 15, 0.1) 0 3px 6px, rgba(15, 15, 15, 0.2) 0 9px 24px);
+}
+.nt-find-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nt-find-input {
+  flex: 1;
+  min-width: 0;
+}
+.nt-find-count {
+  min-width: 52px;
+  font-size: 12px;
+  color: var(--nt-text-3);
+  text-align: end;
+  white-space: nowrap;
+}
+.nt-find-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--nt-text-2);
+}
+.nt-find-btn:hover:not(:disabled) {
+  background: var(--nt-hover);
+}
+.nt-find-btn[aria-pressed="true"] {
+  color: var(--nt-blue-text);
+  background: color-mix(in srgb, var(--nt-blue-text) 12%, transparent);
+}
+.nt-find-btn:disabled {
+  opacity: 0.4;
+}
+.nt-find-hit {
+  background: rgba(255, 212, 0, 0.35);
+  border-radius: 2px;
+}
+.nt-find-current {
+  background: rgba(255, 150, 0, 0.6);
+}
+.dark .nt-find-hit {
+  background: rgba(255, 212, 0, 0.25);
+}
+.dark .nt-find-current {
+  background: rgba(255, 150, 0, 0.5);
+}
+@media (max-width: 600px) {
+  .nt-find {
+    top: auto;
+    bottom: 12px;
+    right: 16px;
+  }
+}
+
+/* Follow (the Updates panel). */
+.nt-follow-btn {
+  margin-inline-start: auto;
+  margin-inline-end: 4px;
+  gap: 6px;
+}
+.nt-follow-btn[aria-pressed="true"] {
+  color: var(--nt-blue-text);
+}
+.nt-settings-select {
+  width: auto;
+  min-width: 180px;
+}
+
+/* Trash: Last edited by, In. */
+.nt-trash-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* Comments: editing one's own, the list's Open / Resolved tabs. */
+.nt-cm-edited {
+  color: var(--nt-text-3);
+  font-size: 12px;
+}
+.nt-cm-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+.nt-cm-edit textarea {
+  width: 100%;
+}
+.nt-cm-edit-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.nt-discuss-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 2px 6px 8px;
+  box-shadow: 0 1px 0 var(--nt-border);
+  margin-bottom: 4px;
+}
+.nt-discuss-tab {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--nt-text-2);
+}
+.nt-discuss-tab:hover {
+  background: var(--nt-hover);
+}
+.nt-discuss-tab[aria-selected="true"] {
+  color: var(--nt-text);
+  background: var(--nt-hover-2);
+  font-weight: 500;
+}
+.nt-discuss-empty {
+  margin: 8px 10px;
+  font-size: 13px;
+  color: var(--nt-text-3);
+}
+
+/* Home: upcoming dates and where to learn more. */
+.nt-home-upcoming {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 12px;
+  box-shadow: var(--nt-card-shadow);
+  padding: 6px;
+}
+.nt-home-event {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: start;
+  font-size: 14px;
+}
+.nt-home-event:hover {
+  background: var(--nt-hover);
+}
+.nt-home-event-date {
+  color: var(--nt-text-2);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.nt-home-event-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-home-event-title svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.nt-home-event-text {
+  grid-column: 2;
+  color: var(--nt-text-2);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-home-empty {
+  margin: 0 4px;
+  font-size: 14px;
+  color: var(--nt-text-3);
+}
+.nt-home-learn {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.nt-home-learn-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: var(--nt-card-shadow);
+  font-size: 14px;
+  color: var(--nt-text);
+  text-decoration: none;
+  text-align: start;
+}
+.nt-home-learn-item svg {
+  width: 16px;
+  height: 16px;
+  color: var(--nt-text-2);
+  flex: none;
+}
+a.nt-home-learn-item:hover,
+button.nt-home-learn-item:hover {
+  background: var(--nt-hover);
+}
+.nt-home-learn-text {
+  color: var(--nt-text-2);
+}
+@media (max-width: 600px) {
+  .nt-home-event {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nt-home-event-text {
+    grid-column: 1;
+  }
+}

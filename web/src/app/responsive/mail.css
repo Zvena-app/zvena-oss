@@ -1,0 +1,285 @@
+/* zvena on phones and tablets: mail. Breakpoints and rules: responsive/shell.css.
+ *
+ * Superhuman / Gmail on a phone: the list's 48 px bar is the search field next
+ * to the shell's menu button, the views scroll as tabs under it; a row is two
+ * lines; the conversation takes the screen with back + the main actions (the
+ * rest in ⋯, Reader.tsx); the composer is full-screen; a compose button floats
+ * over the list. Dialogs are bottom sheets, ⌘K a sheet from the top. Tablets:
+ * the desktop layout (one pane under 900 px, as mail.css has it) with touch
+ * sizes. Touch: 40 px targets, 16 px fields, no hover-only controls.
+ *
+ * Loads before components/mail/mail.css: selectors are doubled to win.
+ */
+
+/* ------------------------------------------------------------------ compose button (phones, touch) */
+
+.zm-fab { display: none; }
+@media (max-width: 860px), (pointer: coarse) {
+  .zm-fab.zm-fab {
+    position: fixed;
+    z-index: 30; /* under the drawer's scrim (40) and the composers (60) */
+    inset-inline-end: calc(16px + var(--rs-safe-r));
+    bottom: calc(20px + var(--rs-safe-b));
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border: 0;
+    border-radius: 16px;
+    background: var(--ui-brand-fill);
+    color: var(--ui-text-on-brand);
+    box-shadow: var(--ui-shadow-3);
+    cursor: pointer;
+  }
+  .zm-fab.zm-fab:active { background: var(--ui-brand-hover); transform: scale(0.96); }
+  .zm-app .zm-rows.zm-rows { padding-bottom: 84px; }
+}
+/* Not over a conversation when it takes the whole pane. */
+@media (max-width: 899px) {
+  .zm-app:has(.zm-body[data-reading]) .zm-fab.zm-fab { display: none; }
+}
+.zm-app[data-pane="full"]:has(.zm-body[data-reading]) .zm-fab.zm-fab { display: none; }
+@media (min-width: 861px) and (pointer: coarse) {
+  /* Docked rail: its own compose button is there; the floating one only over the list. */
+  .zm-app:has(.zm-reader:not(.zm-reader-empty)) .zm-fab.zm-fab { display: none; }
+}
+
+/* ------------------------------------------------------------------ the list's bar (≤ 860, next to the menu button) */
+
+@media (max-width: 860px) {
+  .zm-app .zm-list-head.zm-list-head {
+    align-items: stretch;
+    gap: 8px;
+    min-height: calc(var(--rs-bar-h) + var(--rs-safe-t));
+    padding-top: var(--rs-safe-t);
+    padding-inline-end: calc(8px + var(--rs-safe-r));
+  }
+  .zm-app .zm-tabs.zm-tabs { align-items: flex-end; }
+  .zm-app .zm-tab.zm-tab { height: 40px; }
+  .zm-app .zm-list-tools.zm-list-tools { align-self: center; padding-bottom: 0; }
+  .zm-app .zm-reader-bar.zm-reader-bar {
+    height: calc(var(--rs-bar-h) + var(--rs-safe-t));
+    padding-top: var(--rs-safe-t);
+    padding-inline-end: calc(8px + var(--rs-safe-r));
+    overflow: hidden;
+  }
+}
+@media (max-width: 640px) {
+  .zm-app .zm-list-head.zm-list-head { flex-wrap: wrap; row-gap: 0; padding-bottom: 0; }
+  /* Row 1: the search field (and refresh), 48 px, after the menu button. */
+  .zm-app .zm-list-tools.zm-list-tools { order: -1; flex: 1 0 100%; width: auto; height: var(--rs-bar-h); padding: 0; gap: 4px; }
+  .zm-app .zm-search.zm-search { flex: 1; width: auto; height: 38px; border-radius: var(--ui-radius-md); }
+  .zm-app .zm-search .zm-kbd { display: none; }
+  /* Row 2: the views, scrolling sideways, from the screen's edge. */
+  .zm-app .zm-tabs.zm-tabs {
+    flex: 1 0 100%;
+    margin-inline-start: calc(-40px - var(--rs-safe-l));
+    padding-inline: 0 8px;
+    scroll-padding-inline: 12px;
+    overscroll-behavior-x: contain;
+  }
+  .zm-app .zm-view-bar.zm-view-bar { padding-inline: 12px; }
+
+  /* The conversation's bar: back and the main actions (the rest are in ⋯). */
+  .zm-app .zm-reader-bar .zm-bar-extra,
+  .zm-app .zm-reader-bar .zm-bar-sep,
+  .zm-app .zm-reader-bar .zm-bar-fill,
+  .zm-app .zm-reader-bar .zm-bar-fill ~ .zm-icon-btn { display: none; }
+  .zm-app .zm-reader-bar.zm-reader-bar { gap: 4px; }
+  .zm-app .zm-reader-bar .zm-back { margin-inline-end: auto; }
+}
+
+/* ------------------------------------------------------------------ narrow panes (a tablet's split view, phones) */
+
+/* The list and the conversation size their insides by their own width (container queries):
+   at 1024 the split view gives the list ~340 px and the conversation ~430 px. */
+.zm-app .zm-list.zm-list { container: zm-list / inline-size; }
+.zm-app .zm-reader.zm-reader { container: zm-reader / inline-size; }
+
+@container zm-list (max-width: 460px) {
+  /* The search on its own row, the views under it (they were squeezed out of sight). */
+  .zm-list-head.zm-list-head { flex-wrap: wrap; row-gap: 0; }
+  .zm-list-head .zm-list-tools.zm-list-tools { order: -1; flex: 1 0 100%; width: auto; padding: 8px 0 4px; }
+  .zm-list-head .zm-search.zm-search { flex: 1; width: auto; }
+  .zm-list-head .zm-tabs.zm-tabs { flex: 1 0 100%; }
+}
+@media (pointer: coarse) {
+  @container zm-list (max-width: 560px) {
+    /* Two lines a row: who and when, then subject and snippet (as on a phone). */
+    .zm-app .zm-list .zm-row.zm-row { height: auto; min-height: 60px; flex-wrap: wrap; align-content: center; row-gap: 0; padding: 8px 12px 8px 8px; }
+    .zm-app .zm-row .zm-row-check, .zm-app .zm-row .zm-row-star { order: 0; }
+    .zm-app .zm-row .zm-row-who.zm-row-who { flex: 1 1 0; order: 1; }
+    .zm-app .zm-row .zm-row-clip { order: 2; }
+    .zm-app .zm-row .zm-row-date.zm-row-date { order: 2; }
+    .zm-app .zm-row .zm-row-text.zm-row-text { flex: 1 0 100%; order: 3; padding-inline-start: 56px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }
+  }
+  @container zm-reader (max-width: 600px) {
+    /* The bar keeps back and the main actions; the rest are in ⋯ (Reader.tsx reads this). */
+    .zm-reader-bar .zm-bar-extra,
+    .zm-reader-bar .zm-bar-sep,
+    .zm-reader-bar .zm-bar-fill,
+    .zm-reader-bar .zm-bar-fill ~ .zm-icon-btn { display: none; }
+  }
+}
+
+/* ------------------------------------------------------------------ rows */
+
+@media (pointer: coarse) {
+  .zm-app .zm-row.zm-row { height: 48px; }
+  .zm-app[data-density="comfortable"] .zm-row.zm-row { height: 56px; }
+  .zm-app .zm-row-check, .zm-app .zm-row-star { position: relative; }
+  /* Bigger targets than they look. */
+  .zm-app .zm-row-check::after, .zm-app .zm-row-star::after { content: ""; position: absolute; inset: -10px -6px; }
+  .zm-app .zm-row-star.zm-row-star { width: 24px; height: 32px; }
+}
+@media (hover: none), (pointer: coarse) {
+  .zm-app .zm-row-check.zm-row-check { opacity: 1; }
+  .zm-app .zm-row-star.zm-row-star { opacity: 0.7; }
+  .zm-app .zm-row-star[data-on] { opacity: 1; }
+  /* The quick actions are the conversation's own (its bar); no hover to show them. */
+  .zm-app .zm-row-actions.zm-row-actions { display: none; }
+  .zm-app .zm-row:hover .zm-row-date { visibility: visible; }
+  .zm-app .zm-row:hover:not([data-open], [data-selected], [data-focused]) { background: var(--ui-bg); }
+}
+@media (max-width: 640px) {
+  .zm-app .zm-row.zm-row { height: auto; min-height: 64px; padding-block: 8px; }
+  .zm-app .zm-row-who.zm-row-who { flex: 1 1 0; font-size: 14px; }
+  .zm-app .zm-row-text.zm-row-text { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }
+  .zm-app .zm-row-text .zm-row-snippet { white-space: normal; }
+  .zm-app .zm-row-count { flex-shrink: 0; }
+  .zm-app .zm-empty.zm-empty { padding: 40px 16px; }
+}
+
+/* ------------------------------------------------------------------ reader */
+
+@media (pointer: coarse) {
+  .zm-app .zm-reader-bar .zm-icon-btn.zm-icon-btn { width: var(--rs-touch); height: var(--rs-touch); }
+  .zm-app .zm-msg-tools .zm-icon-btn.zm-icon-btn { width: 36px; height: 36px; }
+  .zm-app .zm-msg-to.zm-msg-to { min-height: 28px; }
+  .zm-app .zm-reply-buttons .zv-btn { height: 40px; }
+  .zm-app .zm-chip-x.zm-chip-x { width: 24px; height: 24px; }
+  .zm-app .zm-att.zm-att { height: 40px; }
+  .zm-app .zm-msg-folded.zm-msg-folded { min-height: 48px; }
+}
+@media (max-width: 640px) {
+  .zm-app .zm-reader-scroll.zm-reader-scroll { padding: 16px 12px calc(32px + var(--rs-safe-b)); overscroll-behavior: contain; }
+  .zm-app .zm-thread-subject.zm-thread-subject { font-size: 19px; }
+  .zm-app .zm-msg-head.zm-msg-head { gap: 8px; }
+  .zm-app .zm-msg-date.zm-msg-date { font-size: 12px; }
+  .zm-app .zm-msg-folded-who.zm-msg-folded-who { max-width: 40%; }
+  .zm-app .zm-msg-details.zm-msg-details { grid-template-columns: minmax(0, max-content) minmax(0, 1fr); margin-inline: 10px; }
+  .zm-app .zm-images-bar.zm-images-bar { margin-inline: 10px; }
+  .zm-app .zm-atts.zm-atts { padding-inline: 10px; }
+  .zm-app .zm-att.zm-att { max-width: 100%; }
+  .zm-app .zm-reply-buttons.zm-reply-buttons { gap: 6px; }
+  .zm-app .zm-reply-buttons .zv-btn { flex: 1 1 auto; justify-content: center; }
+  .zm-app .zm-reply-buttons .zv-kbd, .zm-app .zm-reply-buttons kbd { display: none; }
+}
+
+/* ------------------------------------------------------------------ composer */
+
+.zm-composers .zm-compose-win.zm-compose-win { max-height: calc(100dvh - 80px); }
+@media (pointer: coarse) {
+  .zm-compose-title .zm-icon-btn.zm-icon-btn { width: 36px; height: 36px; }
+  .zm-compose-row .zm-addr-input.zm-addr-input,
+  .zm-compose .zm-compose-subject.zm-compose-subject { font-size: 16px; }
+  .zm-compose .zm-compose-subject.zm-compose-subject { height: 44px; }
+  .zm-compose-row.zm-compose-row { min-height: 44px; }
+  .zm-compose-bar .zm-icon-btn.zm-icon-btn { width: var(--rs-touch); height: var(--rs-touch); }
+  .zm-compose-bar .zv-btn { height: 40px; }
+  .zm-link-btn.zm-link-btn { min-height: 32px; padding-inline: 6px; }
+  .zm-addr.zm-addr { height: 28px; }
+  .zm-sugg-item.zm-sugg-item { height: 44px; }
+}
+@media (max-width: 860px) {
+  .zm-composers .zm-compose-win[data-big] { inset: calc(16px + var(--rs-safe-t)) 16px calc(16px + var(--rs-safe-b)); }
+}
+@media (max-width: 640px) {
+  /* Full screen, under the notch and above the home bar. */
+  .zm-composers .zm-compose-win.zm-compose-win:not([data-min]) {
+    height: 100dvh;
+    max-height: none;
+    padding-top: var(--rs-safe-t);
+    animation: zm-rs-up 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .zm-composers .zm-compose-win[data-min] { max-height: none; }
+  .zm-compose-win .zm-compose-title.zm-compose-title { height: var(--rs-bar-h); padding-inline: 16px 8px; font-size: 15px; }
+  .zm-compose-win .zm-compose-bar.zm-compose-bar { padding-bottom: calc(8px + var(--rs-safe-b)); }
+  .zm-compose-win[data-min] .zm-compose-title.zm-compose-title { padding-bottom: var(--rs-safe-b); height: calc(var(--rs-bar-h) + var(--rs-safe-b)); }
+  .zm-compose-row .zm-sugg.zm-sugg { inset-inline: 8px; min-width: 0; max-width: none; }
+  .zm-compose .zm-editor.zm-editor { flex: 1 0 auto; }
+  .zm-compose-inline .zm-compose-bar.zm-compose-bar { flex-wrap: wrap; }
+}
+@keyframes zm-rs-up { from { transform: translateY(24px); opacity: 0.4; } }
+
+/* ------------------------------------------------------------------ fields, menus, popovers */
+
+@media (pointer: coarse) {
+  .zm-app .zm-icon-btn.zm-icon-btn { width: 36px; height: 36px; }
+  .zm-app .zm-tab-add.zm-tab-add { min-width: 40px; justify-content: center; }
+  .zm-app .zv-btn.zv-btn-sm, .zm-dialog .zv-btn.zv-btn-sm { height: 36px; }
+  .zm-search.zm-search input,
+  .zm-menu .zm-menu-search.zm-menu-search,
+  .zm-select.zm-select,
+  .zm-time-form .zv-input { font-size: 16px; }
+  .zm-select.zm-select { height: 40px; }
+  .zm-menu-item.zm-menu-item { min-height: 40px; }
+  .zm-sugg-item.zm-sugg-item, .zm-menu-search.zm-menu-search { min-height: 40px; }
+  .zm-tab-x.zm-tab-x { width: 24px; height: 24px; }
+  .zm-rail-compose.zm-rail-compose, .zm-rail-add.zm-rail-add { width: 32px; height: 32px; }
+  .zm-rail-hint.zm-rail-hint { height: 40px; }
+  .zm-toggle-row.zm-toggle-row { min-height: 48px; }
+  .zm-checks label { min-height: 36px; }
+  .zm-provider.zm-provider { height: 52px; }
+  .zm-choice.zm-choice { min-height: 44px; }
+  .zm-keys-row.zm-keys-row { min-height: 32px; }
+}
+.zm-pop.zm-pop { max-height: calc(100dvh - 16px); overflow-y: auto; overscroll-behavior: contain; }
+.zm-dialog.zm-dialog { max-height: min(86dvh, 760px); }
+.zm-cmd-scrim.zm-cmd-scrim { padding-top: 12dvh; }
+.zm-cmd .zm-menu-items.zm-menu-items { max-height: 50dvh; }
+
+@media (max-width: 640px) {
+  /* Dialogs: bottom sheets. */
+  .zm-scrim.zm-scrim:not(.zm-cmd-scrim) { place-items: end stretch; padding: calc(8px + var(--rs-safe-t)) 0 0; }
+  .zm-scrim:not(.zm-cmd-scrim) > .zm-dialog.zm-dialog {
+    max-width: none !important;
+    max-height: 90dvh;
+    border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
+    padding-bottom: var(--rs-safe-b);
+    animation: zm-rs-up 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .zm-scrim:not(.zm-cmd-scrim) > .zm-dialog::before { content: ""; align-self: center; width: 36px; height: 4px; margin-top: 8px; border-radius: 2px; background: var(--ui-border-strong); flex-shrink: 0; }
+  .zm-dialog .zm-dialog-body.zm-dialog-body { overscroll-behavior: contain; }
+  .zm-dialog .zm-dialog-foot.zm-dialog-foot { flex-wrap: wrap; }
+  .zm-dialog .zm-dialog-foot .zv-btn { flex: 1 1 auto; justify-content: center; }
+  .zm-dialog .zm-providers.zm-providers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zm-dialog .zm-field-icon.zm-field-icon { width: 100%; }
+  .zm-keys .zm-keys-grid.zm-keys-grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* ⌘K: from the top, where the keyboard leaves room. */
+  .zm-cmd-scrim.zm-cmd-scrim { padding: calc(8px + var(--rs-safe-t)) 8px 0; }
+  .zm-cmd-scrim .zm-cmd .zm-menu-items.zm-menu-items { max-height: calc(100dvh - 120px - var(--rs-safe-t)); }
+}
+@media (max-height: 500px) {
+  .zm-cmd-scrim.zm-cmd-scrim { padding-top: 8px; }
+  .zm-cmd .zm-menu-items.zm-menu-items { max-height: calc(100dvh - 90px); }
+  .zm-scrim.zm-scrim { padding-block: 8px; }
+  .zm-dialog.zm-dialog { max-height: calc(100dvh - 16px); }
+}
+
+/* ------------------------------------------------------------------ setup (no mailbox yet), settings */
+
+@media (max-width: 640px) {
+  .zm-app .zm-welcome.zm-welcome { padding: 32px 16px calc(40px + var(--rs-safe-b)); }
+  .zm-app .zm-welcome h1 { font-size: 22px; line-height: 28px; }
+  .zm-app .zm-welcome .zm-providers.zm-providers { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 20px; }
+  .zm-app .zm-settings.zm-settings { padding-bottom: calc(48px + var(--rs-safe-b)); }
+  .zm-app .zm-settings-head h1 { font-size: 22px; }
+  .zm-app .zm-account-main.zm-account-main { flex: 1 1 calc(100% - 40px); }
+  .zm-app .zm-account .zv-btn { flex: 1 1 auto; justify-content: center; }
+}
+@media (max-width: 360px) {
+  .zm-app .zm-welcome .zm-providers.zm-providers, .zm-dialog .zm-providers.zm-providers { grid-template-columns: minmax(0, 1fr); }
+}

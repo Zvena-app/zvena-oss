@@ -1,0 +1,31 @@
+# Version updates, once a week, grouped so each folder opens at most one pull request
+# for minor and patch versions. New releases wait a week first (cooldown), so a
+# hijacked package version is usually pulled before it reaches a pull request.
+# Security updates are separate (repository settings) and not delayed.
+# design/src (the Penpot fork) is not listed: it follows Penpot's releases.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directories:
+      - /web
+      - /clients/web-clipper
+      - /clients/desktop
+      - /clients/mobile
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]

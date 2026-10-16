@@ -1,0 +1,53 @@
+# Production overlay (see DEPLOY.md):
+# Caddy terminates HTTPS on 80/443 for both domains; the services stay on the
+# internal network (their 127.0.0.1 ports are for checks from the host only).
+# The test sign-in and the test-stand mode are forced off; scripts/common.sh
+# refuses relaxed Design flags (DESIGN_EXTRA_FLAGS) in production.
+#
+#   docker compose --env-file /etc/zvena/zvena.env \
+#     -f docker-compose.yml -f docker-compose.prod.yml --profile web up -d
+
+services:
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    networks: [zvena]
+    depends_on: [web, design-frontend]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN}
+      DESIGN_DOMAIN: ${DESIGN_DOMAIN:?set DESIGN_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    logging:
+      driver: json-file
+      options: { max-size: 20m, max-file: "5" }
+    mem_limit: 256m
+    cpu_shares: 10240
+
+  web:
+    environment:
+      ZVENA_STAND: ""
+      ZVENA_DEV_LOGIN: "0"
+    cpu_shares: 10240
+
+  # Production first: when the server also builds images or runs test stands,
+  # the services people use get ten times the CPU weight of everything else.
+  design-backend:
+    cpu_shares: 10240
+  design-frontend:
+    cpu_shares: 10240
+  postgres:
+    cpu_shares: 10240
+  valkey:
+    cpu_shares: 10240
+
+volumes:
+  caddy-data:
+  caddy-config:

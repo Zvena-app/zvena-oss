@@ -1,0 +1,7 @@
+node_modules
+.next
+.test-dist
+tests
+*.tsbuildinfo
+.env*
+AGENTS.md

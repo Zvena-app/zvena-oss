@@ -1,0 +1,101 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+// Figma UI3 align row — two segmented groups on a light pill.
+.align-options {
+  @include sidebar.option-grid-structure;
+
+  height: deprecated.$s-24;
+}
+
+.align-group-horizontal,
+.align-group-vertical {
+  display: grid;
+  grid-template-columns: subgrid;
+  place-items: center center;
+  border-radius: deprecated.$br-5;
+  background-color: var(--color-background-tertiary);
+}
+
+.align-group-horizontal {
+  grid-column: 1 / span 4;
+}
+
+.align-group-vertical {
+  grid-column: 5 / span 4;
+}
+
+.align-button {
+  @extend %button-tertiary;
+
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
+  padding: 0;
+  border-radius: deprecated.$br-5;
+  background-color: transparent;
+
+  svg {
+    @extend %button-icon;
+
+    stroke: var(--color-foreground-primary);
+  }
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
+
+  &.disabled {
+    cursor: default;
+
+    svg {
+      stroke: var(--button-foreground-color-disabled);
+    }
+
+    &:hover {
+      background-color: transparent;
+
+      svg {
+        stroke: var(--button-foreground-color-disabled);
+      }
+    }
+  }
+}
+
+// zvena: Figma's Tidy up, under the align row when several layers are selected
+.with-tidy {
+  height: auto;
+  row-gap: var(--sp-xs);
+}
+
+.tidy-button {
+  @extend %button-tertiary;
+  @include t.use-typography("body-small");
+
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xs);
+  height: deprecated.$s-24;
+  border-radius: deprecated.$br-5;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+
+  svg {
+    width: deprecated.$s-16;
+    height: deprecated.$s-16;
+    fill: none;
+    stroke: currentColor;
+  }
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}

@@ -1,0 +1,46 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+
+// zvena: Figma's green "Ready for dev" pill and grey "Completed" one.
+.badge {
+  --zvena-badge-bg: var(--color-accent-success, #14ae5c);
+  --zvena-badge-fg: #fff;
+
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: px2rem(2);
+  block-size: px2rem(16);
+  padding-inline: px2rem(2) px2rem(6);
+  border-radius: $br-4;
+  background-color: var(--zvena-badge-bg);
+  color: var(--zvena-badge-fg);
+  font-family: inherit;
+  font-size: px2rem(11);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+
+  &.completed {
+    --zvena-badge-bg: #8c8c8c;
+  }
+
+  &.compact {
+    inline-size: px2rem(16);
+    padding-inline: 0;
+  }
+}
+
+.badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

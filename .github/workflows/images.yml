@@ -1,0 +1,105 @@
+# The three zvena images of a release, built from the tagged commit with the
+# repository's own scripts (deploy/scripts/build-images.sh) and published to
+# GitHub's container registry:
+#   ghcr.io/zvena-app/zvena-web:<version>
+#   ghcr.io/zvena-app/zvena-design-backend:<version>
+#   ghcr.io/zvena-app/zvena-design-frontend:<version>
+# (also :latest for the newest release). Design's exporter is Penpot's own image
+# (penpotapp/exporter, see deploy/docker-compose.yml). linux/amd64 only.
+# A manual run builds without publishing unless `publish` is set.
+name: images
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the images (tag = the version below)
+        type: boolean
+        default: false
+      version:
+        description: Version tag for a manual publish (e.g. 1.0.1)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build and publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io/zvena-app
+      ZVENA_BUILD_DIR: /mnt/zvena-build
+    steps:
+      - name: Disk space (Design's frontend build needs ~15 GB)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo docker image prune -af >/dev/null
+          df -h / /mnt
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Penpot's upstream tag (Design's build compares against it)
+        run: git fetch --no-tags origin tag penpot-2.18.3
+      - name: Version
+        id: v
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then v=${GITHUB_REF_NAME#v}; publish=true
+          else v=${INPUT_VERSION:-}; publish=${INPUT_PUBLISH:-false}; fi
+          if [ "$publish" = true ] && ! [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "::error::a published version must look like 1.2.3"; exit 1; fi
+          echo "version=${v:-dev}" >> "$GITHUB_OUTPUT"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PUBLISH: ${{ inputs.publish }}
+      - name: Build the three images (deploy/scripts/build-images.sh)
+        run: |
+          sudo mkdir -p "$ZVENA_BUILD_DIR"
+          # The scripts run as root (Docker); the checkout belongs to the runner's user.
+          sudo git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          cp deploy/.env.example "$RUNNER_TEMP/build.env"
+          sudo --preserve-env=ZVENA_BUILD_DIR ZVENA_ENV="$RUNNER_TEMP/build.env" BUILD_CPUS=4 BUILD_MEMORY=12g deploy/scripts/build-images.sh
+          grep -E '^(WEB|DESIGN_BACKEND|DESIGN_FRONTEND)_IMAGE=' "$RUNNER_TEMP/build.env" | tee "$RUNNER_TEMP/images.env"
+      - name: Smoke test of the web image
+        run: |
+          . "$RUNNER_TEMP/images.env"
+          docker run -d --name web -p 127.0.0.1:3100:3100 -e AUTH_SECRET=$(openssl rand -hex 32) -e ZVENA_STAND=test "$WEB_IMAGE"
+          for _ in $(seq 1 30); do curl -fsS http://127.0.0.1:3100/api/health && break; sleep 2; done
+          curl -fsS http://127.0.0.1:3100/api/health | grep -q '"ok":true'
+          docker rm -f web
+      - name: Label and tag for the registry
+        run: |
+          . "$RUNNER_TEMP/images.env"
+          v=${{ steps.v.outputs.version }}
+          for pair in "zvena-web=$WEB_IMAGE" "zvena-design-backend=$DESIGN_BACKEND_IMAGE" "zvena-design-frontend=$DESIGN_FRONTEND_IMAGE"; do
+            name=${pair%%=*} src=${pair#*=}
+            printf 'FROM %s\nLABEL org.opencontainers.image.source="https://github.com/%s" org.opencontainers.image.version="%s" org.opencontainers.image.revision="%s" org.opencontainers.image.licenses="%s"\n' \
+              "$src" "$GITHUB_REPOSITORY" "$v" "$GITHUB_SHA" "$([ "$name" = zvena-web ] && echo AGPL-3.0-only || echo MPL-2.0)" \
+              | docker build -q -t "$REGISTRY/$name:$v" - >/dev/null
+            echo "$REGISTRY/$name:$v"
+          done
+      - name: Publish
+        if: steps.v.outputs.publish == 'true'
+        run: |
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          v=${{ steps.v.outputs.version }}
+          for name in zvena-web zvena-design-backend zvena-design-frontend; do
+            docker push -q "$REGISTRY/$name:$v"
+            docker tag "$REGISTRY/$name:$v" "$REGISTRY/$name:latest"
+            docker push -q "$REGISTRY/$name:latest"
+            echo "published $REGISTRY/$name:$v (digest: $(docker inspect --format '{{index .RepoDigests 0}}' "$REGISTRY/$name:$v"))" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

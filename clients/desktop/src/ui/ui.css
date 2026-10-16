@@ -1,0 +1,78 @@
+/* The desktop app's own pages (tab strip, Settings, offline) in zvena's
+   look: the --ui-* tokens of web/src/app/ui-theme.css (Figma UI3: Inter as
+   "Zvena Sans", neutral greys, hairlines, Figma blue, 13 px text, 32 px
+   controls, 6 px corners). Change values there first, then copy here. */
+
+@font-face { font-family: "Zvena Sans"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(/fonts/inter-cyrillic-wght-normal.woff2) format("woff2-variations"); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+@font-face { font-family: "Zvena Sans"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(/fonts/inter-latin-wght-normal.woff2) format("woff2-variations"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+:root {
+  color-scheme: light dark;
+  --ui-bg: #ffffff;
+  --ui-chrome: #f5f5f5;
+  --ui-bg-2: #f5f5f5;
+  --ui-bg-3: #ebebeb;
+  --ui-hover: rgba(0, 0, 0, 0.05);
+  --ui-active: rgba(0, 0, 0, 0.08);
+  --ui-text: #1e1e1e;
+  --ui-text-2: #6e6e6e;
+  --ui-text-3: #8f8f8f;
+  --ui-text-on-brand: #ffffff;
+  --ui-border: #e6e6e6;
+  --ui-border-2: #d9d9d9;
+  --ui-brand: #0d99ff;
+  --ui-brand-hover: #007be5;
+  --ui-danger-text: #dc3412;
+  --ui-font: "Zvena Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --ui-text-sm: 12px;
+  --ui-text-md: 13px;
+  --ui-text-lg: 15px;
+  --ui-radius: 6px;
+  --ui-radius-md: 8px;
+  --ui-radius-lg: 13px;
+  --ui-control-h: 32px;
+  --ui-control-h-sm: 28px;
+  --ui-shadow-1: 0 0 0.5px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --ui-focus: 0 0 0 2px var(--ui-brand);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ui-bg: #2c2c2c;
+    --ui-chrome: #1e1e1e;
+    --ui-bg-2: #383838;
+    --ui-bg-3: #444444;
+    --ui-hover: rgba(255, 255, 255, 0.06);
+    --ui-active: rgba(255, 255, 255, 0.1);
+    --ui-text: #ffffff;
+    --ui-text-2: #b3b3b3;
+    --ui-text-3: #8c8c8c;
+    --ui-border: #444444;
+    --ui-border-2: #4f4f4f;
+    --ui-danger-text: #fc9286;
+    --ui-shadow-1: 0 0 0.5px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font: var(--ui-text-md) / 1.4 var(--ui-font);
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: none; box-shadow: var(--ui-focus); }
+
+.ui-btn {
+  height: var(--ui-control-h);
+  padding: 0 14px;
+  border: 1px solid var(--ui-border-2);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg);
+  cursor: default;
+}
+.ui-btn:hover { background: var(--ui-hover); }
+.ui-btn-primary { background: var(--ui-brand); border-color: transparent; color: var(--ui-text-on-brand); }
+.ui-btn-primary:hover { background: var(--ui-brand-hover); }

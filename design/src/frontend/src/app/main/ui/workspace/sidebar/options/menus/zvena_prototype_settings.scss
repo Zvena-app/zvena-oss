@@ -1,0 +1,41 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
+
+.element-set {
+  margin-block-end: var(--sp-s);
+}
+
+.title-spacing {
+  padding-inline-start: var(--sp-xxs);
+  margin: 0;
+}
+
+.element-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.row {
+  @include t.use-typography("body-small");
+
+  display: grid;
+  grid-template-columns: px2rem(72) 1fr;
+  align-items: center;
+  gap: var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.label {
+  padding-inline-start: var(--sp-xs);
+}
+
+.select {
+  inline-size: 100%;
+}

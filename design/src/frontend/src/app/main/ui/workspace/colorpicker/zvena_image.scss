@@ -1,0 +1,113 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+
+.image-props {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-m);
+}
+
+.mode-row {
+  display: flex;
+  gap: var(--sp-xs);
+  align-items: center;
+
+  > :first-child {
+    flex: 1;
+  }
+}
+
+.slider-row {
+  @include t.use-typography("body-small");
+
+  block-size: px2rem(24);
+  display: grid;
+  grid-template-columns: px2rem(76) 1fr px2rem(40);
+  align-items: center;
+  gap: var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.slider-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Figma-like slider: a thin track and a white round thumb
+.slider {
+  inline-size: 100%;
+  block-size: px2rem(16);
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+
+  &::-webkit-slider-runnable-track {
+    block-size: px2rem(2);
+    border-radius: px2rem(1);
+    background-color: var(--color-background-quaternary);
+  }
+
+  &::-moz-range-track {
+    block-size: px2rem(2);
+    border-radius: px2rem(1);
+    background-color: var(--color-background-quaternary);
+  }
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    inline-size: px2rem(12);
+    block-size: px2rem(12);
+    margin-block-start: px2rem(-5);
+    border: 1px solid rgb(0 0 0 / 15%);
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+  }
+
+  &::-moz-range-thumb {
+    inline-size: px2rem(12);
+    block-size: px2rem(12);
+    border: 1px solid rgb(0 0 0 / 15%);
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+  }
+
+  &:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--color-accent-primary);
+  }
+}
+
+.slider-value {
+  text-align: end;
+  color: var(--color-foreground-primary);
+}
+
+.adjust-title {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-start: var(--sp-s);
+  color: var(--color-foreground-primary);
+}
+
+.reset {
+  @include t.use-typography("body-small");
+
+  border: none;
+  background: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
+}

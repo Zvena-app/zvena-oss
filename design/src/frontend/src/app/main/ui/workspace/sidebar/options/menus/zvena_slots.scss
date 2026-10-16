@@ -1,0 +1,76 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: the Slot section of the design tab (see zvena_slots.cljs)
+
+@use "ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.slot {
+  grid-column: span 8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  max-width: var(--options-width);
+}
+
+.slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: $sz-32;
+}
+
+.slot-title {
+  @include t.use-typography("headline-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.slot-icon {
+  flex: 0 0 auto;
+}
+
+.slot-row {
+  @include sidebar.option-grid-structure;
+
+  align-items: center;
+}
+
+.slot-label {
+  @include t.use-typography("body-small");
+
+  grid-column: span 3;
+  min-inline-size: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.slot-control {
+  grid-column: span 5;
+  min-inline-size: 0;
+}
+
+.slot-value {
+  @include t.use-typography("body-small");
+
+  grid-column: span 5;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-primary);
+}
+
+.slot-hint {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}

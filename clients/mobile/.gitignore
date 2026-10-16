@@ -1,0 +1,22 @@
+node_modules/
+
+# Android build outputs and local settings (the project sources stay in git)
+android/.gradle/
+android/build/
+android/local.properties
+android/.idea/
+*.keystore
+*.jks
+android/app/google-services.json
+
+# iOS build outputs and per-user state
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+ios/App/DerivedData/
+xcuserdata/
+ios/App/App/GoogleService-Info.plist
+
+# Copies `npx cap sync` makes of www/ and of the config
+android/app/src/main/assets/public/
+ios/App/App/public/

@@ -1,0 +1,118 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_sizes.scss" as *;
+
+.tool-window {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+.tab-spacing {
+  margin-inline-end: var(--sp-m);
+}
+
+.content-class {
+  overflow: hidden auto;
+  height: calc(100vh - #{$sz-96});
+  scrollbar-gutter: stable;
+}
+
+.element-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  width: 100%;
+
+  /* FIXME: This is hacky and prone to break, we should tackle the whole layout
+            of the sidebar differently */
+  --sidebar-element-options-height: calc(100vh - #{$sz-88});
+
+  height: var(--sidebar-element-options-height);
+  padding-block-start: var(--sp-s);
+}
+
+.read-only {
+  grid-template-areas: "right-sidebar";
+  padding: var(--sp-s);
+}
+
+.design-options,
+.interaction-options {
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+// Figma UI3 properties panel — full-width sections split by 1px
+// rules, 12px side padding, scrollbars only while scrolling.
+.design-options {
+  --title-bar-title-margin-override: 0;
+  --title-bar-height: #{$sz-24};
+  --title-bar-arrow-display: none;
+
+  gap: 0;
+  padding-inline: 0;
+  padding-block-start: 0;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  > * {
+    flex-shrink: 0;
+    padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-m);
+    border-block-end: 1px solid var(--blueai-border, var(--color-background-quaternary));
+  }
+
+  > .position-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-s);
+    padding-block-end: var(--sp-s);
+    border-block-end: none;
+  }
+
+  > [data-section="position"] {
+    padding-block-start: 0;
+  }
+
+  > *:empty {
+    display: none;
+  }
+}
+
+.interaction-options {
+  --title-bar-title-margin-override: 0;
+  --title-bar-height: #{$sz-24};
+  --title-bar-arrow-display: none;
+
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+}
+
+.inspect {
+  scrollbar-gutter: unset;
+}
+
+// Figma UI3 — tabs row right under the header, zoom at its end.
+.options-tab-switcher {
+  --tabs-nav-padding-inline-start: var(--sp-s);
+  --tabs-nav-padding-inline-end: var(--sp-s);
+  --tabs-nav-inner-padding: 0 0 var(--sp-s) 0;
+  --tabs-nav-min-height: #{$sz-32};
+  --tabs-nav-border-color: var(--color-background-quaternary);
+}
+
+// zvena: the zoom menu for viewers, at the top right of the read-only panel.
+.read-only-zoom {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--sp-xs) var(--sp-s) 0;
+}

@@ -1,0 +1,301 @@
+/* zvena on phones and tablets: calendar. Breakpoints and rules: responsive/shell.css.
+ *
+ * Google / Notion Calendar on a phone: the header is the 48 px bar next to the
+ * shell's menu button (title, Today, ‹ ›) with the view switch under it; the
+ * week view is three days (model.narrowDays), the month a grid of chips where a
+ * tap opens the day; a "+" button makes an event; the event panel and the
+ * editors are full-screen sheets, dialogs bottom sheets. On tablets the desktop
+ * layout, with the event panel over the grid when docking it would squeeze the
+ * days under 560 px. Touch: 40 px targets, 16 px fields, a tap on an empty slot
+ * makes an event, press and hold drags one (TimeGrid).
+ *
+ * Loads before components/calendar/calendar.css: selectors are doubled to win.
+ */
+
+/* ------------------------------------------------------------ the new-event button (phones, touch) */
+
+.cal-fab { display: none; }
+@media (max-width: 860px), (pointer: coarse) {
+  .cal-fab.cal-fab {
+    position: fixed;
+    z-index: 30; /* under the drawer's scrim (40) */
+    inset-inline-end: calc(16px + var(--rs-safe-r));
+    bottom: calc(20px + var(--rs-safe-b));
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border: 0;
+    border-radius: 16px;
+    background: var(--ui-brand-fill);
+    color: var(--ui-text-on-brand);
+    box-shadow: var(--ui-shadow-3);
+    cursor: pointer;
+    animation: cal-rs-pop 0.18s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .cal-fab.cal-fab:active { background: var(--ui-brand-hover); transform: scale(0.96); }
+  /* The grid's last hours scroll clear of it. */
+  .cal-app .cal-grid-body { margin-bottom: 72px; }
+  .cal-app .cal-agenda.cal-agenda { padding-bottom: 96px; }
+}
+@keyframes cal-rs-pop { from { opacity: 0; transform: scale(0.8); } }
+@keyframes cal-rs-up { from { transform: translateY(24px); opacity: 0.4; } }
+
+/* ------------------------------------------------------------ header (≤ 860: next to the menu button) */
+
+@media (max-width: 860px) {
+  .cal-app .cal-head.cal-head {
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-height: calc(var(--rs-bar-h) + var(--rs-safe-t));
+    padding: var(--rs-safe-t) calc(8px + var(--rs-safe-r)) 0 calc(52px + var(--rs-safe-l));
+  }
+  .cal-app .cal-head-title.cal-head-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: var(--rs-bar-h);
+    align-items: center;
+    overflow: hidden;
+    font-size: 17px;
+  }
+  .cal-app .cal-head-title > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .cal-app .cal-head-title > .cal-head-year,
+  .cal-app .cal-head-title > .cal-head-week { flex-shrink: 0; }
+  .cal-app .cal-head-nav.cal-head-nav { flex-shrink: 0; }
+  .cal-app .cal-head-end.cal-head-end { flex: 0 1 auto; min-width: 0; gap: 2px; }
+  .cal-app .cal-seg.cal-seg { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .cal-app .cal-seg.cal-seg::-webkit-scrollbar { display: none; }
+  .cal-app .cal-seg.cal-seg button { flex-shrink: 0; white-space: nowrap; }
+}
+
+/* Phones: the view switch and the tools on a second row, full width. */
+@media (max-width: 640px) {
+  .cal-app .cal-head.cal-head { flex-wrap: wrap; row-gap: 0; padding-bottom: 8px; }
+  .cal-app .cal-head-end.cal-head-end {
+    flex: 1 0 100%;
+    margin-inline-start: calc(-44px - var(--rs-safe-l));
+    gap: 4px;
+  }
+  .cal-app .cal-head-end > .cal-icon-btn:first-child { order: 2; }
+  .cal-app .cal-head-end > .cal-icon-btn:last-child { order: 3; }
+  .cal-app .cal-seg.cal-seg { flex: 1; order: 1; }
+  .cal-app .cal-seg.cal-seg button { flex: 1 0 auto; padding: 0 10px; }
+}
+
+/* ------------------------------------------------------------ touch targets and fields */
+
+@media (pointer: coarse) {
+  .cal-app .cal-head .cal-icon-btn.cal-icon-btn { width: var(--rs-touch); height: var(--rs-touch); }
+  .cal-app .cal-head .cal-btn-sm.cal-btn-sm { height: 36px; padding: 0 12px; font-size: 13px; }
+  .cal-app .cal-seg.cal-seg button { height: 36px; font-size: 13px; }
+
+  .cal-icon-btn.cal-icon-btn { width: 36px; height: 36px; }
+  .cal-btn.cal-btn { height: 40px; }
+  .cal-btn.cal-btn-sm { height: 36px; }
+  .cal-field-btn.cal-field-btn { height: 36px; }
+  .cal-input.cal-input, .cal-select.cal-select { height: 40px; font-size: 16px; }
+  .cal-input.cal-input-num { width: 76px; }
+  .cal-chip.cal-chip { height: 32px; padding: 0 12px; }
+  .cal-chip-x.cal-chip-x { width: 28px; height: 28px; margin-inline-end: -8px; }
+  .cal-chip-mode.cal-chip-mode { height: 24px; }
+  .cal-color.cal-color { width: 28px; height: 28px; }
+  .cal-colors.cal-colors { gap: 8px; }
+  .cal-wd.cal-wd { min-width: 36px; height: 36px; }
+  .cal-menu-item.cal-menu-item { min-height: 40px; }
+  .cal-time-opt.cal-time-opt { min-height: 40px; }
+  .cal-time-list.cal-time-list { max-height: min(320px, 50dvh); overscroll-behavior: contain; }
+  .cal-cmd .cal-cmd-input input { font-size: 16px; }
+
+  /* The grid: a swipe over an event scrolls (press and hold drags it, TimeGrid). */
+  .cal-col .cal-ev.cal-ev { touch-action: pan-y; -webkit-touch-callout: none; }
+  .cal-ev-resize.cal-ev-resize { touch-action: none; display: none; }
+  .cal-ev-sel .cal-ev-resize.cal-ev-resize { display: block; height: 16px; }
+  .cal-ev-sel .cal-ev-resize::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 24px; height: 4px; margin-left: -12px; border-radius: 2px; background: color-mix(in srgb, #fff 80%, transparent); }
+  .cal-ev-ghost.cal-ev-ghost { box-shadow: var(--ui-shadow-3); }
+  .cal-dayhead.cal-dayhead { min-height: 44px; align-items: center; }
+
+  /* Month and agenda. */
+  .cal-agenda-row.cal-agenda-row { min-height: 44px; }
+  .cal-month-more.cal-month-more { min-height: 24px; }
+
+  /* The rail block (in the drawer and docked). */
+  .cal-mini-day.cal-mini-day { height: 36px; font-size: 13px; }
+  .cal-mini-head .cal-icon-btn.cal-icon-btn { width: 36px; height: 36px; }
+  .cal-item.cal-item { min-height: 40px; }
+  .cal-item-name.cal-item-name { font-size: 14px; }
+  .cal-item .cal-item-more.cal-item-more { width: 36px; height: 36px; }
+  .cal-group-head .cal-icon-btn.cal-icon-btn { width: 32px; height: 32px; }
+  .cal-check.cal-check { width: 18px; height: 18px; }
+  .cal-check[aria-checked="true"]::after { left: 5px; top: 1.5px; width: 4px; height: 9px; }
+  .cal-next.cal-next { min-height: 56px; }
+}
+@media (hover: none), (pointer: coarse) {
+  .cal-item .cal-item-more.cal-item-more { opacity: 1; }
+  .cal-ev.cal-ev:hover { box-shadow: none; }
+}
+
+/* ------------------------------------------------------------ phones: views */
+
+@media (max-width: 640px) {
+  .cal-app .cal-dayhead.cal-dayhead { flex-direction: column; align-items: center; gap: 0; padding: 4px 2px; }
+  .cal-app .cal-dayhead-wd { font-size: 11px; }
+  .cal-app .cal-dayhead-n { font-size: 17px; min-width: 28px; height: 28px; line-height: 28px; }
+  .cal-app .cal-ev.cal-ev { padding-inline: 4px; font-size: 11.5px; }
+  .cal-app .cal-allday-label.cal-allday-label { padding-inline: 2px 6px; }
+
+  /* Month: chips with the title only, the day's number centered (Google Calendar). */
+  .cal-month-head.cal-month-head span { text-align: center; padding: 6px 2px; font-size: 10.5px; }
+  .cal-month-num.cal-month-num { inset-inline: 0; margin-inline: auto; width: max-content; font-size: 12px; }
+  .cal-month-day[data-today] .cal-month-num.cal-month-num { min-width: 22px; }
+  .cal-month-bars .cal-ev.cal-mline,
+  .cal-month-bars .cal-ev.cal-bar {
+    height: 18px;
+    padding: 0 3px;
+    gap: 0;
+    border-radius: 3px;
+    border-inline-start: 0;
+    background: color-mix(in srgb, var(--ev, var(--ui-brand)) 18%, var(--ui-bg));
+    color: color-mix(in srgb, var(--ev, var(--ui-brand)) 62%, var(--ui-text));
+    font-size: 10.5px;
+  }
+  :root.dark .cal-month-bars .cal-ev.cal-mline,
+  :root.dark .cal-month-bars .cal-ev.cal-bar { background: color-mix(in srgb, var(--ev, var(--ui-brand)) 32%, var(--ui-bg)); color: color-mix(in srgb, var(--ev, var(--ui-brand)) 30%, #fff); }
+  .cal-month-bars .cal-ev.cal-ev-sel { background: var(--ev, var(--ui-brand)); color: #fff; }
+  .cal-month-bars .cal-mline .cal-mline-dot,
+  .cal-month-bars .cal-mline .cal-ev-time { display: none; }
+  .cal-month-bars .cal-ev .cal-ev-title { font-weight: 600; text-overflow: clip; }
+  .cal-month-more.cal-month-more { inset-inline: 0; padding: 0 3px; font-size: 10px; text-align: start; }
+
+  /* Agenda: when on one line, what on the next. */
+  .cal-agenda.cal-agenda { padding-inline: 8px; }
+  .cal-agenda-day h3 { padding-inline: 8px; }
+  .cal-agenda-row.cal-agenda-row { grid-template-columns: 10px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 10px; row-gap: 1px; padding: 6px 8px; }
+  .cal-agenda-row .cal-agenda-when { grid-column: 2; grid-row: 2; }
+  .cal-agenda-row .cal-agenda-dot { grid-column: 1; grid-row: 1; }
+  .cal-agenda-row .cal-agenda-title { grid-column: 2; grid-row: 1; }
+}
+
+/* ------------------------------------------------------------ the event panel */
+
+/* Phones (≤ 720, calendar.css makes it full-screen): a sheet with a real top bar. */
+@media (max-width: 720px) {
+  .cal-app .cal-panel.cal-panel {
+    padding-top: var(--rs-safe-t);
+    padding-inline: var(--rs-safe-l) var(--rs-safe-r);
+    height: 100dvh;
+    animation: cal-rs-up 0.2s cubic-bezier(0.2, 0, 0, 1);
+    overscroll-behavior: contain;
+  }
+  .cal-app .cal-panel-head.cal-panel-head { min-height: var(--rs-bar-h); align-items: center; padding: 4px 8px; }
+  .cal-app .cal-panel-head .cal-icon-btn.cal-icon-btn { width: var(--rs-touch); height: var(--rs-touch); }
+  .cal-app .cal-panel-body.cal-panel-body { overscroll-behavior: contain; }
+  .cal-app .cal-panel-foot.cal-panel-foot { padding-bottom: calc(10px + var(--rs-safe-b)); }
+  .cal-app .cal-panel-foot .cal-btn { flex: 1; justify-content: center; }
+  .cal-app .cal-title-input.cal-title-input { font-size: 20px; }
+}
+
+/* Tablets: over the grid from the end side while docking it would leave the days under 560 px. */
+@media (min-width: 721px) and (max-width: 1179px) {
+  .cal-app .cal-body.cal-body { position: relative; }
+  .cal-app .cal-panel.cal-panel {
+    position: absolute;
+    z-index: 25; /* under the drawer's scrim and the shell's menu button */
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: min(380px, 88%);
+    box-shadow: var(--ui-shadow-3);
+    border-inline-start: 0.5px solid var(--ui-border);
+    animation: cal-rs-in 0.18s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .cal-app .cal-panel-foot.cal-panel-foot { padding-bottom: calc(10px + var(--rs-safe-b)); }
+}
+@keyframes cal-rs-in { from { opacity: 0; transform: translateX(16px); } }
+[dir="rtl"] .cal-app .cal-panel.cal-panel { animation-name: cal-rs-in-rtl; }
+@keyframes cal-rs-in-rtl { from { opacity: 0; transform: translateX(-16px); } }
+@media (max-width: 720px) {
+  [dir="rtl"] .cal-app .cal-panel.cal-panel { animation-name: cal-rs-up; }
+}
+
+/* ------------------------------------------------------------ dialogs, menus, ⌘K */
+
+.cal-layer.cal-layer { padding-top: 10dvh; }
+.cal-layer .cal-modal.cal-modal { max-height: 80dvh; }
+.cal-layer .cal-cmd.cal-cmd { max-height: 70dvh; }
+.cal-pop.cal-pop { max-height: min(420px, 80dvh); overscroll-behavior: contain; }
+.cal-modal-body.cal-modal-body { overscroll-behavior: contain; }
+
+@media (max-width: 640px) {
+  /* Dialogs: bottom sheets. */
+  .cal-layer.cal-layer { place-items: end stretch; padding: calc(8px + var(--rs-safe-t)) 0 0; }
+  .cal-layer > .cal-modal.cal-modal,
+  .cal-layer > .cal-modal.cal-modal-wide {
+    width: 100%;
+    max-height: 90dvh;
+    border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
+    padding-bottom: var(--rs-safe-b);
+    animation: cal-rs-up 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .cal-layer > .cal-modal::before { content: ""; align-self: center; width: 36px; height: 4px; margin-top: 8px; border-radius: 2px; background: var(--ui-border-strong); flex-shrink: 0; }
+  .cal-modal-head.cal-modal-head { padding: 8px 8px 4px 16px; padding-inline: 16px 8px; min-height: 44px; }
+  .cal-modal-foot.cal-modal-foot { flex-wrap: wrap; }
+  .cal-modal-foot .cal-btn:not(.cal-foot-left) { flex: 1 1 auto; justify-content: center; }
+  .cal-field.cal-field { gap: 6px; }
+  .cal-hours-row.cal-hours-row { grid-template-columns: 84px minmax(0, 1fr); }
+  .cal-copy-row.cal-copy-row { flex-wrap: wrap; }
+  .cal-copy-row .cal-input { flex: 1 1 100%; }
+
+  /* ⌘K: a sheet from the top, where the keyboard leaves room. */
+  .cal-layer > .cal-cmd.cal-cmd {
+    align-self: start;
+    width: auto;
+    margin: 0 8px;
+    max-height: calc(100dvh - 24px - var(--rs-safe-t));
+    animation: cal-rs-pop 0.16s ease;
+  }
+}
+
+/* ------------------------------------------------------------ landscape phones: no tall chrome */
+
+@media (max-height: 500px) and (pointer: coarse) {
+  .cal-app .cal-dayhead.cal-dayhead { min-height: 36px; padding-block: 2px; }
+  /* Many all-day events would leave no hours on screen: the row scrolls past two bars. */
+  .cal-app .cal-allday.cal-allday { max-height: 56px; overflow-y: auto; overscroll-behavior: contain; }
+  .cal-layer.cal-layer { padding-top: 8px; place-items: start center; }
+  .cal-layer .cal-modal.cal-modal, .cal-layer .cal-cmd.cal-cmd { max-height: calc(100dvh - 16px); }
+  .cal-fab.cal-fab { bottom: calc(12px + var(--rs-safe-b)); width: 46px; height: 46px; border-radius: 14px; }
+}
+
+/* ------------------------------------------------------------ public booking pages (/cal/…) */
+
+@media (pointer: coarse) {
+  .bk .bk-form input, .bk .bk-form textarea { font-size: 16px; }
+  .bk .bk-form input { height: 44px; }
+  .bk .bk-nav.bk-nav { width: 40px; height: 40px; }
+  .bk .bk-slot.bk-slot, .bk .bk-next.bk-next { height: 44px; }
+  .bk .bk-back.bk-back { min-height: 40px; }
+  .bk .bk-cancel.bk-cancel { min-height: 40px; }
+  .bk .cal-field-btn.cal-field-btn { height: 36px; font-size: 13px; }
+}
+@media (max-width: 760px) {
+  .bk.bk { padding: calc(12px + var(--rs-safe-t)) calc(12px + var(--rs-safe-r)) calc(16px + var(--rs-safe-b)) calc(12px + var(--rs-safe-l)); }
+  .bk .bk-day.bk-day { font-size: 14px; }
+  .bk .bk-form.bk-form { max-width: none; }
+  .bk .bk-answers.bk-answers { flex-wrap: wrap; }
+  .bk .bk-answers > * { flex: 1 1 auto; }
+}
+
+/* Landscape phones: the month's weeks keep room for two lines; the month scrolls. */
+@media (max-height: 500px) {
+  .cal-app .cal-month.cal-month { overflow-y: auto; overscroll-behavior: contain; }
+  .cal-app .cal-month-body.cal-month-body { flex: none; height: 408px; }
+}
+
+/* Booking pages, every size (bugs seen on phones, real on desktop too; booking.css owner informed):
+   the form's Confirm button is a flex child of a column (flex: 1 squashed it to its text), and the
+   invitation page sets no --bk, so its Yes / No / Maybe buttons had no border or color. */
+.bk .bk-form .bk-next.bk-next { flex: none; min-height: 40px; }
+.bk:not([style*="--bk"]) { --bk: var(--ui-brand); }
+
+/* A long scheduling-link title truncates in the rail (the shell keeps its group at the rail's width). */
+.cal-rail .cal-item-btn.cal-item-name { min-width: 0; }

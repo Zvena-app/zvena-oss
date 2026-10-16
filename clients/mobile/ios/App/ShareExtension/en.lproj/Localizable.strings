@@ -1,0 +1,5 @@
+/* Written by scripts/strings.mjs. */
+"share" = "Save to zvena";
+"saving" = "Saving to zvena…";
+"opening" = "Opening zvena…";
+"empty" = "Nothing to save here: share a link or text.";

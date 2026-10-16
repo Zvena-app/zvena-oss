@@ -1,0 +1,111 @@
+# Checks of every push and pull request: the web app (install from the lock file,
+# typecheck, lint with no warnings, unit tests, the ten translation catalogs, the
+# decision-model rule, a production build), the client apps' tests and build, the
+# shell scripts and the access-log masking test. The same commands run locally, see
+# CONTRIBUTING.md. Actions are pinned to full commit SHAs (the comment is the tag).
+name: ci
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # web.Dockerfile builds on node:24.11; engines say >=24. CI takes the newest 24.x,
+  # the one contributors install, so a lock file it cannot install fails here first.
+  NODE_VERSION: 24
+  NEXT_TELEMETRY_DISABLED: 1
+  npm_config_audit: false
+  npm_config_fund: false
+
+jobs:
+  web:
+    name: web
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install (package-lock.json)
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint (warnings fail)
+        run: npx eslint --max-warnings 0 .
+      - name: Unit and API tests
+        run: npm test
+      - name: Translations (all ten languages, same keys and placeholders)
+        run: npm run check:i18n
+      - name: Decision model only in lib/decide/smart.ts
+        run: npm run check:no-ai
+      - name: Production build
+        run: npm run build
+
+  clients:
+    name: clients/${{ matrix.app }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # desktop and mobile: their tests load only their own src/ (no Electron or
+        # Capacitor needed), so nothing is installed. The web clipper is built too.
+        include:
+          - app: desktop
+            install: false
+          - app: mobile
+            install: false
+          - app: web-clipper
+            install: true
+            build: true
+    defaults:
+      run:
+        working-directory: clients/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install (package-lock.json)
+        if: matrix.install
+        run: npm ci
+      - name: Build
+        if: matrix.build
+        run: npm run build
+      - name: Tests
+        run: npm test
+
+  tools:
+    name: shell scripts, log masking
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: shellcheck (preinstalled on the runner)
+        run: |
+          shellcheck --version | head -2
+          git ls-files -z -- 'deploy/*.sh' 'tools/*.sh' 'tools/release/*.sh' 'design/bin/*.sh' | xargs -0 shellcheck -x -S warning
+      - name: Access logs keep no secrets (real Caddyfile, dummy token, Docker)
+        run: deploy/caddy/test-log-masking.sh

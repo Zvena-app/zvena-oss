@@ -1,0 +1,70 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// Sizes are in vw: on a phone the page is laid out about 980px wide
+// (Board has no viewport meta), so fixed pixel sizes come out tiny.
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6vw;
+  background-color: var(--color-background-primary);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4vw;
+  inline-size: 86vw;
+}
+
+.title {
+  margin: 0;
+  font-size: 6.6vw;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-foreground-primary);
+}
+
+.text {
+  margin: 0;
+  font-size: 4.4vw;
+  line-height: 1.45;
+  color: var(--color-foreground-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5vw;
+  margin-block-start: 2vw;
+}
+
+.primary,
+.secondary {
+  inline-size: 100%;
+  padding: 3.6vw 4vw;
+  border: none;
+  border-radius: 2.4vw;
+  font-family: inherit;
+  font-size: 4.4vw;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primary {
+  background-color: var(--color-accent-primary);
+  color: var(--color-background-primary);
+}
+
+.secondary {
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+}

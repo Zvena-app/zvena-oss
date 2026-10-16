@@ -1,0 +1,114 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// Transparent catcher: a click anywhere else closes the panel, as in Figma.
+.quick-actions-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-index-dropdown);
+}
+
+// Opens above the bottom toolbar, where Figma's Actions panel appears.
+.quick-actions {
+  position: absolute;
+  inset-block-end: px2rem(72);
+  inset-inline-start: 50%;
+  display: flex;
+  flex-direction: column;
+  inline-size: px2rem(400);
+  max-inline-size: calc(100% - px2rem(32));
+  max-block-size: min(px2rem(420), calc(100% - px2rem(96)));
+  transform: translateX(-50%);
+  border-radius: $br-12;
+  background-color: var(--color-background-primary);
+  box-shadow:
+    0 0 0.5px rgb(0 0 0 / 30%),
+    0 2px 7px rgb(0 0 0 / 15%),
+    0 5px 17px rgb(0 0 0 / 20%);
+  overflow: hidden;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  flex-shrink: 0;
+  block-size: px2rem(40);
+  padding-inline: var(--sp-m);
+  border-block-end: $b-1 solid var(--color-background-tertiary);
+}
+
+.search-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.search-input {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: px2rem(24);
+  margin: 0;
+  padding: 0;
+  line-height: px2rem(24);
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--color-foreground-primary);
+  font-size: px2rem(13);
+
+  &::placeholder {
+    color: var(--color-foreground-secondary);
+  }
+}
+
+.list {
+  margin: 0;
+  padding: var(--sp-s);
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-l);
+  block-size: px2rem(32);
+  padding-inline: var(--sp-s);
+  border-radius: $br-8;
+  color: var(--color-foreground-primary);
+  font-size: px2rem(12);
+  cursor: default;
+
+  &.current {
+    background-color: var(--color-accent-primary);
+    color: #fff;
+
+    .item-shortcut {
+      color: rgb(255 255 255 / 80%);
+    }
+  }
+}
+
+.item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-shortcut {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.empty {
+  padding: var(--sp-l) var(--sp-m);
+  color: var(--color-foreground-secondary);
+  font-size: px2rem(12);
+}

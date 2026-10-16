@@ -1,0 +1,384 @@
+/* Home, laid out like a Linear view: a thin header, dense lists under group
+   heads, a side panel. Colors and sizes are zvena's tokens (ui-theme.css),
+   so light, dark and right-to-left follow on their own. */
+
+.eco-home {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-bg);
+}
+
+/* The header: what this is, and the day. */
+.eco-home-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 6px 20px;
+  border-bottom: 0.5px solid var(--ui-border-2);
+  background: color-mix(in srgb, var(--ui-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+.eco-home-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+}
+.eco-home-head h1 svg {
+  color: var(--ui-text-2);
+}
+.eco-home-today {
+  margin-inline-start: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-sm);
+}
+
+.eco-home-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+.eco-home-main {
+  min-width: 0;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+}
+
+.eco-home-hello {
+  margin: 0 0 16px;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+  color: var(--ui-text);
+}
+.eco-home-banner {
+  margin: 0 0 16px;
+}
+
+/* "What will you create?" — Canva's one click, in Linear's size: a row of chips. */
+.eco-home .zc-hero {
+  gap: 8px;
+  margin: 0 0 28px;
+}
+.eco-home .zc-hero-title {
+  font-size: var(--ui-text-sm);
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ui-text-2);
+}
+.eco-home .zc-hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.eco-home .zc-hero-row .zc-tile-lg {
+  flex-direction: row;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px 0 4px;
+  border: 0.5px solid var(--ui-border-2);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+  text-align: start;
+  transition: background-color 0.1s, border-color 0.1s;
+}
+.eco-home .zc-hero-row .zc-tile-lg:hover {
+  background: var(--ui-bg-2);
+  border-color: var(--ui-border-strong);
+}
+.eco-home .zc-hero-row .zc-tile-lg:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 1px;
+}
+.eco-home .zc-hero-row .zc-tile-lg .zc-tile-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ui-radius);
+}
+.eco-home .zc-hero-row .zc-tile-lg .zc-tile-icon svg {
+  width: 14px;
+  height: 14px;
+}
+.eco-home .zc-hero-row .zc-tile-lg .zc-tile-label {
+  font-size: var(--ui-text-md);
+}
+/* "More" opens the full picker; it sits inline in a box of its own. */
+.eco-home .zc-picker {
+  padding: 12px;
+  border: 0.5px solid var(--ui-border-2);
+  border-radius: var(--ui-radius-md);
+}
+
+/* A list: a group head and rows divided by hairlines (Linear's list view). */
+.eco-home-list {
+  margin: 0 0 24px;
+  border: 0.5px solid var(--ui-border-2);
+  border-radius: var(--ui-radius-md);
+  overflow: hidden;
+  background: var(--ui-bg);
+}
+.eco-home-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding-block: 0;
+  padding-inline: 16px 12px;
+  background: var(--ui-bg-2);
+  border-bottom: 0.5px solid var(--ui-border-2);
+}
+.eco-home-group h2 {
+  margin: 0;
+  font-size: var(--ui-text-md);
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.eco-home-count {
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.eco-home-counts {
+  /* Toward the text color: readable on the grey head in light and dark (AA). */
+  color: color-mix(in srgb, var(--ui-danger-text) 82%, var(--ui-text));
+  font-size: var(--ui-text-sm);
+  font-weight: 500;
+}
+.eco-home-all {
+  margin-inline-start: auto;
+  padding: 2px 6px;
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-sm);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.eco-home-all:hover {
+  background: var(--ui-hover);
+  color: var(--ui-text);
+  text-decoration: none;
+}
+
+/* Issue rows (live cards from the ecosystem) as list rows. */
+.eco-home-list .eco-block,
+.eco-home-list .eco-row {
+  min-height: 40px;
+  padding-block: 0;
+  padding-inline: 10px 16px;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 0.5px solid var(--ui-border);
+  background: transparent;
+  font-size: var(--ui-text-md);
+}
+.eco-home-list .eco-row {
+  padding-inline-start: 16px;
+}
+.eco-home-list .eco-root > :last-child {
+  border-bottom: 0;
+}
+.eco-home-list .eco-block:hover,
+.eco-home-list .eco-row:hover {
+  background: var(--ui-hover);
+}
+.eco-home-list .eco-block .eco-main:hover .eco-title {
+  text-decoration: none;
+}
+.eco-home-list .eco-title {
+  font-weight: 500;
+}
+.eco-home-list .eco-ident {
+  min-width: 44px;
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-sm);
+}
+.eco-home-list .pj-prio-icon {
+  flex: none;
+  color: var(--ui-text-2);
+}
+.eco-home-list .eco-block:not([data-done]) .pj-prio-1 {
+  color: var(--ui-danger);
+}
+.eco-home-list .eco-meta {
+  gap: 10px;
+  font-size: var(--ui-text-sm);
+}
+/* The status is the circle you click; its name stays for screen readers. */
+.eco-home-list .eco-status-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Document and design rows. */
+.eco-home-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-bottom: 0.5px solid var(--ui-border);
+  color: var(--ui-text);
+  font-size: var(--ui-text-md);
+  text-decoration: none;
+}
+.eco-home-row:last-child {
+  border-bottom: 0;
+}
+.eco-home-row:hover {
+  background: var(--ui-hover);
+  text-decoration: none;
+}
+.eco-home-row:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: -2px;
+}
+.eco-home-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--ui-text-2);
+  font-size: 15px;
+  line-height: 1;
+}
+.eco-home-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.eco-home-sub {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-sm);
+}
+.eco-home-meta {
+  margin-inline-start: auto;
+  flex: none;
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.eco-home-empty {
+  padding: 12px 16px;
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-md);
+}
+.eco-home-empty a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The side panel. */
+.eco-home-side {
+  min-width: 0;
+  padding: 16px 16px 48px;
+  border-inline-start: 0.5px solid var(--ui-border-2);
+  background: var(--ui-chrome);
+}
+.eco-home-panel + .eco-home-panel {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 0.5px solid var(--ui-border-2);
+}
+.eco-home-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  margin-bottom: 6px;
+}
+.eco-home-panel-head h2 {
+  margin: 0;
+  font-size: var(--ui-text-sm);
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ui-text-2);
+}
+.eco-home-panel .eco-row {
+  margin-inline: -8px;
+  width: calc(100% + 16px);
+  font-size: var(--ui-text-md);
+}
+.eco-home-side .zv-meter,
+.eco-home-side .eco-progress {
+  background: var(--ui-bg-3);
+}
+.eco-home-storage {
+  margin: 8px 0 0;
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-sm);
+}
+
+@media (max-width: 1100px) {
+  .eco-home-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .eco-home-main {
+    padding-bottom: 24px;
+  }
+  .eco-home-side {
+    padding: 20px 32px 48px;
+    border-inline-start: 0;
+    border-top: 0.5px solid var(--ui-border-2);
+  }
+}
+@media (max-width: 860px) {
+  /* The phone has the shell's own bar on top; the header scrolls away under it. */
+  .eco-home-head {
+    position: static;
+    padding: 6px 16px;
+    backdrop-filter: none;
+  }
+  .eco-home-main {
+    padding: 16px 16px 24px;
+  }
+  .eco-home-side {
+    padding: 16px 16px 48px;
+  }
+  .eco-home .zc-hero-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+  .eco-home .zc-hero-row .zc-tile-lg {
+    flex: none;
+  }
+  .eco-home-list .eco-meta .eco-due + .eco-avatar,
+  .eco-home-sub {
+    display: none;
+  }
+}

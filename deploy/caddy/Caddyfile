@@ -1,0 +1,172 @@
+# zvena in production: HTTPS (Let's Encrypt, renewed by Caddy) in front of
+# the web app and Design. Domains and the ACME e-mail come from .env.
+# Access log: client addresses cut to /16 (IPv4) and /32 (IPv6), no cookies,
+# tokens or OAuth codes — the log holds no personal data (privacy policy).
+# The same filter covers Caddy's own log (stderr → docker logs), where a
+# failed request is written with its address and URL too.
+#
+# Custom domains of published sites (Notion Sites → Custom domain, see
+# DEPLOY.md "Custom domains for sites"): any other host name that reaches
+# this server gets a certificate on its first HTTPS request — on demand —
+# but only when the web app says it is a verified, live site domain (the
+# "ask" endpoint answers 200 for those and 404 for everything else, so
+# nobody can make Caddy fetch certificates for arbitrary names).
+
+# What any log line may say about a request (see the top of this file). It
+# stands above the global options: their `log default` imports it, and an
+# import finds only a snippet defined above it.
+# A URL keeps its shape and loses its secrets: a path segment that is a
+# capability (the link itself is the key) and the value of a query parameter
+# that carries a secret or a person's data become "***" — none of the secret
+# stays. One rule for request>uri: a field takes one filter (a second line
+# for the same field replaces the first), so the query parameters are in the
+# same expression. deploy/caddy/test-log-masking.sh proves it.
+#   Paths: /join/<token> (workspace invite), /share/<token> (page invite),
+#   /f/<id> and /api/notes/form/<id> (public form), /n/<id> (published page),
+#   /api/notes/file/<hash>.<ext> (a page's file: the hash is the key),
+#   /cal/<slug>/<token> and /cal/invite/<token> (a booking, an RSVP),
+#   /api/calendar/feed/<token>.ics, /api/calendar/invite/<token>,
+#   /api/calendar/public/<slug>/booking/<token>/….
+#   Query: OAuth (code, state), sign-in links (token, next — a path that may
+#   hold one of the links above), signed links (sig, s, key, t — a booking's
+#   token), Design's share links (share-id), what people type or paste (q,
+#   email, emails, filter, name, url, u, note, download — a file's name;
+#   title, text — what the installed app is shared, on /clip), the e-mail
+#   sign-in's reference (r — it names the address) and a place (lat, lng).
+(log-filter) {
+	format filter {
+		request>remote_ip ip_mask 16 32
+		request>client_ip ip_mask 16 32
+		request>headers>Cookie delete
+		request>headers>Authorization delete
+		request>headers>X-Forwarded-For delete
+		request>headers>X-Real-Ip delete
+		request>headers>Cf-Connecting-Ip delete
+		request>headers>Cf-Connecting-Ipv6 delete
+		request>headers>True-Client-Ip delete
+		request>headers>Referer delete
+		request>headers>X-Zvena-Key delete
+		request>headers>X-File-Name delete
+		request>headers>X-Name delete
+		request>uri regexp `(?i)(/(?:join|share|f|n|cal/[^/?#]+|api/calendar/(?:feed|invite|public/[^/?#]+/booking)|api/notes/(?:form|file))/)[^/?#.]+|([?&](?:code|state|token|device_id|access_token|id_token|password|secret|signature|sig|s|key|t|next|login|share-id|q|email|emails|filter|name|url|u|note|download|title|text|r|lat|lng)=)[^&#]*` "${1}${2}***"
+		resp_headers>Set-Cookie delete
+		resp_headers>Location delete
+	}
+}
+
+{
+	email {$ACME_EMAIL}
+	log default {
+		output stderr
+		import log-filter
+	}
+	# Behind Cloudflare the TCP peer is a Cloudflare edge: the visitor's address
+	# comes from Cf-Connecting-Ip, and only from these ranges
+	# (https://www.cloudflare.com/ips), so the log's client_ip is the visitor's,
+	# cut to /16 like every address in the log. Without Cloudflare nothing changes.
+	servers {
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		client_ip_headers Cf-Connecting-Ip
+	}
+	on_demand_tls {
+		ask http://web:3100/api/sites/domain-check
+	}
+}
+
+# Let's Encrypt first; if it can't issue yet (a new DNS record, a CDN in
+# front), a certificate from Caddy's own CA keeps the site up meanwhile —
+# enough for Cloudflare's "Full" SSL mode — and Caddy tries ACME again.
+(certs) {
+	tls {
+		issuer acme
+		issuer internal
+	}
+}
+
+(log) {
+	log {
+		output file /data/logs/access.log {
+			roll_size 50MiB
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		import log-filter
+	}
+}
+
+(zvena) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+		-Via
+	}
+	import log
+}
+
+{$APP_DOMAIN} {
+	import zvena
+	# The largest body the web app takes is a 50 MB upload to Documents.
+	request_body {
+		max_size 60MB
+	}
+	# Caddy's own question; nobody else needs the answer.
+	@ask path /api/sites/domain-check
+	respond @ask 404
+	reverse_proxy web:3100 {
+		header_up X-Real-IP {remote_host}
+	}
+}
+
+{$DESIGN_DOMAIN} {
+	import zvena
+	import certs
+	request_body {
+		max_size 350MB
+	}
+	reverse_proxy design-frontend:8080 {
+		header_up X-Real-IP {remote_host}
+	}
+}
+
+www.{$APP_DOMAIN} {
+	import certs
+	redir https://{$APP_DOMAIN}{uri} permanent
+}
+
+# Every other host: a site's custom domain (docs.example.com → CNAME
+# zv-….sites.example.com). The web app serves the site there and nothing else
+# of zvena (src/proxy.ts); here no cookie goes in or out either way, bodies
+# are small (published pages are read-only), and HSTS covers the host only
+# (the web app sets it, without includeSubDomains — the customer's other
+# subdomains are not ours to pin).
+https:// {
+	tls {
+		on_demand
+	}
+	encode zstd gzip
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+		-Via
+	}
+	import log
+	request_body {
+		max_size 1MB
+	}
+	@ask path /api/sites/domain-check
+	respond @ask 404
+	reverse_proxy web:3100 {
+		header_up X-Real-IP {remote_host}
+		header_up -Cookie
+		header_up -Authorization
+		header_down -Set-Cookie
+	}
+}
+
+http:// {
+	redir https://{host}{uri} permanent
+}

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>zvena Design</title>
+    <!-- Design is an app behind sign-in: it is never indexed. -->
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="zvena Design is an interface design tool in the browser: design, prototyping, real-time collaboration and Dev Mode.">
+    <meta property="og:title" content="zvena Design">
+    <meta property="og:image" content="images/link-preview.jpg">
+    <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#2C2C2C" media="(prefers-color-scheme: dark)">
+    <!-- Boot splash: the app's 2.4 MB stylesheet and its bundle do not block the
+         first paint — the zvena mark shows at once until the app draws (the
+         loader at the end of <body>). -->
+    <style>
+      @font-face { font-family: "BA Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/ba/inter-cyrillic-wght-normal.woff2?v={{& version_tag}}) format("woff2-variations"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+      @font-face { font-family: "BA Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/ba/inter-latin-wght-normal.woff2?v={{& version_tag}}) format("woff2-variations"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+      @font-face { font-family: "BA Serif"; font-style: normal; font-weight: 200 900; font-display: swap; src: url(fonts/ba/source-serif-4-latin-opsz-normal.woff2?v={{& version_tag}}) format("woff2-variations"); unicode-range: U+0000-00FF, U+2000-206F; }
+      :root { --ba-bg: #ffffff; --ba-side: #f5f4ed; --ba-canvas: #efede6; --ba-surface: #ffffff; --ba-text: #141413; --ba-text-2: #5e5d59; --ba-text-3: #8a8880; --ba-line: rgba(31, 30, 29, 0.13); --ba-hover: rgba(31, 30, 29, 0.05); --ba-blue: #2c84db; --ba-blue-ink: #2470bd; --ba-mark: #000000; --ba-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(31, 30, 29, 0.15); }
+      @media (prefers-color-scheme: dark) { :root { --ba-bg: #1e1e1e; --ba-side: #1f1e1d; --ba-canvas: #1a1918; --ba-surface: #30302e; --ba-text: #faf9f5; --ba-text-2: #c2c0b6; --ba-text-3: #8f8d85; --ba-line: rgba(222, 220, 209, 0.14); --ba-hover: rgba(222, 220, 209, 0.07); --ba-blue-ink: #6aaaf0; --ba-mark: #ffffff; --ba-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(222, 220, 209, 0.15); } }
+      #ba-boot { position: fixed; inset: 0; z-index: 2147483000; display: flex; flex-direction: column; gap: 20px; align-items: center; justify-content: center; background: var(--ba-bg); transition: opacity 0.25s ease; }
+      /* zvena: a progress bar under the mark, so a slow first start never looks stuck */
+      #ba-boot .ba-bar { width: 120px; height: 3px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--ba-mark) 15%, transparent); opacity: 0; animation: ba-show 0.3s ease 0.8s forwards; }
+      #ba-boot .ba-bar::after { content: ""; display: block; width: 40%; height: 100%; border-radius: 2px; background: var(--ba-mark); animation: ba-slide 1.2s ease-in-out infinite; }
+      @keyframes ba-show { to { opacity: 1; } }
+      @keyframes ba-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+      #ba-boot svg { width: 56px; height: 56px; color: var(--ba-mark); animation: ba-breathe 1.6s ease-in-out infinite; }
+      #ba-boot.ba-gone { opacity: 0; pointer-events: none; }
+      @keyframes ba-breathe { 0%, 100% { opacity: 0.55; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1); } }
+      @media (prefers-reduced-motion: reduce) { #ba-boot svg, #ba-boot .ba-bar::after { animation: none; } }
+    </style>
+    <!-- media="print" + the line below: the stylesheets load in parallel without
+         blocking the splash; the loader waits for them before the app starts. -->
+    <link id="theme" href="css/main.css?version={{& version_tag}}" rel="stylesheet" type="text/css" media="print" data-ba-css />
+    <link href="css/ui.css?version={{& version_tag}}" rel="stylesheet" type="text/css" media="print" data-ba-css />
+    <script>
+      window.__baCss = function () {
+        var links = document.querySelectorAll("link[data-ba-css]");
+        return Promise.all(Array.prototype.map.call(links, function (l) {
+          l.media = "all";
+          if (l.sheet) return null;
+          return new Promise(function (res) { l.addEventListener("load", res, { once: true }); l.addEventListener("error", res, { once: true }); });
+        }));
+      };
+      window.__baCss();
+    </script>
+    {{#isDebug}}
+    <link href="css/debug.css?version={{& version_tag}}" rel="stylesheet" type="text/css" />
+    {{/isDebug}}
+
+    <link rel="icon" href="images/favicon.png?version={{& version_tag }}" />
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png?version={{& version_tag }}" />
+    <!-- zvena: installable as a desktop app (Figma's "Get desktop app"); the
+         install prompt is kept for Help → Get desktop app. -->
+    <link rel="manifest" href="images/manifest.json?version={{& version_tag }}" />
+    <script>
+      window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__zvInstallPrompt = e; });
+      window.addEventListener("appinstalled", function () { window.__zvInstallPrompt = null; });
+    </script>
+
+    <script type="importmap">{{& manifest.importmap }}</script>
+
+    <script type="module">
+      globalThis.penpotVersion = "{{& version}}";
+      globalThis.penpotVersionTag = "{{& version_tag}}";
+      globalThis.penpotBuildDate = "{{& build_date}}";
+    </script>
+
+    {{# manifest}}
+    <!-- defer: they still run before the loader below, without holding the splash. -->
+    <script src="{{& config}}" defer></script>
+    <script src="{{& polyfills}}" defer></script>
+    {{/manifest}}
+
+    <!--cookie-consent-->
+  </head>
+  <body>
+    <div id="ba-boot"><svg viewBox="0 0 185 185" aria-hidden="true"><g fill="currentColor"><path d="M46.5 54.3H156L98.4 94H86C64.2 94 46.5 76.2 46.5 54.3Z"/><path d="M98.4 94C126 94 149 111.9 149 134H39Z"/></g></svg><div class="ba-bar" role="progressbar" aria-label="Loading"></div></div>
+    {{> ../public/images/sprites/symbol/icons.svg }}
+    {{> ../public/images/sprites/symbol/cursors.svg }}
+    {{> ../public/images/sprites/assets.svg }}
+    <noscript>
+      <main style="max-width:720px;margin:48px auto;padding:0 16px;font-family:sans-serif;line-height:1.6">
+        <h1>zvena Design</h1>
+        <p>Turn on JavaScript to use the editor.</p>
+      </main>
+    </noscript>
+    <div id="app"></div>
+    <section id="modal"></section>
+
+    {{# manifest}}
+    <script type="module">
+      // Loader: the app as usual (libs, then main with the translations), once
+      // its stylesheets are in; the splash stays until the app draws.
+      const boot = document.getElementById("ba-boot");
+      const app = document.getElementById("app");
+      let started = false;
+      async function startApp() {
+        if (started) return;
+        started = true;
+        boot.classList.remove("ba-gone");
+        await window.__baCss();
+        await import("{{& libs}}");
+        const [main, tr] = await Promise.all([import("{{& app_main}}"), import("{{& default_translations}}")]);
+        new MutationObserver((_, obs) => {
+          if (!app.firstChild) return;
+          obs.disconnect();
+          boot.classList.add("ba-gone");
+          setTimeout(() => boot.remove(), 300);
+        }).observe(app, { childList: true });
+        main.init({ defaultTranslations: tr.default });
+      }
+      startApp();
+    </script>
+    {{/manifest}}
+  </body>
+</html>

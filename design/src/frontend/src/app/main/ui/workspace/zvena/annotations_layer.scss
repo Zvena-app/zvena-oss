@@ -1,0 +1,99 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+
+// zvena: Dev Mode annotation callouts drawn over the canvas.
+.annotations-layer {
+  --zvena-annotation-color: #8638e5;
+}
+
+.outline,
+.leader {
+  fill: none;
+  stroke: var(--zvena-annotation-color);
+  pointer-events: none;
+}
+
+.anchor {
+  fill: var(--zvena-annotation-color);
+  pointer-events: none;
+}
+
+.card-holder {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.card {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  gap: px2rem(4);
+  box-sizing: border-box;
+  inline-size: fit-content;
+  min-inline-size: px2rem(120);
+  max-inline-size: px2rem(240);
+  max-block-size: px2rem(480);
+  overflow: hidden;
+  padding: px2rem(8) px2rem(10);
+  border: $b-1 solid var(--zvena-annotation-color);
+  border-inline-start-width: px2rem(3);
+  border-radius: $br-6;
+  background-color: #fff;
+  color: #1e1e1e;
+  box-shadow: 0 px2rem(2) px2rem(8) rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+
+  .selected & {
+    box-shadow:
+      0 0 0 px2rem(1) var(--zvena-annotation-color),
+      0 px2rem(2) px2rem(8) rgba(0, 0, 0, 0.2);
+  }
+}
+
+.card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--zvena-annotation-color);
+}
+
+.card-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.card-props {
+  display: flex;
+  flex-direction: column;
+  gap: px2rem(2);
+  margin: 0;
+  padding-block-start: px2rem(4);
+  border-block-start: $b-1 solid #e6e6e6;
+}
+
+.card-prop {
+  display: flex;
+  justify-content: space-between;
+  gap: px2rem(8);
+
+  dt {
+    color: #6e6e6e;
+  }
+
+  dd {
+    margin: 0;
+    font-family: "Roboto Mono", monospace;
+    white-space: nowrap;
+  }
+}

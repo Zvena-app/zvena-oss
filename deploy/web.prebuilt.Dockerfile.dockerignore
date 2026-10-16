@@ -1,0 +1,6 @@
+# Only the built app goes into the context (web.prebuilt.Dockerfile).
+*
+!.next/standalone
+!.next/static
+!public
+!templates

@@ -1,0 +1,63 @@
+/* A template's public preview (templates/[id]/page.tsx), in the website's look
+   (site.css): the page's head, the way in, then the template as it reads.
+   Headings and tables are written `:root .zs.zs …` to beat ui-theme.css. */
+
+:root .zs.zs .zt { max-width: 880px; }
+.zt-back { margin: 0 0 28px; font-size: 15px; }
+.zt-back a { display: inline-flex; align-items: center; gap: 6px; text-decoration: none !important; color: rgba(0, 0, 0, 0.54) !important; }
+.zt-back a:hover { color: #000 !important; }
+.zt-back svg { width: 16px; height: 16px; }
+.zt-cta { margin: 0 0 48px; }
+.zt-cta .zv-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.zt-note { margin: 14px 0 0; font-size: 15px; color: rgba(0, 0, 0, 0.54); }
+.zt-muted { color: rgba(0, 0, 0, 0.54); }
+
+/* The template, on a tinted stage like the home page's screenshots */
+.zt-preview { padding: 6%; background: #f2f2f2; border-radius: 4px; }
+.zt-preview > img { display: block; width: 100%; height: auto; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 30px 60px -30px rgba(0, 0, 0, 0.4); }
+.zt-doc { background: #fff; padding: 48px 56px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 30px 60px -30px rgba(0, 0, 0, 0.3); font-size: 16px; line-height: 1.55; }
+:root .zs.zs .zt-doc .zt-title { font-size: 34px; line-height: 1.15; margin: 0 0 18px; letter-spacing: -0.02em; }
+:root .zs.zs .zt-doc h3 { font-size: 24px; line-height: 1.25; margin: 28px 0 8px; }
+:root .zs.zs .zt-doc h4 { font-size: 19px; line-height: 1.3; margin: 22px 0 6px; font-weight: 500; }
+:root .zs.zs .zt-doc .zt-h3 { font-size: 17px; }
+.zt-doc p { margin: 0 0 10px; }
+.zt-doc ul, .zt-doc ol { margin: 0 0 12px; padding-left: 24px; }
+.zt-doc ul.zt-checks { list-style: none; padding-left: 0; }
+.zt-checks li { display: flex; gap: 10px; align-items: baseline; }
+.zt-checks li[data-checked] { color: rgba(0, 0, 0, 0.54); text-decoration: line-through; }
+.zt-box { display: inline-block; flex: none; width: 14px; height: 14px; border: 1.5px solid rgba(0, 0, 0, 0.5); border-radius: 3px; vertical-align: -2px; }
+.zt-box[data-checked] { background: #000; border-color: #000; box-shadow: inset 0 0 0 2px #fff; }
+.zt-callout { display: flex; gap: 12px; margin: 0 0 14px; padding: 14px 16px; border-radius: 6px; background: #f5f5f5; }
+.zt-doc blockquote { margin: 0 0 14px; padding-left: 16px; border-left: 3px solid #000; }
+.zt-doc hr { border: 0; border-top: 1px solid rgba(0, 0, 0, 0.12); margin: 20px 0; }
+.zt-doc pre { margin: 0 0 14px; padding: 14px 16px; border-radius: 6px; background: #f5f5f5; overflow-x: auto; font-family: var(--zs-mono); font-size: 13px; line-height: 1.5; }
+.zt-doc code { font-family: var(--zs-mono); font-size: 0.9em; }
+.zt-embed { margin: 0 0 14px; }
+.zt-embed figcaption { font-size: 13px; color: rgba(0, 0, 0, 0.54); margin-bottom: 6px; }
+p.zt-embed { padding: 18px; border: 1px dashed rgba(0, 0, 0, 0.2); border-radius: 6px; text-align: center; font-size: 14px; }
+.zt-mention { padding: 0 4px; border-radius: 4px; background: rgba(0, 0, 0, 0.06); }
+.zt-toggle, .zt-subpage { margin: 0 0 10px; }
+.zt-toggle summary, details.zt-subpage summary { cursor: pointer; }
+p.zt-subpage, details.zt-subpage summary { padding: 6px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.08); text-decoration: underline; text-decoration-color: rgba(0, 0, 0, 0.25); text-underline-offset: 3px; }
+.zt-subpage-body { padding: 14px 0 6px 18px; border-left: 1px solid rgba(0, 0, 0, 0.1); margin: 8px 0 0 6px; }
+.zt-cols { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 24px; }
+
+/* Databases: name, views, the sample rows */
+.zt-db { margin: 6px 0 18px; }
+.zt-db-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
+.zt-db-head b { font-weight: 500; font-size: 17px; }
+.zt-views { display: flex; flex-wrap: wrap; gap: 6px; }
+.zt-views span { padding: 2px 9px; border-radius: 99px; background: rgba(0, 0, 0, 0.06); font-size: 13px; }
+.zt-db-scroll { overflow-x: auto; }
+:root .zs.zs .zt-db table { width: 100%; border-collapse: collapse; font-size: 14px; }
+:root .zs.zs .zt-db th { text-align: left; font-family: var(--zs-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(0, 0, 0, 0.54); border-bottom: 1px solid #000; padding: 6px 10px 6px 0; white-space: nowrap; background: transparent; }
+:root .zs.zs .zt-db td { border-bottom: 1px solid rgba(0, 0, 0, 0.1); padding: 7px 10px 7px 0; vertical-align: top; }
+.zt-chip { display: inline-block; margin: 0 4px 2px 0; padding: 1px 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.06); font-size: 13px; white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .zt-preview { padding: 0; background: transparent; }
+  .zt-doc { padding: 24px 18px; }
+  :root .zs.zs .zt-doc .zt-title { font-size: 26px; }
+  .zt-cols { grid-auto-flow: row; }
+  :root .zs.zs .zt-cta .zv-actions { flex-direction: column; align-items: stretch; }
+}

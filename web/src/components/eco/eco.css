@@ -1,0 +1,920 @@
+/* The ecosystem's components (cards, Related, the palette, the Inbox).
+   They sit on every surface — Home and the shell (--zv-*), Documents (--nt-*),
+   Projects (--pj-*) — and take that surface's colors: each token falls back
+   through the three, so light and dark follow whatever is around them. */
+
+.eco-root,
+.eco-hub,
+.eco-card,
+.eco-related,
+.eco-search,
+.eco-layer {
+  --eco-text: var(--pj-text, var(--nt-text, var(--zv-text, #2c2c2b)));
+  --eco-text-2: var(--pj-text-2, var(--nt-text-2, var(--zv-text-2, #73726e)));
+  --eco-text-3: var(--pj-text-3, var(--nt-text-3, var(--zv-text-3, #a09f9b)));
+  --eco-bg: var(--pj-bg, var(--nt-bg, var(--zv-card, #fff)));
+  --eco-panel: var(--pj-panel, var(--nt-menu-bg, var(--zv-card, #fff)));
+  --eco-hover: var(--pj-hover, var(--nt-hover, var(--zv-hover, rgba(0, 0, 0, 0.04))));
+  --eco-active: var(--pj-active, var(--nt-hover-2, var(--zv-active, rgba(0, 0, 0, 0.07))));
+  --eco-border: var(--pj-border, var(--nt-border, var(--zv-border, rgba(55, 53, 47, 0.09))));
+  --eco-border-2: var(--pj-border-2, var(--nt-border-2, var(--zv-border-2, rgba(55, 53, 47, 0.16))));
+  --eco-accent: var(--pj-accent, var(--nt-blue, var(--zv-accent, #2383e2)));
+  --eco-accent-soft: var(--pj-accent-soft, var(--nt-blue-soft, var(--zv-accent-soft, rgba(44, 132, 219, 0.1))));
+  --eco-danger: var(--pj-danger, var(--nt-red, var(--zv-danger, #d44c47)));
+  --eco-shadow: var(--pj-shadow-lg, var(--nt-menu-shadow, var(--zv-shadow-lg, 0 14px 28px -6px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(84, 72, 49, 0.08))));
+  --eco-font: var(--pj-font, var(--zv-font, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif));
+}
+
+/* ------------------------------------------------------------ cards */
+
+.eco-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--eco-text);
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 20px;
+}
+.eco-card .eco-kind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--eco-text-2);
+}
+.eco-card .eco-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+.eco-card .eco-ident {
+  flex: none;
+  color: var(--eco-text-2);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.eco-card .eco-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.eco-card .eco-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eco-card .eco-sub {
+  color: var(--eco-text-3);
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eco-card .eco-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  color: var(--eco-text-2);
+  font-size: 12px;
+}
+.eco-card[data-done] .eco-title {
+  color: var(--eco-text-2);
+}
+.eco-status {
+  flex: none;
+  display: block;
+}
+.eco-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--eco-active);
+  color: var(--eco-text-2);
+  font-size: 10px;
+  font-weight: 600;
+  flex: none;
+}
+.eco-due {
+  white-space: nowrap;
+}
+.eco-due.eco-late {
+  color: var(--eco-danger);
+}
+.eco-progress {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--eco-active);
+  overflow: hidden;
+}
+.eco-progress > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--eco-accent);
+  border-radius: 2px;
+}
+.eco-thumb {
+  width: 32px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--eco-border);
+  background: var(--eco-hover);
+  flex: none;
+}
+
+.eco-row {
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: start;
+}
+.eco-row:hover,
+.eco-row[data-active] {
+  background: var(--eco-hover);
+}
+.eco-row:focus-visible {
+  outline: 2px solid var(--eco-accent);
+  outline-offset: -2px;
+}
+
+.eco-chip {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--eco-hover);
+  vertical-align: baseline;
+}
+.eco-chip:hover {
+  background: var(--eco-active);
+}
+
+/* An issue living inside a document. */
+.eco-block {
+  width: 100%;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--eco-border);
+  border-radius: 6px;
+  background: var(--eco-bg);
+  user-select: none;
+  transition: border-color 0.12s;
+}
+.eco-block:hover {
+  border-color: var(--eco-border-2);
+}
+.eco-block .eco-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.eco-block .eco-main:hover .eco-title {
+  text-decoration: underline;
+  text-decoration-color: var(--eco-border-2);
+  text-underline-offset: 3px;
+}
+.eco-block[data-done] .eco-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--eco-text-3);
+}
+.eco-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--eco-text-2);
+  cursor: pointer;
+  flex: none;
+  padding: 0;
+}
+.eco-check:hover {
+  background: var(--eco-hover);
+}
+.eco-check:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+.eco-status-name {
+  white-space: nowrap;
+}
+.eco-missing {
+  color: var(--eco-text-3);
+  font-size: 13px;
+}
+.eco-loading .eco-skel {
+  display: block;
+  height: 12px;
+  width: 40%;
+  border-radius: 6px;
+  background: var(--eco-hover);
+  animation: eco-pulse 1.2s ease-in-out infinite;
+}
+@keyframes eco-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eco-loading .eco-skel {
+    animation: none;
+  }
+}
+
+/* Creating an issue in place (the "/issue" block before it has one). */
+.eco-new-issue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px dashed var(--eco-border-2);
+  border-radius: 6px;
+  color: var(--eco-text-2);
+}
+.eco-new-issue input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--eco-text);
+  font: inherit;
+  font-size: 14px;
+}
+.eco-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--eco-border-2);
+  border-radius: 6px;
+  background: var(--eco-bg);
+  color: var(--eco-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.eco-btn:hover {
+  background: var(--eco-hover);
+}
+.eco-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.eco-btn-primary {
+  border-color: transparent;
+  background: var(--eco-accent);
+  color: #fff;
+}
+.eco-btn-primary:hover {
+  background: var(--eco-accent);
+  filter: brightness(0.95);
+}
+.eco-btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--eco-text-2);
+}
+.eco-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--eco-text-3);
+  cursor: pointer;
+  flex: none;
+}
+.eco-icon-btn:hover {
+  background: var(--eco-active);
+  color: var(--eco-text);
+}
+
+/* ------------------------------------------------------------ Related */
+
+.eco-related {
+  font-family: inherit;
+  color: var(--eco-text);
+}
+.eco-related-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  color: var(--eco-text-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+.eco-related-head .eco-count {
+  color: var(--eco-text-3);
+  font-weight: 400;
+}
+.eco-related-head .eco-spacer {
+  flex: 1;
+}
+.eco-related-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  margin-inline-start: -6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.eco-related-toggle:hover {
+  background: var(--eco-hover);
+}
+.eco-related-group {
+  margin: 4px 0 8px;
+}
+.eco-related-group-title {
+  padding: 4px 8px 2px;
+  color: var(--eco-text-3);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.eco-related-item {
+  position: relative;
+}
+.eco-related-item .eco-via {
+  color: var(--eco-text-3);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.eco-related-item .eco-icon-btn {
+  opacity: 0;
+}
+.eco-related-item:hover .eco-icon-btn,
+.eco-related-item .eco-icon-btn:focus-visible {
+  opacity: 1;
+}
+.eco-related-empty {
+  padding: 6px 0 10px;
+  color: var(--eco-text-3);
+  font-size: 13px;
+  line-height: 18px;
+}
+.eco-related-note {
+  padding: 2px 8px;
+  color: var(--eco-text-3);
+  font-size: 12px;
+}
+
+/* ------------------------------------------------------------ search, palette, popovers */
+
+.eco-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  font-family: var(--eco-font);
+}
+.eco-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 15, 0.35);
+}
+.eco-palette {
+  position: absolute;
+  top: min(14vh, 120px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 32px));
+  border-radius: 12px;
+  background: var(--eco-panel);
+  box-shadow: var(--eco-shadow);
+  overflow: hidden;
+  color: var(--eco-text);
+}
+.eco-popover {
+  position: fixed;
+  width: min(420px, calc(100vw - 32px));
+  border-radius: 10px;
+  background: var(--eco-panel);
+  box-shadow: var(--eco-shadow);
+  overflow: hidden;
+  color: var(--eco-text);
+  z-index: 1001;
+}
+/* An issue's status menu (StatusMenu.tsx): the team's workflow, Linear's way. */
+.eco-status-menu {
+  transform: none;
+  padding: 4px;
+  outline: none;
+}
+.eco-status-menu-head {
+  padding: 6px 8px 4px;
+  color: var(--eco-text-3);
+  font-size: 12px;
+}
+.eco-status-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.eco-status-opt[data-active] {
+  background: var(--eco-hover);
+}
+.eco-status-opt-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eco-status-opt-check {
+  color: var(--eco-text-2);
+}
+.eco-status-opt .eco-kbd {
+  min-width: 18px;
+  text-align: center;
+}
+@media (pointer: coarse) {
+  .eco-status-opt {
+    min-height: 40px;
+  }
+  .eco-status-opt .eco-kbd {
+    display: none;
+  }
+}
+.eco-search {
+  display: flex;
+  flex-direction: column;
+  max-height: min(70vh, 560px);
+}
+.eco-search-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--eco-border);
+  color: var(--eco-text-3);
+}
+.eco-search-input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--eco-text);
+  font: inherit;
+  font-size: 15px;
+}
+.eco-search-list {
+  overflow-y: auto;
+  padding: 6px;
+  overscroll-behavior: contain;
+}
+.eco-search-head {
+  padding: 8px 8px 4px;
+  color: var(--eco-text-3);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.eco-search-empty {
+  padding: 18px 10px;
+  color: var(--eco-text-3);
+  font-size: 13px;
+  text-align: center;
+}
+.eco-snippet {
+  margin: -2px 8px 4px 36px;
+  color: var(--eco-text-3);
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eco-kbd {
+  padding: 0 5px;
+  border: 1px solid var(--eco-border-2);
+  border-radius: 4px;
+  color: var(--eco-text-3);
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+}
+.eco-palette-foot {
+  display: flex;
+  gap: 14px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--eco-border);
+  color: var(--eco-text-3);
+  font-size: 12px;
+}
+.eco-palette-foot span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ------------------------------------------------------------ Inbox */
+
+.eco-inbox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.eco-inbox-item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--eco-text);
+  text-decoration: none;
+}
+.eco-inbox-item:hover {
+  background: var(--eco-hover);
+}
+.eco-inbox-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--eco-accent);
+}
+.eco-inbox-item[data-read] .eco-inbox-dot {
+  background: transparent;
+}
+.eco-inbox-what {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.eco-inbox-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.eco-inbox-who {
+  color: var(--eco-text-2);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eco-inbox-text {
+  color: var(--eco-text-3);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eco-inbox-when {
+  color: var(--eco-text-3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.eco-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--eco-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .eco-palette {
+    top: 12px;
+  }
+  .eco-card .eco-meta .eco-status-name {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------ the shell's sidebar, Home */
+
+.zv-nav .zv-nav-kbd,
+.zv-nav .zv-nav-badge {
+  margin-inline-start: auto;
+}
+.zv-nav .zv-nav-kbd {
+  padding: 0 5px;
+  border: 1px solid var(--zv-border);
+  border-radius: 4px;
+  color: var(--zv-text-3);
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+}
+.zv-nav .zv-nav-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--zv-accent-bg);
+  color: var(--zv-on-accent, #fff);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+/* ------------------------------------------------------------ an issues list in a document */
+
+.eco-issues,
+.eco-issues-pick {
+  width: 100%;
+  padding: 8px 10px 10px;
+  border: 1px solid var(--eco-border);
+  border-radius: 8px;
+  background: var(--eco-bg);
+  font-family: var(--eco-font);
+}
+.eco-issues .eco-block {
+  border-color: transparent;
+  padding-inline-start: 2px;
+}
+.eco-issues .eco-block:hover {
+  border-color: var(--eco-border);
+}
+.eco-issues .eco-new-issue {
+  border-style: solid;
+  border-color: transparent;
+  padding-inline-start: 6px;
+}
+.eco-issues .eco-new-issue:focus-within {
+  border-color: var(--eco-border-2);
+}
+.eco-issues-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--eco-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.eco-issues-title:hover {
+  text-decoration: underline;
+}
+.eco-issues-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+/* ------------------------------------------------------------ a goal: an issue that closes itself */
+
+.eco-goal {
+  margin: 4px 0 12px;
+}
+.eco-goal-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(60px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--eco-hover);
+  font-size: 13px;
+}
+.eco-goal-row[data-reached] {
+  background: var(--eco-accent-soft);
+}
+.eco-goal-text {
+  color: var(--eco-text-2);
+}
+.eco-goal-text b {
+  color: var(--eco-text);
+  font-weight: 600;
+}
+.eco-goal-now {
+  color: var(--eco-text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.eco-goal-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--eco-active);
+  overflow: hidden;
+}
+.eco-goal-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 3px;
+  background: var(--eco-accent);
+  transition: width 0.4s ease;
+}
+.eco-goal-bar > span[data-full] {
+  background: var(--pj-ok, var(--zv-ok, #2f7a3e));
+}
+@media (prefers-reduced-motion: reduce) {
+  .eco-goal-bar > span {
+    transition: none;
+  }
+}
+.eco-goal-form {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--eco-border);
+  border-radius: 8px;
+}
+.eco-goal-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.eco-goal-fields label {
+  display: grid;
+  gap: 4px;
+  color: var(--eco-text-3);
+  font-size: 12px;
+}
+.eco-goal-fields input,
+.eco-goal-fields select {
+  height: 30px;
+  min-width: 90px;
+  padding: 0 8px;
+  border: 1px solid var(--eco-border-2);
+  border-radius: 6px;
+  background: var(--eco-bg);
+  color: var(--eco-text);
+  font: inherit;
+  font-size: 13px;
+}
+.eco-goal-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--eco-text-2);
+  font-size: 13px;
+}
+
+/* Goals in a "Related" header: a linked project's progress, live. */
+.eco-goal-chips { display: inline-flex; gap: 6px; min-width: 0; overflow: hidden; }
+.eco-goal-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 220px;
+  padding: 2px 8px; border-radius: 999px; background: var(--eco-active); color: inherit; text-decoration: none; font-size: 12px;
+}
+.eco-goal-chip:hover { background: var(--eco-hover, var(--eco-active)); }
+.eco-goal-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.eco-goal-chip .eco-progress { background: var(--eco-bg, rgba(127, 127, 127, 0.18)); flex-shrink: 0; }
+.eco-goal-chip-pct { font-variant-numeric: tabular-nums; opacity: 0.75; }
+.eco-goal-chip[data-done] .eco-goal-chip-pct { color: var(--eco-accent); opacity: 1; }
+@media (max-width: 640px) { .eco-goal-chips { display: none; } }
+.eco-goal-set {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.eco-goal-set input {
+  width: 96px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--ui-border, rgba(0, 0, 0, 0.12));
+  border-radius: 6px;
+  background: var(--ui-bg, #fff);
+  color: inherit;
+  font: inherit;
+}
+.eco-goal-taken {
+  display: block;
+  margin-top: 4px;
+  color: var(--ui-danger-text, #dc3412);
+  font-size: 12px;
+}
+
+/* Automations on Home (AutomationsPanel.tsx): goals, suggestions and what was done. */
+.eco-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--eco-border);
+  border-radius: 10px;
+  background: var(--eco-bg);
+  min-height: 48px;
+}
+.eco-hub-head { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.eco-hub-head h2 { margin: 0; font-size: 13px; font-weight: 600; }
+.eco-hub-head .eco-icon-btn:last-child { margin-left: auto; }
+.eco-hub-settings { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--eco-hover); font-size: 13px; }
+.eco-hub-settings label { display: flex; gap: 8px; align-items: center; }
+.eco-hub-block h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--eco-text-2); text-transform: none; }
+.eco-hub-empty { margin: 0; font-size: 13px; color: var(--eco-text-2); }
+.eco-hub-goals, .eco-hub-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.eco-hub-goals li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 6px 6px; border-radius: 6px; }
+.eco-hub-goals li:hover, .eco-hub-items li:hover { background: var(--eco-hover); }
+.eco-hub-goals li .eco-goal-bar { grid-column: 1 / -1; width: 100%; }
+.eco-hub-goals li[data-met] { color: var(--eco-text-2); }
+.eco-hub-goals li[data-met] svg { color: #2da44e; }
+.eco-hub-goal-title { display: flex; align-items: center; gap: 6px; min-width: 0; color: inherit; text-decoration: none; font-size: 13px; }
+.eco-hub-id { color: var(--eco-text-2); font-variant-numeric: tabular-nums; flex: none; }
+.eco-hub-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; text-decoration: none; font-size: 13px; }
+.eco-hub-goal-num { font-size: 12px; color: var(--eco-text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.eco-hub-items li { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 2px 6px; border-radius: 6px; }
+.eco-hub-items li .eco-hub-text { flex: 1; }
+.eco-hub-items li[data-undone] .eco-hub-text { text-decoration: line-through; color: var(--eco-text-2); }
+.eco-hub-sure, .eco-hub-when { flex: none; font-size: 12px; color: var(--eco-text-2); font-variant-numeric: tabular-nums; }
+.eco-hub-acts { display: inline-flex; gap: 4px; flex: none; }
+.eco-hub-acts .eco-btn { height: 26px; padding: 0 8px; font-size: 12px; }
+@media (max-width: 640px) {
+  .eco-hub { padding: 12px; }
+  .eco-hub-goals li { grid-template-columns: minmax(0, 1fr); }
+  .eco-hub-items li { flex-wrap: wrap; }
+  .eco-hub-items li .eco-hub-text { white-space: normal; flex-basis: 100%; }
+}
+
+/* The Goal panel's measure picker, live marker and suggested goal (GoalCondition.tsx). */
+.eco-goal-from { display: flex; flex-wrap: wrap; gap: 6px; }
+.eco-goal-from label { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--eco-border-2); border-radius: 6px; font-size: 12px; cursor: pointer; }
+.eco-goal-from label[data-on] { border-color: var(--eco-accent); background: var(--eco-accent-soft); }
+.eco-goal-from input { position: absolute; opacity: 0; pointer-events: none; }
+.eco-goal-from label:has(input:focus-visible) { outline: 2px solid var(--eco-accent); outline-offset: 1px; }
+.eco-goal-live { font-size: 11px; padding: 0 6px; border-radius: 9px; color: var(--eco-text-2); background: var(--eco-hover); white-space: nowrap; }
+.eco-goal-start { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.eco-goal-proposal { gap: 8px; border: 1px dashed rgba(123, 97, 255, 0.5); }
+.eco-goal-proposal > svg { color: #7b61ff; flex: none; }
+.eco-goal-proposal .eco-btn { height: 26px; padding: 0 8px; font-size: 12px; }
+
+/* Goals under a Documents chart (ChartGoal.tsx). */
+.eco-chart-goals { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.eco-chart-goal { display: grid; grid-template-columns: auto auto minmax(0, 1fr) minmax(80px, 160px); align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; color: var(--eco-text); text-decoration: none; font-size: 13px; }
+.eco-chart-goal:hover { background: var(--eco-hover); }
+.eco-chart-goal[data-met] svg { color: #2da44e; }
+.eco-chart-goal-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.eco-chart-goal .eco-goal-bar { width: 100%; }
+.eco-chart-goal-add { align-self: flex-start; height: 28px; font-size: 12px; }
+.eco-chart-goal-form { width: min(360px, calc(100vw - 32px)); padding: 12px; }
+.eco-chart-goal-name { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--eco-text-2); }
+.eco-chart-goal-name input { height: 30px; padding: 0 8px; border: 1px solid var(--eco-border-2); border-radius: 6px; background: transparent; color: var(--eco-text); font: inherit; font-size: 13px; }
+@media (max-width: 640px) {
+  .eco-chart-goal { grid-template-columns: auto auto minmax(0, 1fr); }
+  .eco-chart-goal .eco-goal-bar { grid-column: 1 / -1; }
+}
+
+/* Automations settings: a key for numbers from outside, shown once. */
+.eco-hub-ingest {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--eco-border);
+}
+.eco-hub-code {
+  margin: 0;
+  padding: 8px;
+  overflow-x: auto;
+  max-width: 100%;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre;
+  border-radius: 6px;
+  background: var(--eco-hover);
+  user-select: all;
+}

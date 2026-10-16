@@ -1,0 +1,168 @@
+/* The clipper's popup in zvena's look (web/src/app/ui-theme.css: Figma's
+   UI3 — Inter as "Zvena Sans", neutral greys, hairlines, Figma blue, 13 px
+   text, 32 px controls, 6/8/13 px corners). The values are copied: the
+   extension cannot load the app's stylesheet. */
+
+@font-face { font-family: "Zvena Sans"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/inter-cyrillic-wght-normal.woff2) format("woff2-variations"); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+@font-face { font-family: "Zvena Sans"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/inter-latin-wght-normal.woff2) format("woff2-variations"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+:root {
+  --ui-bg: #ffffff;
+  --ui-chrome: #f5f5f5;
+  --ui-bg-2: #f5f5f5;
+  --ui-bg-3: #ebebeb;
+  --ui-hover: rgba(0, 0, 0, 0.05);
+  --ui-active: rgba(0, 0, 0, 0.08);
+  --ui-selected: #e5f4ff;
+  --ui-text: #1e1e1e;
+  --ui-text-2: #6e6e6e;
+  --ui-text-3: #8f8f8f;
+  --ui-border: #e6e6e6;
+  --ui-border-2: #d9d9d9;
+  --ui-brand: #0d99ff;
+  --ui-brand-hover: #007be5;
+  --ui-brand-text: #007be5;
+  --ui-success: #14ae5c;
+  --ui-danger-text: #dc3412;
+  --ui-danger-soft: #ffe2e0;
+  --ui-font: "Zvena Sans", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --ui-radius-sm: 4px;
+  --ui-radius: 6px;
+  --ui-radius-md: 8px;
+  --ui-radius-lg: 13px;
+  --ui-control-h: 32px;
+  --ui-control-h-sm: 28px;
+  --ui-focus: 0 0 0 2px var(--ui-brand);
+  --zc-logo-filter: none;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ui-bg: #2c2c2c;
+    --ui-chrome: #1e1e1e;
+    --ui-bg-2: #383838;
+    --ui-bg-3: #444444;
+    --ui-hover: rgba(255, 255, 255, 0.06);
+    --ui-active: rgba(255, 255, 255, 0.1);
+    --ui-selected: #36475f;
+    --ui-text: #ffffff;
+    --ui-text-2: #b3b3b3;
+    --ui-text-3: #8c8c8c;
+    --ui-border: #444444;
+    --ui-border-2: #4f4f4f;
+    --ui-brand-text: #7cc4f8;
+    --ui-danger-text: #fc9286;
+    --ui-danger-soft: rgba(242, 72, 34, 0.18);
+    /* The wordmark is black artwork: white on the dark panel. */
+    --zc-logo-filter: invert(1);
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  width: 360px;
+  min-height: 200px;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font: 400 13px/1.45 var(--ui-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Opened as a tab (the test hook): the popup's own width, centred. */
+body.zc-tab { margin: 24px auto; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-lg); }
+
+[hidden] { display: none !important; }
+
+svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.zc-head { display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 0 8px 0 16px; border-bottom: 1px solid var(--ui-border); }
+.zc-logo { display: block; height: 15px; width: auto; filter: var(--zc-logo-filter); }
+
+.zc-screen { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 16px; }
+.zc-center { align-items: center; text-align: center; padding-top: 28px; }
+
+.zc-h1 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; }
+.zc-lead { margin: 0 0 6px; color: var(--ui-text-2); }
+.zc-muted { margin: 0; color: var(--ui-text-2); }
+.zc-small { font-size: 12px; }
+.zc-label { font-size: 11px; font-weight: 500; color: var(--ui-text-2); }
+.zc-row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; min-height: 28px; }
+.zc-server-line { margin-top: 4px; word-break: break-all; }
+
+.zc-input, .zc-select {
+  width: 100%;
+  height: var(--ui-control-h);
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-2);
+  color: var(--ui-text);
+  font: inherit;
+  outline: none;
+}
+.zc-input:hover, .zc-select:hover { border-color: var(--ui-border-2); }
+.zc-input:focus, .zc-select:focus { border-color: var(--ui-brand); box-shadow: inset 0 0 0 1px var(--ui-brand); background: var(--ui-bg); }
+.zc-select { width: auto; max-width: 60%; height: var(--ui-control-h-sm); padding: 0 6px; }
+
+.zc-search { position: relative; }
+.zc-search svg { position: absolute; inset-inline-start: 9px; top: 8px; color: var(--ui-text-3); }
+.zc-search .zc-input { padding-inline-start: 31px; }
+
+.zc-dests { display: flex; flex-direction: column; gap: 1px; max-height: 204px; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.zc-group { padding: 8px 8px 2px; font-size: 11px; font-weight: 500; color: var(--ui-text-3); }
+.zc-dest {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--ui-control-h); padding: 4px 8px;
+  border: 0; border-radius: var(--ui-radius); background: transparent; color: inherit; font: inherit; text-align: start; cursor: default;
+}
+.zc-dest:hover { background: var(--ui-hover); }
+.zc-dest[aria-selected="true"] { background: var(--ui-selected); }
+.zc-dest:focus-visible { outline: none; box-shadow: var(--ui-focus); }
+.zc-dest-icon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; color: var(--ui-text-2); }
+.zc-dest-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.zc-dest-title, .zc-dest-path { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.zc-dest-path { font-size: 11px; color: var(--ui-text-3); }
+.zc-tag { font-size: 11px; color: var(--ui-text-3); border: 1px solid var(--ui-border); border-radius: var(--ui-radius-sm); padding: 0 4px; }
+.zc-empty { padding: 8px; color: var(--ui-text-3); }
+
+.zc-seg { display: flex; padding: 2px; gap: 2px; background: var(--ui-bg-2); border-radius: var(--ui-radius); }
+.zc-seg-item { flex: 1; position: relative; }
+.zc-seg-item input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+.zc-seg-item span { display: flex; align-items: center; justify-content: center; height: var(--ui-control-h-sm); border-radius: var(--ui-radius-sm); color: var(--ui-text-2); font-weight: 500; white-space: nowrap; }
+.zc-seg-item input:checked + span { background: var(--ui-bg); color: var(--ui-text); box-shadow: 0 0 0.5px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.08); }
+.zc-seg-item input:focus-visible + span { box-shadow: var(--ui-focus); }
+.zc-seg-item input:disabled + span { color: var(--ui-text-3); opacity: 0.6; }
+
+.zc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--ui-control-h); padding: 0 12px;
+  border: 1px solid var(--ui-border-2); border-radius: var(--ui-radius); background: var(--ui-bg); color: var(--ui-text);
+  font: inherit; font-weight: 500; text-decoration: none; cursor: default; white-space: nowrap;
+}
+.zc-btn:hover { background: var(--ui-hover); }
+.zc-btn:focus-visible { outline: none; box-shadow: var(--ui-focus); }
+.zc-btn:disabled { opacity: 0.6; }
+.zc-btn-primary { background: var(--ui-brand); border-color: transparent; color: #fff; }
+.zc-btn-primary:hover { background: var(--ui-brand-hover); }
+.zc-btn-block { width: 100%; margin-top: 6px; }
+.zc-btn-sm { height: var(--ui-control-h-sm); padding: 0 8px; }
+.zc-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: var(--ui-radius); background: transparent; color: var(--ui-text-2); }
+.zc-icon-btn:hover { background: var(--ui-hover); color: var(--ui-text); }
+.zc-link { border: 0; padding: 0; background: none; color: var(--ui-brand-text); font: inherit; cursor: pointer; }
+.zc-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+.zc-error { margin: 4px 0 0; padding: 8px 10px; border-radius: var(--ui-radius); background: var(--ui-danger-soft); color: var(--ui-danger-text); }
+
+.zc-account { display: flex; flex-direction: column; gap: 4px; padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid var(--ui-border); }
+.zc-account-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.zc-done-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ui-success); color: #fff; }
+.zc-done-icon svg { width: 22px; height: 22px; stroke-width: 2.5; }
+
+.zc-spinner { width: 18px; height: 18px; border: 2px solid var(--ui-border-2); border-top-color: var(--ui-brand); border-radius: 50%; animation: zc-spin 0.8s linear infinite; }
+.zc-spinner-sm { width: 14px; height: 14px; border-color: rgba(255, 255, 255, 0.4); border-top-color: #fff; }
+@keyframes zc-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .zc-spinner { animation-duration: 2s; } }

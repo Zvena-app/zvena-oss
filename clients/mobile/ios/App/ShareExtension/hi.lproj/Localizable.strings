@@ -1,0 +1,5 @@
+/* Written by scripts/strings.mjs. */
+"share" = "zvena में सहेजें";
+"saving" = "zvena में सहेजा जा रहा है…";
+"opening" = "zvena खुल रहा है…";
+"empty" = "यहाँ सहेजने के लिए कुछ नहीं है: कोई लिंक या टेक्स्ट साझा करें।";

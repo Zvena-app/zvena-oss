@@ -1,0 +1,244 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Dev Mode "Compare changes" dialog.
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  background-color: var(--color-overlay-default);
+}
+
+.modal-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  inline-size: min(px2rem(1200), calc(100vw - px2rem(48)));
+  block-size: min(px2rem(820), calc(100vh - px2rem(48)));
+  padding: var(--sp-xl);
+  border-radius: $br-8;
+  border: $b-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+}
+
+.modal-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-m);
+  padding-inline-end: var(--sp-xxxl);
+}
+
+.frame-name {
+  @include use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-m);
+}
+
+.version-row {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  color: var(--color-foreground-secondary);
+}
+
+.version-select {
+  @include use-typography("body-small");
+
+  block-size: px2rem(28);
+  min-inline-size: px2rem(260);
+  padding: 0 var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-6;
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr px2rem(340);
+  gap: var(--sp-m);
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-m);
+  min-block-size: 0;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  min-block-size: 0;
+}
+
+.pane-title {
+  @include use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.pane-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-block-size: 0;
+  padding: var(--sp-m);
+  border-radius: $br-8;
+  background-color: var(--color-background-secondary);
+  overflow: hidden;
+
+  svg {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+}
+
+.pane-empty {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-foreground-secondary);
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  min-block-size: 0;
+}
+
+.changes-title {
+  @include use-typography("headline-small");
+}
+
+.change-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.change {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  padding: var(--sp-s) 0;
+  border-block-end: $b-1 solid var(--color-background-tertiary);
+}
+
+.change-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.change-name {
+  @include use-typography("body-medium");
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  @include use-typography("body-small");
+
+  flex: none;
+  padding: 0 var(--sp-xs);
+  border-radius: $br-4;
+}
+
+.badge-added {
+  background-color: rgba(20, 174, 92, 0.15);
+  color: #14ae5c;
+}
+
+.badge-removed {
+  background-color: rgba(242, 72, 34, 0.15);
+  color: #f24822;
+}
+
+.badge-changed {
+  background-color: rgba(13, 153, 255, 0.15);
+  color: var(--color-accent-primary);
+}
+
+.props {
+  inline-size: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    @include use-typography("body-small");
+
+    padding: var(--sp-xxs) var(--sp-xs);
+    text-align: start;
+    vertical-align: top;
+    word-break: break-word;
+  }
+
+  th {
+    inline-size: px2rem(84);
+    color: var(--color-foreground-secondary);
+    font-weight: normal;
+  }
+}
+
+.before {
+  color: var(--color-foreground-secondary);
+  text-decoration: line-through;
+}
+
+.arrow {
+  color: var(--color-foreground-secondary);
+  inline-size: px2rem(16);
+}
+
+.after {
+  color: var(--color-foreground-primary);
+}
+
+.empty {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: px2rem(80);
+  color: var(--color-foreground-secondary);
+  text-align: center;
+}

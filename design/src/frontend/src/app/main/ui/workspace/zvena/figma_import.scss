@@ -1,0 +1,169 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  background-color: var(--color-overlay-default);
+}
+
+.modal-container {
+  position: relative;
+  padding: var(--sp-xxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  inline-size: px2rem(480);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  color: var(--color-foreground-primary);
+}
+
+.modal-close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-m);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.field {
+  @include use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  color: var(--color-foreground-secondary);
+
+  input {
+    @include use-typography("body-medium");
+
+    inline-size: 100%;
+    box-sizing: border-box;
+    block-size: $sz-32;
+    padding: 0 var(--sp-s);
+    border-radius: $br-8;
+    border: $b-1 solid transparent;
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent-primary);
+    }
+  }
+}
+
+.hint {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+
+  a {
+    color: var(--color-accent-primary);
+  }
+}
+
+.error {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-error);
+}
+
+.progress {
+  @include use-typography("body-medium");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.bar {
+  block-size: px2rem(6);
+  border-radius: px2rem(3);
+  background-color: var(--color-background-tertiary);
+  overflow: hidden;
+}
+
+.bar-fill {
+  block-size: 100%;
+  background-color: var(--color-accent-primary);
+  transition: width 0.3s ease;
+}
+
+.warnings {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  max-block-size: px2rem(160);
+  overflow: auto;
+
+  ul {
+    padding-inline-start: var(--sp-l);
+    list-style: disc;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+// zvena: .fig file drop zone
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-m);
+  border-radius: $br-8;
+  border: $b-1 dashed var(--color-background-quaternary);
+  background-color: var(--color-background-secondary);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.drop-zone-active {
+  border-color: var(--color-accent-primary);
+  background-color: var(--color-background-tertiary);
+}
+
+.drop-title {
+  @include use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+}
+
+.drop-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  flex-wrap: wrap;
+}
+
+.file-input {
+  display: none;
+}
+
+.separator {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  padding-block-start: var(--sp-xs);
+}

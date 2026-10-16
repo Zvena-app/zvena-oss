@@ -1,0 +1,564 @@
+/* /welcome: Linear's first-run screens — one question at a time on an empty
+   page, a quiet progress line, one primary button. Canva's part is the big,
+   clickable choices (the look, solo or team) that answer as you click them.
+   zvena's tokens (ui-theme.css), so light, dark and right-to-left follow. */
+
+.zw {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: start center;
+  padding: 12vh 16px 48px;
+  background: var(--ui-chrome);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+}
+.zw-card {
+  width: 100%;
+  max-width: 440px;
+}
+.zw-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.zw-mark {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: var(--ui-radius);
+  color: var(--ui-text);
+}
+.zw-steps {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.zw-steps li {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ui-border-2);
+  transition: background-color 0.2s;
+}
+.zw-steps li[data-on] {
+  background: var(--ui-text);
+}
+
+.zw-title {
+  margin: 0 0 6px;
+  font-size: var(--ui-title-page);
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  outline: none;
+}
+.zw-lead {
+  margin: 0 0 24px;
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-lg);
+  line-height: 22px;
+}
+.zw-note {
+  margin: -8px 0 16px;
+  padding: 8px 12px;
+  border-radius: var(--ui-radius);
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning-text);
+  font-size: var(--ui-text-md);
+  line-height: 18px;
+}
+
+/* Fields */
+.zw-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.zw-label {
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-sm);
+  font-weight: 500;
+}
+.zw-input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 0.5px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 14px;
+}
+select.zw-input {
+  padding-inline-end: 8px;
+}
+.zw-input:focus {
+  outline: none;
+  border-color: var(--ui-brand);
+  box-shadow: var(--ui-focus);
+}
+.zw-input:disabled {
+  color: var(--ui-text-2);
+}
+.zw-emails {
+  height: auto;
+  min-height: 84px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 20px;
+}
+.zw-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.zw-role {
+  flex: 1;
+}
+
+/* Who you are: the avatar and name your team will see, live. */
+.zw-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 0.5px solid var(--ui-border-2);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+}
+.zw-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ui-brand-fill);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+}
+.zw-who-text {
+  display: grid;
+  min-width: 0;
+}
+.zw-who-name,
+.zw-who-mail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zw-who-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.zw-who-mail {
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-sm);
+}
+
+/* The look: three pictures of zvena, chosen with one click. */
+.zw-themes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.zw-theme {
+  display: grid;
+  gap: 8px;
+  padding: 6px 6px 8px;
+  border: 0.5px solid var(--ui-border-2);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font: inherit;
+  cursor: pointer;
+  text-align: start;
+  transition: border-color 0.1s, box-shadow 0.1s;
+}
+.zw-theme:hover {
+  border-color: var(--ui-border-strong);
+}
+.zw-theme[aria-checked="true"] {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 1px var(--ui-brand);
+}
+.zw-theme:focus-visible,
+.zw-choice:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 2px;
+}
+/* Pictures, not the page's own colors: light is light whatever the page is. */
+.zw-theme-art {
+  --a-bg: #ffffff;
+  --a-side: #f5f5f5;
+  --a-line: #d9d9d9;
+  --a-ink: #1e1e1e;
+  display: flex;
+  height: 64px;
+  overflow: hidden;
+  border-radius: var(--ui-radius);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  background: var(--a-bg);
+}
+.zw-theme[data-v="dark"] .zw-theme-art {
+  --a-bg: #2c2c2c;
+  --a-side: #1e1e1e;
+  --a-line: #4f4f4f;
+  --a-ink: #ffffff;
+}
+.zw-theme[data-v="system"] .zw-theme-art {
+  background: linear-gradient(to right, #ffffff 50%, #2c2c2c 50%);
+}
+.zw-theme-side {
+  width: 28%;
+  background: var(--a-side);
+}
+.zw-theme[data-v="system"] .zw-theme-side {
+  background: #f5f5f5;
+}
+.zw-theme-main {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px 8px;
+}
+.zw-theme-main span {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--a-line);
+}
+.zw-theme-main span:first-child {
+  width: 60%;
+  height: 6px;
+  background: var(--a-ink);
+  opacity: 0.8;
+}
+.zw-theme-main span:nth-child(3) {
+  width: 75%;
+}
+.zw-theme[data-v="system"] .zw-theme-main span {
+  background: #8f8f8f;
+}
+.zw-theme-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 2px;
+  font-size: var(--ui-text-md);
+  font-weight: 500;
+}
+.zw-theme-label svg {
+  width: 14px;
+  height: 14px;
+  color: var(--ui-text-2);
+}
+.zw-theme-label .zw-theme-on {
+  margin-inline-start: auto;
+  color: var(--ui-brand-text);
+}
+
+/* Solo or team: two large rows, like Linear's plan picker. */
+.zw-choices {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.zw-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 0.5px solid var(--ui-border-2);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 0.1s, box-shadow 0.1s;
+}
+.zw-choice:hover {
+  border-color: var(--ui-border-strong);
+}
+.zw-choice[aria-checked="true"] {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 1px var(--ui-brand);
+}
+.zw-choice-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg-2);
+  color: var(--ui-text-2);
+}
+.zw-choice-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.zw-choice-text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.zw-choice-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.zw-choice-hint {
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-md);
+  line-height: 18px;
+}
+.zw-radio {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 50%;
+}
+.zw-choice[aria-checked="true"] .zw-radio {
+  border-color: var(--ui-brand-fill);
+  background: var(--ui-brand-fill);
+  color: #fff;
+}
+.zw-radio svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Invites */
+.zw-sent {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ui-text-md);
+}
+.zw-sent li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.zw-sent li > span:not(.zw-dot) {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.zw-sent svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--ui-success-text);
+}
+.zw-sent li[data-status="failed"] {
+  color: var(--ui-danger-text);
+}
+.zw-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-inline: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.zw-invite-link {
+  display: grid;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 0.5px solid var(--ui-border-2);
+}
+
+/* Buttons */
+.zw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  height: 40px;
+  padding: 0 16px;
+  border: 0.5px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.zw-btn:hover:not(:disabled) {
+  background: var(--ui-bg-2);
+}
+.zw-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.zw-btn:focus-visible,
+.zw-back:focus-visible,
+.zw-link:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 2px;
+}
+.zw-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.zw-btn-quiet {
+  height: 36px;
+  font-size: var(--ui-text-md);
+}
+.zw-btn-start {
+  justify-self: start;
+}
+.zw-btn-primary {
+  min-width: 140px;
+  border-color: transparent;
+  background: var(--ui-brand-fill);
+  color: #fff;
+}
+.zw-btn-primary:hover:not(:disabled) {
+  background: var(--ui-brand-hover);
+}
+.zw-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+.zw-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  margin-inline-start: -8px;
+  border: 0;
+  border-radius: var(--ui-radius);
+  background: none;
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: var(--ui-text-md);
+  cursor: pointer;
+}
+.zw-back:hover {
+  background: var(--ui-hover);
+  color: var(--ui-text);
+}
+.zw-back svg {
+  width: 14px;
+  height: 14px;
+}
+[dir="rtl"] .zw-back svg {
+  transform: scaleX(-1);
+}
+.zw-link {
+  flex: none;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: none;
+  color: var(--ui-brand-text);
+  font: inherit;
+  font-size: var(--ui-text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+.zw-link:hover {
+  background: var(--ui-hover);
+}
+.zw-error {
+  margin: 16px 0 0;
+  color: var(--ui-danger-text);
+  font-size: var(--ui-text-md);
+}
+
+/* The last screen: the keys worth knowing. */
+.zw-tips {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 0.5px solid var(--ui-border-2);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+}
+.zw-tips li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 12px;
+}
+.zw-tips li + li {
+  border-top: 0.5px solid var(--ui-border);
+}
+.zw-tip-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-2);
+  color: var(--ui-text-2);
+}
+.zw-tip-icon svg {
+  width: 15px;
+  height: 15px;
+}
+.zw-tip-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+@media (max-width: 520px) {
+  .zw {
+    padding-top: 32px;
+  }
+  .zw-themes {
+    gap: 6px;
+  }
+  .zw-theme-art {
+    height: 48px;
+  }
+  .zw-theme-label svg:first-child {
+    display: none;
+  }
+  .zw-row:has(.zw-role) {
+    flex-wrap: wrap;
+  }
+  .zw-row:has(.zw-role) .zw-btn {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zw-steps li,
+  .zw-theme,
+  .zw-choice {
+    transition: none;
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "extName": {
+    "message": "zvena Web Clipper"
+  },
+  "extDescription": {
+    "message": "যেকোনো ওয়েব পেজ zvena Docs-এ সেভ করুন: পুরো লেখা, একটি বুকমার্ক, বা শুধু যে অংশটি আপনি বেছে নিয়েছেন।"
+  },
+  "actionTitle": {
+    "message": "zvena-তে সেভ করুন"
+  },
+  "menuSave": {
+    "message": "zvena-তে সেভ করুন"
+  },
+  "cmdOpen": {
+    "message": "zvena Web Clipper খুলুন"
+  },
+  "cmdSavePage": {
+    "message": "এই পেজটি শেষবারের জায়গায় সেভ করুন"
+  },
+  "connectTitle": {
+    "message": "পেজ zvena-তে সেভ করুন"
+  },
+  "connectLead": {
+    "message": "ক্লিপারটি আপনার zvena অ্যাকাউন্টের সাথে কানেক্ট করুন। এটি শুধু পেজ যোগ করতে পারে; কখনো আপনার ডকুমেন্ট পড়ে না।"
+  },
+  "connectButton": {
+    "message": "zvena-তে কানেক্ট করুন"
+  },
+  "connectWaiting": {
+    "message": "এইমাত্র খোলা zvena ট্যাবে কানেক্ট করা শেষ করুন।"
+  },
+  "titleLabel": {
+    "message": "শিরোনাম"
+  },
+  "addTo": {
+    "message": "যেখানে যোগ হবে"
+  },
+  "workspace": {
+    "message": "ওয়ার্কস্পেস"
+  },
+  "searchPlaceholder": {
+    "message": "পেজ ও ডেটাবেস খুঁজুন"
+  },
+  "destPrivate": {
+    "message": "ব্যক্তিগত"
+  },
+  "destPrivateHint": {
+    "message": "আপনার ব্যক্তিগত বিভাগে একটি নতুন পেজ"
+  },
+  "recent": {
+    "message": "সাম্প্রতিক"
+  },
+  "results": {
+    "message": "পেজ ও ডেটাবেস"
+  },
+  "noResults": {
+    "message": "কিছু পাওয়া যায়নি"
+  },
+  "database": {
+    "message": "ডেটাবেস"
+  },
+  "saveAs": {
+    "message": "যেভাবে সেভ হবে"
+  },
+  "modeArticle": {
+    "message": "পুরো পেজ"
+  },
+  "modeBookmark": {
+    "message": "বুকমার্ক"
+  },
+  "modeSelection": {
+    "message": "নির্বাচিত অংশ"
+  },
+  "save": {
+    "message": "সেভ করুন"
+  },
+  "saving": {
+    "message": "সেভ হচ্ছে…"
+  },
+  "saved": {
+    "message": "zvena-তে সেভ হয়েছে"
+  },
+  "openInZvena": {
+    "message": "zvena-তে খুলুন"
+  },
+  "done": {
+    "message": "হয়ে গেছে"
+  },
+  "settings": {
+    "message": "সেটিংস"
+  },
+  "back": {
+    "message": "পেছনে"
+  },
+  "serverLabel": {
+    "message": "zvena সার্ভার"
+  },
+  "serverHint": {
+    "message": "আপনার zvena সার্ভারের ঠিকানা, যেমন https://zvena.example.com।"
+  },
+  "serverSave": {
+    "message": "এই সার্ভার ব্যবহার করুন"
+  },
+  "serverInvalid": {
+    "message": "একটি zvena সার্ভারের ঠিকানা লিখুন, যেমন https://zvena.example.com।"
+  },
+  "signedInAs": {
+    "message": "যে নামে কানেক্টেড"
+  },
+  "disconnect": {
+    "message": "ডিসকানেক্ট করুন"
+  },
+  "loading": {
+    "message": "লোড হচ্ছে…"
+  },
+  "untitled": {
+    "message": "শিরোনামহীন"
+  },
+  "errBadRequest": {
+    "message": "zvena এই পেজটি সেভ করতে পারেনি। “যেভাবে সেভ হবে”-এর অন্য একটি বিকল্প চেষ্টা করুন।"
+  },
+  "errUnauthorized": {
+    "message": "zvena-র সাথে কানেকশন শেষ হয়ে গেছে। আবার কানেক্ট করুন।"
+  },
+  "errForbidden": {
+    "message": "আপনি সেখানে পেজ যোগ করতে পারবেন না। অন্য একটি জায়গা বেছে নিন।"
+  },
+  "errNotFound": {
+    "message": "সেই পেজ বা ডেটাবেস আর নেই। অন্য একটি জায়গা বেছে নিন।"
+  },
+  "errTooLarge": {
+    "message": "এই পেজটি সেভ করার জন্য অনেক বড়। বুকমার্ক বা নির্বাচিত অংশ চেষ্টা করুন।"
+  },
+  "errRateLimited": {
+    "message": "একসাথে অনেক বেশি ক্লিপ। এক মিনিট পরে আবার চেষ্টা করুন।"
+  },
+  "errQuota": {
+    "message": "আপনার zvena স্টোরেজ পূর্ণ।"
+  },
+  "errServer": {
+    "message": "zvena এখন পাওয়া যাচ্ছে না। পরে আবার চেষ্টা করুন।"
+  },
+  "errNetwork": {
+    "message": "zvena-তে পৌঁছানো যাচ্ছে না। আপনার কানেকশন দেখে নিন।"
+  },
+  "errNoPage": {
+    "message": "এই পেজটি ক্লিপ করা যাবে না (ব্রাউজারের পেজ ও এক্সটেনশন স্টোর সুরক্ষিত)। অন্য একটি ট্যাব চেষ্টা করুন।"
+  },
+  "errNoSelection": {
+    "message": "আগে পেজে কিছু টেক্সট নির্বাচন করুন।"
+  },
+  "errPermission": {
+    "message": "zvena সার্ভারে প্রবেশের অনুমতি দেওয়া হয়নি।"
+  },
+  "errConnect": {
+    "message": "কানেক্ট করা শেষ হয়নি। আবার চেষ্টা করুন।"
+  }
+}

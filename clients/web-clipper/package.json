@@ -1,0 +1,20 @@
+{
+  "name": "zvena-web-clipper",
+  "version": "1.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "description": "zvena Web Clipper: save web pages to zvena Docs.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "build:test": "node build.mjs --server http://127.0.0.1:3955 --out dist/chrome-test",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@mozilla/readability": "0.6.0",
+    "esbuild": "0.28.2"
+  }
+}

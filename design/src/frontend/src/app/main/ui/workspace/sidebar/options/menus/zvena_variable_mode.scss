@@ -1,0 +1,50 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) zvena
+
+// zvena: Figma's "Apply variable mode" (see zvena_variable_mode.cljs)
+
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.element-set {
+  max-inline-size: var(--options-width);
+}
+
+.element-title {
+  inline-size: 100%;
+}
+
+.mode-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-end: var(--sp-s);
+}
+
+// Figma: "Collection   [Mode v]"
+.mode-row {
+  @include sidebar.option-grid-structure;
+
+  align-items: center;
+  min-block-size: $sz-32;
+}
+
+.mode-group {
+  @include t.use-typography("body-small");
+
+  grid-column: span 3;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
+}
+
+.mode-control {
+  grid-column: span 5;
+  min-inline-size: 0;
+}
