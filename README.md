@@ -45,8 +45,22 @@ npm run dev
 Open http://localhost:3100, choose **Sign in as a test user** and type any name. Docs, Projects, Calendar, Mail and the workspace settings all work. Your data stays in `web/data/`, which Git ignores; delete the folder to start over.
 
 - `ZVENA_STAND=test` marks the server as a test server: a banner on every page and nothing indexed by search engines. The test sign-in works only together with it, so never set either one on a real server.
-- Design is a separate server (the Penpot fork). It is not part of `npm run dev`, so its links stay off. To get Design too, run the full stack with Docker, as described below.
+- Design is a separate server (the Penpot fork). It is not part of `npm run dev`, so its links stay off. To get Design too, run everything with Docker, as described next.
 - Every other setting, such as e-mail (SMTP) and smart suggestions, is in [`deploy/.env.example`](deploy/.env.example).
+
+## Everything on your computer, Design included (Docker)
+
+You need Linux (or WSL 2) with [Docker](https://docs.docker.com/engine/install/), Git, Python 3, rsync and OpenSSL; for the first build about 8 GB of RAM, 15 GB of disk and 30–60 minutes.
+
+```bash
+git clone https://github.com/Zvena-app/zvena-oss.git && cd zvena-oss
+git fetch origin tag penpot-2.18.3           # Design's build compares against it
+sudo deploy/scripts/local.sh
+```
+
+The script writes `/etc/zvena/local.env` with fresh secrets, builds the web app and Design from this checkout, and starts them. When it prints `running`, open http://localhost:3100 and choose **Sign in as a test user**; Design is at http://localhost:3110. Later runs start in seconds. Other ports: `sudo ZVENA_LOCAL_PORT=4100 deploy/scripts/local.sh` (Design gets the next two). Everything listens on 127.0.0.1 only; letters are kept as files in the web container (`/data/outbox`) instead of being sent. Stop it with `sudo docker compose -p zvena-local down`; add `-v` to delete its data too.
+
+This is a test server (a banner on every page, the test sign-in): for other people, run a real server.
 
 ## Running your own server
 
