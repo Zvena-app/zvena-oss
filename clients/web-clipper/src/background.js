@@ -12,6 +12,7 @@ import { lastKey, pushRecent, recentsKey } from "./lib/recents.js";
 import { originPattern, serverOrigin } from "./lib/urls.js";
 
 const ext = globalThis.browser ?? globalThis.chrome;
+/** The server a build for one server bakes in; "" in the default build (the person sets theirs). */
 const DEFAULT_SERVER = __ZV_SERVER__;
 const PENDING_TTL = 10 * 60_000;
 const CUSTOM_SCRIPT = "zv-connect-custom";
@@ -49,6 +50,7 @@ function clientName() {
 
 async function startConnect() {
   const server = await serverOf();
+  if (!server) return { ok: false, error: "serverInvalid" };
   const state = makeState();
   const verifier = makeVerifier();
   const challenge = await challengeOf(verifier);
@@ -88,10 +90,10 @@ async function disconnect() {
   return { ok: true };
 }
 
-/** The connect page's content script for a self-hosted server (the store build declares zvena.app's). */
+/** The connect page's content script for the server the person set (a build for one server declares its own). */
 async function ensureCustomScript(server) {
   const registered = await ext.scripting.getRegisteredContentScripts({ ids: [CUSTOM_SCRIPT] }).catch(() => []);
-  const want = server !== DEFAULT_SERVER ? `${originPattern(server).slice(0, -1)}clipper/connected*` : "";
+  const want = server && server !== DEFAULT_SERVER ? `${originPattern(server).slice(0, -1)}clipper/connected*` : "";
   const have = registered[0]?.matches?.[0] ?? "";
   if (have === want) return;
   if (registered.length) await ext.scripting.unregisterContentScripts({ ids: [CUSTOM_SCRIPT] }).catch(() => {});

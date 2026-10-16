@@ -96,13 +96,13 @@
     "message": "zvena সার্ভার"
   },
   "serverHint": {
-    "message": "শুধু তখনই বদলান যদি আপনার টিমের নিজস্ব zvena সার্ভার থাকে।"
+    "message": "আপনার zvena সার্ভারের ঠিকানা, যেমন https://zvena.example.com।"
   },
   "serverSave": {
     "message": "এই সার্ভার ব্যবহার করুন"
   },
   "serverInvalid": {
-    "message": "একটি zvena সার্ভারের ঠিকানা লিখুন, যেমন https://zvena.app।"
+    "message": "একটি zvena সার্ভারের ঠিকানা লিখুন, যেমন https://zvena.example.com।"
   },
   "signedInAs": {
     "message": "যে নামে কানেক্টেড"

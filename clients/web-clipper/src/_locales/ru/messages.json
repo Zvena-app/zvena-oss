@@ -96,13 +96,13 @@
     "message": "Сервер zvena"
   },
   "serverHint": {
-    "message": "Меняйте, только если у вашей команды свой сервер zvena."
+    "message": "Адрес вашего сервера zvena, например https://zvena.example.com."
   },
   "serverSave": {
     "message": "Использовать этот сервер"
   },
   "serverInvalid": {
-    "message": "Введите адрес сервера zvena, например https://zvena.app."
+    "message": "Введите адрес сервера zvena, например https://zvena.example.com."
   },
   "signedInAs": {
     "message": "Подключено как"

@@ -206,6 +206,8 @@ async function init() {
   state.server = st.server;
   state.defaultServer = st.defaultServer;
   state.user = st.user;
+  // No server yet (the default build has none built in): its address comes first.
+  if (!st.server) return openSettings();
   if (!st.user) return showConnect();
   state.tabId = testTab ?? (await ext.tabs.query({ active: true, currentWindow: true }))[0]?.id ?? null;
   const [seen, me] = await Promise.all([state.tabId !== null ? ask({ type: "peek", tabId: state.tabId }) : null, ask({ type: "me" })]);
@@ -302,6 +304,7 @@ ext.storage.onChanged.addListener((changes, area) => {
 
 function openSettings() {
   $("server").value = state.server;
+  $("settings-back").hidden = !state.server;
   $("account").hidden = !state.user;
   $("account-name").textContent = state.user?.name || "";
   showError($("settings-error"), "");

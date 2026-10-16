@@ -1,6 +1,6 @@
 // Builds the extension for each browser and packs the store uploads:
 //   node build.mjs                      dist/chrome, dist/firefox + the zips (Chrome Web Store / Edge Add-ons, AMO)
-//                                       and the source zip AMO asks for
+//                                       and the source zip AMO asks for; no built-in server (the person enters theirs)
 //   node build.mjs --server <origin> --out dist/chrome-test [--browser chrome]
 //                                       one unpacked build for another server (a test stand); never for a store
 // Bundled with esbuild (readable output, no minification: store reviewers read it).
@@ -24,7 +24,7 @@ function arg(name) {
 
 const customServer = arg("server");
 const server = customServer ? serverOrigin(customServer) : DEFAULT_SERVER;
-if (!server) throw new Error(`not a server origin: ${customServer}`);
+if (customServer && !server) throw new Error(`not a server origin: ${customServer}`);
 const customOut = arg("out");
 
 const ENTRIES = ["background.js", "popup.js", "extract.js", "connect.js"];

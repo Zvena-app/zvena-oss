@@ -96,13 +96,13 @@
     "message": "Server zvena"
   },
   "serverHint": {
-    "message": "Ubah hanya jika tim Anda menjalankan server zvena sendiri."
+    "message": "Alamat server zvena Anda, misalnya https://zvena.example.com."
   },
   "serverSave": {
     "message": "Gunakan server ini"
   },
   "serverInvalid": {
-    "message": "Masukkan alamat server zvena, misalnya https://zvena.app."
+    "message": "Masukkan alamat server zvena, misalnya https://zvena.example.com."
   },
   "signedInAs": {
     "message": "Terhubung sebagai"

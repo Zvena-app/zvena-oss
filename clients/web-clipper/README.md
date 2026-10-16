@@ -19,6 +19,7 @@ Manifest V3. One code base builds three packages: Chrome and Edge share one, and
 - **Keyboard shortcuts.** You can change them in `chrome://extensions/shortcuts` or in Firefox's add-on manager.
   - **Alt+Shift+Z** opens the popup.
   - **Alt+Shift+S** saves the page to the last destination without opening the popup.
+- **Server.** There is no built-in server. The first time you open the popup it shows Settings, where you enter the address of your zvena server; Connect follows. You can change the server later in Settings.
 - **Languages.** English (the default) plus zh_CN, hi, es, ar (right to left), fr, bn, pt_BR, pt_PT, ru and id. All strings are in `src/_locales`.
 - **Look.** The popup follows zvena's design system: the tokens of `web/src/app/ui-theme.css`, the "Zvena Sans" (Inter) font, and light and dark themes. The brand files are the owner's, from `clients/brand/`: the `zvena.` wordmark, and icons rasterized from `favicon.svg` by `scripts/icons.mjs`.
 
@@ -30,8 +31,7 @@ Manifest V3. One code base builds three packages: Chrome and Edge share one, and
 | `scripting` | Runs the page reader (`extract.js`) in that tab, once per clip. |
 | `contextMenus` | Adds the "Save to zvena" menu item. |
 | `storage` | Keeps the clipper token, the server address and recent destinations, all on this device. |
-| `host_permissions: https://zvena.app/*` | Calls the zvena API, and runs the content script of the Connect page. |
-| `optional_host_permissions` | Used only when you point the clipper at a self-hosted server in Settings. The extension then asks for that one origin, at that moment. |
+| `optional_host_permissions` | Your zvena server. The default build has no server built in and no `host_permissions`: on first use the popup asks for your server's address (for example `https://zvena.example.com`), and the extension asks for that one origin at that moment. It then calls the zvena API there and registers the content script of the Connect page for it. |
 
 The extension does not request `tabs`, `cookies`, `<all_urls>` or `webRequest`. It loads no remote code and uses no `eval`. The extension pages run under `script-src 'self'`.
 
@@ -72,13 +72,13 @@ npm run build            # dist/chrome, dist/firefox, and the three zips below
 
 The zips are written by `scripts/zip.mjs`, a small deterministic ZIP writer, so no `zip` tool is needed. The same tree always gives the same bytes.
 
-To build for another server, such as a test stand or a self-hosted instance (unpacked only, never for a store):
+To build for one server, such as a test stand (unpacked only, never for a store):
 
 ```sh
 node build.mjs --server http://127.0.0.1:3955 --out dist/chrome-test [--browser firefox]
 ```
 
-This bakes the origin into `host_permissions`, into the Connect content script's match, and into the default server.
+This bakes the origin into `host_permissions`, into the Connect content script's match, and into the default server, so the popup goes straight to Connect.
 
 The icons in `src/icons` are generated from `clients/brand/favicon.svg`. Run `node scripts/icons.mjs` only when the brand file changes. It needs `sharp`: by default the web app's copy, or the path set in `SHARP=…`.
 
@@ -151,7 +151,7 @@ Upload the same chrome zip. Use the same listing and privacy answers.
 
 1. Upload the firefox zip.
 2. When asked about source code, upload `zvena-web-clipper-source-<version>.zip`. Build instructions for the reviewer: Node 22 or later, `cd clients/web-clipper && npm ci && npm run build`. The output is `dist/firefox/`.
-3. The manifest declares `data_collection_permissions: { required: ["websiteContent"] }`, which AMO requires. The add-on ID is `web-clipper@zvena.app`. The minimum version is Firefox 140 on desktop and 142 on Android.
+3. The manifest declares `data_collection_permissions: { required: ["websiteContent"] }`, which AMO requires. The add-on ID is `web-clipper@zvena-oss` (set in `src/lib/manifest.js`; if you publish your own build, use an ID of your own, since AMO ties an ID to one listing). The minimum version is Firefox 140 on desktop and 142 on Android.
 
 To release an update, bump `version` in `package.json`, rebuild, and upload to each store.
 
@@ -161,7 +161,7 @@ The server's Connect page and token endpoint decide which clients may connect. B
 
 - the Chrome Web Store ID;
 - the Edge Add-ons ID;
-- the Firefox add-on ID, `web-clipper@zvena.app`.
+- the Firefox add-on ID, `web-clipper@zvena-oss` (or your own, see above).
 
 The variable names are in the web app's deploy notes.
 

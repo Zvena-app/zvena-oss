@@ -96,13 +96,13 @@
     "message": "خادم zvena"
   },
   "serverHint": {
-    "message": "غيّره فقط إذا كان فريقك يشغّل خادم zvena خاصًا به."
+    "message": "عنوان خادم zvena الخاص بك، مثل https://zvena.example.com."
   },
   "serverSave": {
     "message": "استخدام هذا الخادم"
   },
   "serverInvalid": {
-    "message": "أدخل عنوان خادم zvena، مثل https://zvena.app."
+    "message": "أدخل عنوان خادم zvena، مثل https://zvena.example.com."
   },
   "signedInAs": {
     "message": "متصل باسم"

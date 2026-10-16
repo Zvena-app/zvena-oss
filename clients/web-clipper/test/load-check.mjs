@@ -1,5 +1,6 @@
-// The built Chrome extension in a real Chromium: it loads, its popup shows
-// the Connect screen without errors, and the page reader (extract.js)
+// The built Chrome extension in a real Chromium: it loads, its popup asks
+// for the server first (the default build has none built in) without
+// errors, and the page reader (extract.js)
 // turns an article into clean, absolute HTML. Run in the Playwright image:
 //   docker run --rm --name zvcli-ext-$$ --network host \
 //     -v $PWD/clients/web-clipper:/clipper:ro \
@@ -38,15 +39,14 @@ try {
   popup.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   popup.on("pageerror", (e) => errors.push(String(e)));
   await popup.goto(`chrome-extension://${id}/popup.html`);
-  await popup.waitForSelector('[data-test="connect"]', { state: "visible", timeout: 10000 });
-  check("2 not connected: the popup shows Connect", (await popup.locator('[data-test="connect"]').innerText()).trim() === "Connect to zvena");
+  await popup.waitForSelector('[data-test="settings-screen"]', { state: "visible", timeout: 10000 });
+  check("2 no server yet: the popup asks for its address", (await popup.locator('[data-test="server"]').inputValue()) === "" && (await popup.locator("#settings-back").isHidden()));
   check("3 the wordmark loads", await popup.locator(".zc-logo").evaluate((img) => img.complete && img.naturalWidth > 0));
   check("4 the popup uses Zvena Sans", (await popup.evaluate(() => getComputedStyle(document.body).fontFamily)).startsWith('"Zvena Sans"'));
-  await popup.locator("#connect-settings").click();
-  check("5 settings show the server", (await popup.locator('[data-test="server"]').inputValue()).startsWith("http"));
+  check("5 the hint gives an example address", (await popup.locator('[data-i18n="serverHint"]').innerText()).includes("https://zvena.example.com"));
 
   const manifest = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8"));
-  check("6 no broad host access in the manifest", !JSON.stringify(manifest.host_permissions).includes("<all_urls>") && !manifest.permissions.includes("tabs"));
+  check("6 no host access in the manifest until a server is set", manifest.host_permissions === undefined && manifest.content_scripts === undefined && !manifest.permissions.includes("tabs"));
 
   // The page reader, on a page of our own (extension pages cannot be scripted, so the bundle is added directly).
   const page = await ctx.newPage();

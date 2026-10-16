@@ -96,13 +96,13 @@
     "message": "zvena 服务器"
   },
   "serverHint": {
-    "message": "仅当你的团队运行自己的 zvena 服务器时才需更改。"
+    "message": "你的 zvena 服务器地址，例如 https://zvena.example.com。"
   },
   "serverSave": {
     "message": "使用此服务器"
   },
   "serverInvalid": {
-    "message": "请输入 zvena 服务器地址，例如 https://zvena.app。"
+    "message": "请输入 zvena 服务器地址，例如 https://zvena.example.com。"
   },
   "signedInAs": {
     "message": "已连接为"

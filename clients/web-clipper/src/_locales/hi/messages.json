@@ -96,13 +96,13 @@
     "message": "zvena सर्वर"
   },
   "serverHint": {
-    "message": "इसे तभी बदलें जब आपकी टीम का अपना zvena सर्वर हो।"
+    "message": "आपके zvena सर्वर का पता, जैसे https://zvena.example.com।"
   },
   "serverSave": {
     "message": "यह सर्वर इस्तेमाल करें"
   },
   "serverInvalid": {
-    "message": "किसी zvena सर्वर का पता डालें, जैसे https://zvena.app।"
+    "message": "किसी zvena सर्वर का पता डालें, जैसे https://zvena.example.com।"
   },
   "signedInAs": {
     "message": "इस रूप में कनेक्टेड"

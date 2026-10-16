@@ -96,13 +96,13 @@
     "message": "Servidor zvena"
   },
   "serverHint": {
-    "message": "Altere apenas se a sua equipa tiver um servidor zvena próprio."
+    "message": "O endereço do seu servidor zvena, como https://zvena.example.com."
   },
   "serverSave": {
     "message": "Usar este servidor"
   },
   "serverInvalid": {
-    "message": "Introduza o endereço de um servidor zvena, como https://zvena.app."
+    "message": "Introduza o endereço de um servidor zvena, como https://zvena.example.com."
   },
   "signedInAs": {
     "message": "Ligado como"

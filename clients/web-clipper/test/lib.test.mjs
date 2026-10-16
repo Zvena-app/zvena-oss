@@ -68,7 +68,7 @@ test("server origins: https anywhere, http only on this machine", () => {
   assert.equal(serverOrigin("ftp://x"), "");
   assert.equal(serverOrigin(""), "");
   assert.equal(originPattern("http://127.0.0.1:3955"), "http://127.0.0.1/*");
-  assert.equal(originPattern("https://zvena.app"), "https://zvena.app/*");
+  assert.equal(originPattern("https://zvena.example.com"), "https://zvena.example.com/*");
 });
 
 test("payload: fields cut to their limits, the target cleaned", () => {
@@ -106,8 +106,8 @@ test("recent destinations: newest first, no duplicates, five at most", () => {
   assert.equal(list[0].title, "again");
   assert.equal(cleanDest({ id: "x", kind: "private" }), null);
   assert.deepEqual(pushRecent([{ id: "a", kind: "database", title: "D", icon: "icon:star:blue" }], null).map((d) => d.icon), [""]);
-  assert.equal(recentsKey("https://zvena.app", "w1"), "recent:https://zvena.app|w1");
-  assert.equal(lastKey("https://zvena.app"), "last:https://zvena.app");
+  assert.equal(recentsKey("https://zvena.example.com", "w1"), "recent:https://zvena.example.com|w1");
+  assert.equal(lastKey("https://zvena.example.com"), "last:https://zvena.example.com");
   assert.equal(safeIcon("📄"), "📄");
   assert.equal(safeIcon("/api/notes/file/x.png"), "");
   assert.equal(safeIcon("javascript:x"), "");
@@ -146,10 +146,13 @@ test("manifests: least privilege, the right background per browser", () => {
     assert.equal(m.manifest_version, 3);
     assert.equal(m.version, "1.2.3");
     assert.ok(!all.includes("<all_urls>"));
-    assert.deepEqual(m.host_permissions, ["https://zvena.app/*"]);
+    // No built-in server: no host access and no Connect script until the person sets theirs.
+    assert.equal(m.host_permissions, undefined);
+    assert.equal(m.content_scripts, undefined);
+    assert.deepEqual(m.optional_host_permissions, ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"]);
+    assert.equal(m.homepage_url, "https://github.com/Zvena-app/zvena-oss");
     assert.deepEqual([...m.permissions].sort(), ["activeTab", "contextMenus", "scripting", "storage"]);
     assert.ok(!m.permissions.includes("tabs") && !m.permissions.includes("cookies"));
-    assert.deepEqual(m.content_scripts[0].matches, ["https://zvena.app/clipper/connected*"]);
     assert.equal(m.default_locale, "en");
     assert.ok(m.commands._execute_action && m.commands["save-page"]);
   }
@@ -158,12 +161,15 @@ test("manifests: least privilege, the right background per browser", () => {
   assert.equal(c.browser_specific_settings, undefined);
   const f = makeManifest({ browser: "firefox", version: "1" });
   assert.deepEqual(f.background, { scripts: ["background.js"] });
-  assert.equal(f.browser_specific_settings.gecko.id, "web-clipper@zvena.app");
+  assert.equal(f.browser_specific_settings.gecko.id, "web-clipper@zvena-oss");
   assert.ok(Array.isArray(f.browser_specific_settings.gecko.data_collection_permissions.required));
   const tst = makeManifest({ browser: "chrome", version: "1", server: "http://127.0.0.1:3955" });
   assert.deepEqual(tst.host_permissions, ["http://127.0.0.1/*"]);
   assert.deepEqual(tst.content_scripts[0].matches, ["http://127.0.0.1/clipper/connected*"]);
-  assert.equal(DEFAULT_SERVER, "https://zvena.app");
+  const one = makeManifest({ browser: "firefox", version: "1", server: "https://zvena.example.com" });
+  assert.deepEqual(one.host_permissions, ["https://zvena.example.com/*"]);
+  assert.deepEqual(one.content_scripts[0].matches, ["https://zvena.example.com/clipper/connected*"]);
+  assert.equal(DEFAULT_SERVER, "");
   assert.throws(() => makeManifest({ browser: "safari", version: "1" }));
 });
 
