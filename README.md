@@ -1,6 +1,6 @@
 # zvena
 
-A free, open-source workspace for teams — design, docs, projects, calendar and mail in one place. This is the software behind [zvena.app](https://zvena.app); you can run your own server with it.
+A free, open-source workspace for teams — design, docs, projects, calendar and mail in one place. Run it on your own computer or server.
 
 - **Design** — an interface design tool, a fork of [Penpot](https://github.com/penpot/penpot) 2.18.3: components, auto layout, prototypes, inspect mode, real-time collaboration;
 - **Docs** — pages and databases (table, board, list, gallery, calendar, timeline, chart, form, map, feed and dashboard views), built on the BlockNote editor;
