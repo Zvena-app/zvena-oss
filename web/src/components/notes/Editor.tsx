@@ -1527,14 +1527,19 @@ const NoteEditorInner = forwardRef<EditorHandle, NoteEditorProps>(function NoteE
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(save, 350);
     }, !collab);
+    // The page going away (reload, close, background) takes the typing now, not 350 ms later.
+    const release = store.holdEdits(() => {
+      if (saveTimer.current) save();
+    });
     return () => {
       if (typeof off === "function") off();
+      release();
       if (saveTimer.current) {
         clearTimeout(saveTimer.current);
         save();
       }
     };
-  }, [collab, editor, save]);
+  }, [collab, editor, save, store]);
 
   // Outside changes to this note's body (sync, another tab, the sidebar);
   // a co-edited page takes them through its session (collab-editor.ts).
@@ -1803,24 +1808,28 @@ const NoteEditorInner = forwardRef<EditorHandle, NoteEditorProps>(function NoteE
       onChange: () => {
         if (suggestCtl.mode() !== "only") return;
         if (suggestSave.current) clearTimeout(suggestSave.current);
-        suggestSave.current = setTimeout(() => {
-          suggestSave.current = null;
-          const doc = editor.document as unknown[];
-          if (!collab) {
-            lastContent.current = doc;
-            store.update(noteId, { content: doc });
-          }
-          pruneSuggestions(doc);
-        }, 350);
+        suggestSave.current = setTimeout(saveSuggested, 350);
       },
     });
-  }, [api.user, collab, editor, noteId, pruneSuggestions, store, suggestCtl]);
-  useEffect(
-    () => () => {
+    const saveSuggested = () => {
       if (suggestSave.current) clearTimeout(suggestSave.current);
-    },
-    []
-  );
+      suggestSave.current = null;
+      const doc = editor.document as unknown[];
+      if (!collab) {
+        lastContent.current = doc;
+        store.update(noteId, { content: doc });
+      }
+      pruneSuggestions(doc);
+    };
+    // Suggestions typed a moment ago are kept like typing (the page going away, another page opened).
+    const release = store.holdEdits(() => {
+      if (suggestSave.current) saveSuggested();
+    });
+    return () => {
+      release();
+      if (suggestSave.current) saveSuggested();
+    };
+  }, [api.user, collab, editor, noteId, pruneSuggestions, store, suggestCtl]);
   const openSuggestions = useOpenSuggestions(editor, note);
   const canDecide = !readOnly && !embedded;
   /** Accepts or rejects suggestions (all open ones without `sids`): the page changes, their records say who decided. */

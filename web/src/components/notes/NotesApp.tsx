@@ -18,7 +18,7 @@ import { useLiveSites } from "./live-site";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronsRight, Menu as MenuIcon, X, Maximize2, SquarePen, Trash2 } from "lucide-react";
-import { notesStore } from "@/lib/notes/store";
+import { notesStore, type SaveState } from "@/lib/notes/store";
 import { loadPeople, reportTimeZone, setMe } from "@/lib/notes/people";
 import { recordView } from "@/lib/notes/history-client";
 import { loadCustomEmoji } from "@/lib/notes/emoji";
@@ -93,6 +93,7 @@ function readNum(key: string, dflt: number): number {
 export default function NotesApp({ initialUser }: { initialUser?: NotesUser | null }) {
   const store = notesStore();
   const snap = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const saveState = useSyncExternalStore(store.subscribeSave, store.getSaveState, () => "saved" as const);
   const { t, locale } = useNotesT();
   const [route, setRoute] = useState<Route>({ kind: "start" });
   const [user, setUser] = useState<NotesUser | null | undefined>(initialUser);
@@ -229,12 +230,22 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
       setModal("import");
     }
     const onUnload = () => {
-      // A request started now is cut off with the page; the keepalive one is not.
+      // Typing the editor holds back for a moment goes into the store first,
+      // then out: a request started now is cut off with the page; the
+      // keepalive one is not. persistNow keeps it on this device even if the
+      // IndexedDB write cannot finish.
+      store.takeHeldEdits();
       syncRef.current?.sendOnUnload();
-      void store.flush();
+      store.persistNow();
       void syncRef.current?.push();
     };
+    // A page sent to the background (another app, a locked phone, a tab
+    // discarded later) may be killed without a pagehide.
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") onUnload();
+    };
     window.addEventListener("pagehide", onUnload);
+    document.addEventListener("visibilitychange", onHidden);
     const onTheme = () => setTick((x) => x + 1);
     window.addEventListener("nt-theme", onTheme);
     return () => {
@@ -242,6 +253,7 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
       window.removeEventListener("hashchange", onHash);
       window.removeEventListener("popstate", onHash);
       window.removeEventListener("pagehide", onUnload);
+      document.removeEventListener("visibilitychange", onHidden);
       window.removeEventListener("nt-theme", onTheme);
       const s = syncRef.current;
       s?.stop();
@@ -899,6 +911,7 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
             <span>{t("ro.banner", { role: t(`ro.role.${user.ws.role}`), comment: user.ws.role === "commenter" ? t("ro.comment") : "" })}</span>
           </div>
         )}
+        <SaveNotice state={saveState} guest={user === null} onRetry={() => void store.retrySave()} />
         {user === null && <GuestBanner onSignIn={api.signIn} />}
         <div className="nt-work">
           <div className="nt-scroller">
@@ -1031,6 +1044,34 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
 }
 
 /** A guest's reminder: documents live in this browser; uploads are kept while they visit. */
+/**
+ * Changes this device could not keep (IndexedDB refused the write, or this
+ * browser keeps nothing): said plainly, with a retry, and closing the tab
+ * asks first — they would be lost.
+ */
+function SaveNotice({ state, guest, onRetry }: { state: SaveState; guest: boolean; onRetry: () => void }) {
+  const { t } = useNotesT();
+  // Without storage an account's pages are still on the server; a guest's are only here.
+  const atRisk = state === "failed" || (state === "memory" && guest);
+  useEffect(() => {
+    if (!atRisk) return;
+    const ask = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", ask);
+    return () => window.removeEventListener("beforeunload", ask);
+  }, [atRisk]);
+  if (!atRisk) return null;
+  return (
+    <div className="nt-banner" role="alert" data-save-state={state}>
+      <span>{state === "failed" ? t("save.failed") : t("save.memory")}</span>
+      {state === "failed" && (
+        <button type="button" className="nt-btn-reset" onClick={onRetry}>
+          {t("save.retry")}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function GuestBanner({ onSignIn }: { onSignIn: () => void }) {
   const { t, locale } = useNotesT();
   const [info, setInfo] = useState<{ files: number; removeAt: number | null; ttlDays: number } | null>(null);

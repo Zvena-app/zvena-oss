@@ -1173,6 +1173,9 @@ const en = {
   "toast.syncFailed": "Some changes couldn't sync",
   "toast.otherTab": "Another workspace was opened in another tab. Changes here are only saved once they sync — reload this tab.",
   "toast.reload": "Reload",
+  "save.failed": "Your latest changes aren't saved on this device yet — keep this tab open.",
+  "save.memory": "This browser doesn't keep pages (private window or blocked storage): they're lost when this tab closes. Sign in to keep them.",
+  "save.retry": "Try again",
 
   "time.justNow": "just now",
   "time.minutes": "{n}m ago",
@@ -2951,6 +2954,9 @@ const ru: Record<NotesKey, string> = {
   "toast.syncFailed": "Часть изменений не синхронизировалась",
   "toast.otherTab": "В другой вкладке открыто другое пространство. Изменения здесь сохранятся только после синхронизации — обновите эту вкладку.",
   "toast.reload": "Обновить",
+  "save.failed": "Последние изменения ещё не сохранены на этом устройстве — не закрывайте вкладку.",
+  "save.memory": "Этот браузер не хранит страницы (приватное окно или запрет хранилища): они пропадут при закрытии вкладки. Войдите, чтобы их сохранить.",
+  "save.retry": "Повторить",
 
   "time.justNow": "только что",
   "time.minutes": "{n} мин назад",

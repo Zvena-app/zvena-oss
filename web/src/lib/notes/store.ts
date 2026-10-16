@@ -50,6 +50,50 @@ const DB_VERSION = 2;
 const META_KEY = "meta";
 /** A guest's pages put aside while the account opens a shared workspace (the personal one adopts them). */
 const GUEST_KEY = "guest";
+/**
+ * Notes not yet in IndexedDB when the page went away (closed, reloaded, sent
+ * to the background): IndexedDB writes are asynchronous and a closing page
+ * may not finish them, so they are also kept here, synchronously, and the
+ * next load takes the newer copy.
+ */
+const JOURNAL_KEY = "zvena-docs-unsaved";
+
+interface Journal {
+  owner: string;
+  /** This device's own edits (never notes sync brought in: those are on the server). */
+  notes: Note[];
+  /** Their changed fields (Meta.fields), so the push after the replay merges as the original one would. */
+  fields?: Record<string, string[]>;
+}
+
+/**
+ * Whether this device has kept every change: "saved"; "saving" (written in a
+ * moment); "failed" (IndexedDB refused the write — quota, a closed
+ * connection; the changes are in memory and retried); "memory" (this browser
+ * keeps nothing: private mode, storage blocked).
+ */
+export type SaveState = "saved" | "saving" | "failed" | "memory";
+
+function readJournal(): Journal | null {
+  try {
+    const raw = localStorage.getItem(JOURNAL_KEY);
+    const j = raw ? (JSON.parse(raw) as Journal) : null;
+    return j && typeof j.owner === "string" && Array.isArray(j.notes) ? j : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeJournal(j: Journal | null): boolean {
+  try {
+    if (!j || j.notes.length === 0) localStorage.removeItem(JOURNAL_KEY);
+    else localStorage.setItem(JOURNAL_KEY, JSON.stringify(j));
+    return true;
+  } catch {
+    // Over the browser's quota or storage blocked: IndexedDB is all there is.
+    return false;
+  }
+}
 
 /** What a tab tells the others after writing (`owner`: whose store it wrote). */
 interface ChangeMsg {
@@ -121,6 +165,12 @@ export class NotesStore {
   /** Notes this tab changed or deleted since its last write (another tab's meta does not list them yet). */
   private unsaved = new Set<string>();
   meta: Meta = { ...EMPTY_META };
+  /** Notes kept in the journal (JOURNAL_KEY) until IndexedDB has them. */
+  private journaled = new Set<string>();
+  /** Edits held back for a moment (the editor's typing): saved into the store before every write that cannot wait. */
+  private holders = new Set<() => void>();
+  private saveState: SaveState = "saved";
+  private saveListeners = new Set<Listener>();
   /** Called after local changes (sync.ts schedules a push). */
   onLocalChange: (() => void) | null = null;
   /** Another tab took this browser's copy for another workspace (this tab now keeps its changes in memory). */
@@ -144,6 +194,95 @@ export class NotesStore {
   };
 
   getSnapshot = (): NotesSnapshot => this.snap;
+
+  /** Whether this device has kept every change (SaveState); for useSyncExternalStore. */
+  subscribeSave = (fn: Listener): (() => void) => {
+    this.saveListeners.add(fn);
+    return () => this.saveListeners.delete(fn);
+  };
+  getSaveState = (): SaveState => this.saveState;
+  private setSaveState(state: SaveState): void {
+    if (this.saveState === state) return;
+    this.saveState = state;
+    for (const fn of this.saveListeners) fn();
+  }
+
+  /**
+   * Edits someone holds back for a moment (the editor saves typing a little
+   * later): `save` puts them into the store at once. Every write that cannot
+   * wait (the page going away, sync on leaving) calls it first.
+   */
+  holdEdits(save: () => void): () => void {
+    this.holders.add(save);
+    return () => this.holders.delete(save);
+  }
+
+  /** Puts held-back edits into the store now. */
+  takeHeldEdits(): void {
+    for (const save of [...this.holders]) {
+      try {
+        save();
+      } catch {
+        // One editor failing keeps the others' edits.
+      }
+    }
+  }
+
+  /**
+   * The page is going away (closed, reloaded, hidden — a hidden page may be
+   * killed without another event): held-back edits go into the store, the
+   * notes not yet in IndexedDB into the journal (synchronously, so they are
+   * there even if the page dies now), and the IndexedDB write starts.
+   */
+  persistNow(): void {
+    this.takeHeldEdits();
+    if (this.detached) return;
+    this.writeJournal();
+    void this.flush();
+  }
+
+  /** This device's edits not yet in IndexedDB into the journal. */
+  private writeJournal(): void {
+    const ids = [...this.dirty, ...this.journaled].filter((id) => this.unsaved.has(id) && this.notes.has(id));
+    const keep = new Set(ids);
+    if (keep.size === 0) return;
+    const fields = Object.fromEntries(Object.entries(this.meta.fields ?? {}).filter(([id]) => keep.has(id)));
+    if (writeJournal({ owner: this.meta.owner, notes: [...keep].map((id) => this.notes.get(id) as Note), fields })) this.journaled = keep;
+  }
+
+  /** Writes again after a failed save (the "Retry" of the save notice). */
+  retrySave(): Promise<void> {
+    this.takeHeldEdits();
+    return this.flush();
+  }
+
+  /** The journal's notes newer than IndexedDB's (the page went away before its write finished) come back as local edits. */
+  private replayJournal(): void {
+    const j = readJournal();
+    if (!j) return;
+    if (j.owner !== this.meta.owner) {
+      // Another account's or workspace's notes: never into this store (this one's own load clears it).
+      return;
+    }
+    let taken = false;
+    for (const n of j.notes) {
+      if (!n || typeof n.id !== "string") continue;
+      const cur = this.notes.get(n.id);
+      // IndexedDB got it after all, or has a newer copy (another tab).
+      if (cur && (cur.updatedAt > n.updatedAt || JSON.stringify(cur) === JSON.stringify(n))) continue;
+      this.notes.set(n.id, n);
+      this.dirty.add(n.id);
+      this.unsaved.add(n.id);
+      const had = this.meta.fields?.[n.id] ?? [];
+      const mine = j.fields?.[n.id] ?? ["*"];
+      const fields = had.includes("*") || mine.includes("*") ? ["*"] : [...new Set([...had, ...mine])];
+      this.meta = { ...this.meta, pending: union(this.meta.pending, [n.id]), fields: { ...(this.meta.fields ?? {}), [n.id]: fields } };
+      this.journaled.add(n.id);
+      taken = true;
+    }
+    if (!taken) writeJournal(null);
+    else this.schedule();
+  }
 
   private emit(): void {
     const fav = this.favorites;
@@ -180,6 +319,9 @@ export class NotesStore {
       } catch {
         // A broken store still lets the workspace run in memory.
       }
+      this.replayJournal();
+    } else {
+      this.setSaveState("memory");
     }
     try {
       this.channel = new BroadcastChannel(DB_NAME);
@@ -233,6 +375,7 @@ export class NotesStore {
   }
 
   private schedule(): void {
+    if (this.db && !this.detached && this.saveState !== "failed") this.setSaveState("saving");
     if (this.flushTimer) return;
     this.flushTimer = setTimeout(() => void this.flush(), 250);
   }
@@ -277,17 +420,36 @@ export class NotesStore {
       written.forEach((id) => this.unsaved.delete(id));
       if (claim && this.meta.owner === owner) this.claim = false;
       if (ids.length || removed.length) this.channel?.postMessage({ owner, ids, removed } satisfies ChangeMsg);
+      this.dropJournaled([...ids, ...removed]);
+      if (this.dirty.size === 0 && this.removed.size === 0 && !this.flushTimer) this.setSaveState("saved");
     } catch {
       if (foreign) {
         this.detached = true;
         this.onDetached?.();
         return;
       }
-      // Quota or a closed connection: the notes stay in memory and the
-      // next change retries.
+      // Quota or a closed connection: the notes stay in memory (and in the
+      // journal, while it has room), the save notice offers a retry and the
+      // next change retries too.
       ids.forEach((id) => this.dirty.add(id));
       removed.forEach((id) => this.removed.add(id));
+      if (this.meta.owner === owner) this.writeJournal();
+      this.setSaveState("failed");
     }
+  }
+
+  /** IndexedDB has these notes now: the journal no longer needs them (unless they changed again meanwhile). */
+  private dropJournaled(ids: readonly string[]): void {
+    if (this.journaled.size === 0) return;
+    let changed = false;
+    for (const id of ids) {
+      if (this.dirty.has(id) || !this.journaled.has(id)) continue;
+      this.journaled.delete(id);
+      changed = true;
+    }
+    if (!changed) return;
+    if (this.journaled.size === 0) writeJournal(null);
+    else this.writeJournal();
   }
 
   saveMeta(patch: Partial<Meta>): void {
@@ -439,6 +601,8 @@ export class NotesStore {
     this.dirty.clear();
     this.meta = { ...EMPTY_META, owner, seeded: true };
     this.unsaved.clear();
+    this.journaled.clear();
+    writeJournal(null);
     this.claim = true;
     await this.flush();
     if (forgetHistory && !this.detached && this.db) {
