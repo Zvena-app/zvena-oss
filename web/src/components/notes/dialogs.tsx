@@ -3,7 +3,8 @@
 // Notion's Import dialog: a tile per source (Evernote, Trello, Asana,
 // Confluence, Text & Markdown, CSV, HTML, Word, Google Docs, Dropbox Paper,
 // Jira, Notion); a tile picks files of its kind. Big imports show how far
-// they got.
+// they got and can be cancelled; files a ZIP left out (too large, over the
+// import's limits, damaged) are listed when it is done.
 
 import { useRef, useState } from "react";
 import { BookOpen, Box, Bug, FileArchive, FileCode2, FileSpreadsheet, FileText, FileType, ListChecks, NotebookPen, SquareKanban, X } from "lucide-react";
@@ -11,6 +12,20 @@ import { useNotes } from "./context";
 import { Modal, toast } from "./ui";
 import { importFile } from "./importer";
 import type { NotesKey } from "@/lib/notes/i18n";
+import { ZipError, type SkipReason, type SkippedEntry } from "@/lib/notes/zip";
+
+const SKIP_KEY: Record<SkipReason, NotesKey> = {
+  "too-large": "import.skip.tooLarge",
+  budget: "import.skip.budget",
+  "too-many": "import.skip.tooMany",
+  "too-deep": "import.skip.tooDeep",
+  ratio: "import.skip.ratio",
+  corrupt: "import.skip.corrupt",
+  unsupported: "import.skip.unsupported",
+  encrypted: "import.skip.encrypted",
+};
+/** Rows of the report shown at most (the rest is a count). */
+const REPORT_ROWS = 100;
 
 const ALL = ".zip,.md,.markdown,.txt,.html,.htm,.csv,.enex,.docx,.json";
 
@@ -20,26 +35,44 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [accept, setAccept] = useState(ALL);
   const [busy, setBusy] = useState<{ file: number; files: number; done: number; total: number } | null>(null);
+  const [report, setReport] = useState<{ pages: number; rows: SkippedEntry[]; more: number; last: string | null } | null>(null);
+  const abort = useRef<AbortController | null>(null);
+  const finish = (last: string | null) => {
+    onClose();
+    if (last) api.open(last);
+  };
   const run = async (files: FileList | null) => {
     if (!files?.length) return;
     const list = [...files];
+    const ctl = new AbortController();
+    abort.current = ctl;
     setBusy({ file: 1, files: list.length, done: 0, total: 0 });
     let total = 0;
     let last: string | null = null;
+    const rows: SkippedEntry[] = [];
+    let more = 0;
     for (const [i, f] of list.entries()) {
       setBusy({ file: i + 1, files: list.length, done: 0, total: 0 });
       try {
-        const r = await importFile(f, store, api.upload, null, (done, all) => setBusy({ file: i + 1, files: list.length, done, total: all }));
+        const r = await importFile(f, store, api.upload, null, (done, all) => setBusy({ file: i + 1, files: list.length, done, total: all }), ctl.signal);
         total += r.pages;
         if (r.root) last = r.root.id;
-      } catch {
-        toast(`${t("import.failed")} (${f.name})`);
+        for (const x of r.skipped ?? []) rows.push({ ...x, name: !x.name ? f.name : list.length > 1 ? `${f.name}/${x.name}` : x.name });
+        more += r.skippedMore ?? 0;
+      } catch (e) {
+        if (ctl.signal.aborted) break;
+        toast(`${t(e instanceof ZipError ? "import.badZip" : "import.failed")} (${f.name})`);
       }
     }
+    abort.current = null;
     setBusy(null);
-    if (total) toast(t("import.done", { n: total }));
-    onClose();
-    if (last) api.open(last);
+    if (ctl.signal.aborted) toast(t("import.cancelled"));
+    else if (total) toast(t("import.done", { n: total }));
+    if (rows.length && !ctl.signal.aborted) {
+      setReport({ pages: total, rows, more, last });
+      return;
+    }
+    finish(last);
   };
   const pick = (acc: string) => {
     setAccept(acc);
@@ -61,13 +94,13 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
     { key: "notion", icon: <FileArchive />, title: "import.notion", hint: "import.notionHint", accept: ".zip" },
   ];
   return (
-    <Modal onClose={busy ? () => {} : onClose} label={t("import.title")} className="nt-import">
+    <Modal onClose={busy ? () => {} : report ? () => finish(report.last) : onClose} label={t("import.title")} className="nt-import">
       <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div>
           <div style={{ fontSize: 16, fontWeight: 600 }}>{t("import.title")}</div>
           <div style={{ fontSize: 13, color: "var(--nt-text-2)", marginTop: 4 }}>{t("import.hint")}</div>
         </div>
-        <button type="button" className="nt-icon-btn nt-btn-reset" aria-label={t("common.close")} disabled={Boolean(busy)} onClick={onClose}>
+        <button type="button" className="nt-icon-btn nt-btn-reset" aria-label={t("common.close")} disabled={Boolean(busy)} onClick={report ? () => finish(report.last) : onClose}>
           <X />
         </button>
       </div>
@@ -83,6 +116,28 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
               <small>{t("import.progress", { done: busy.done, total: busy.total })}</small>
             </>
           )}
+          <button type="button" className="nt-btn nt-btn-plain nt-btn-sm nt-btn-reset" onClick={() => abort.current?.abort()}>
+            {t("import.cancel")}
+          </button>
+        </div>
+      ) : report ? (
+        <div className="nt-import-report" role="status">
+          <b>{t("import.skippedTitle")}</b>
+          <p>{t("import.skippedHint", { n: report.pages })}</p>
+          <ul>
+            {report.rows.slice(0, REPORT_ROWS).map((x, i) => (
+              <li key={i}>
+                <span className="nt-import-report-name">{x.name}</span>
+                <small>{t(SKIP_KEY[x.reason], { n: x.count ?? 0 })}</small>
+              </li>
+            ))}
+          </ul>
+          {report.rows.length + report.more > REPORT_ROWS && <small>{t("import.skippedMore", { n: report.rows.length + report.more - REPORT_ROWS })}</small>}
+          <div className="nt-import-report-actions">
+            <button type="button" className="nt-btn nt-btn-primary nt-btn-sm nt-btn-reset" onClick={() => finish(report.last)}>
+              {t("import.ok")}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="nt-import-grid">

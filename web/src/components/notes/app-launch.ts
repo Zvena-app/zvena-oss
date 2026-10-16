@@ -89,11 +89,14 @@ export function useAppLaunch(opts: { ready: boolean; store: NotesStore; upload: 
       try {
         const { importFile } = await import("./importer");
         let first: string | null = null;
+        let skipped = 0;
         for (const f of list) {
           const r = await importFile(f, store, upload, null);
           if (r.root) first ??= r.root.id;
+          skipped += (r.skipped ?? []).reduce((n, x) => n + (x.count ?? 1), 0) + (r.skippedMore ?? 0);
         }
-        toast(t("launch.imported"));
+        // What a ZIP left out is listed in the Import dialog; here, how many.
+        toast(skipped ? t("import.skippedToast", { n: skipped }) : t("launch.imported"));
         const n = first ? store.get(first) : undefined;
         if (n) {
           history.replaceState(null, "", `/docs#${noteSlug(n)}`);

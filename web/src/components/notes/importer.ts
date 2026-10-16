@@ -13,7 +13,7 @@ import type { NotesStore } from "@/lib/notes/store";
 import type { DbProperty, DbSchema, Note, PropValue, SelectOption } from "@/lib/notes/types";
 import { NOTE_COLORS } from "@/lib/notes/types";
 import { inferType, isTrelloBoard, notionSources, parseCsv, titleColumn, toIsoDate, trelloPlan } from "@/lib/notes/import-formats";
-import { unzip, type UnzippedFile } from "@/lib/notes/zip";
+import { unzip, type SkippedEntry, type UnzippedFile } from "@/lib/notes/zip";
 import { htmlToBlocks, markdownToBlocks } from "./md-blocks";
 import { notesT } from "@/lib/notes/i18n";
 
@@ -263,13 +263,20 @@ function notionAside(md: string): string {
 export interface ImportResult {
   root: Note | null;
   pages: number;
+  /** Files of a ZIP left out (too large, over the import's budget, damaged…); `skippedMore` past the listed ones. */
+  skipped?: SkippedEntry[];
+  skippedMore?: number;
 }
 
-/** Notion "Markdown & CSV" export, or any zip of .md/.csv/.html files. */
-export async function importZip(buf: ArrayBuffer, store: NotesStore, upload: (f: File) => Promise<string>, parentId: string | null, rootTitle: string, onProgress?: ImportProgress): Promise<ImportResult> {
-  const all = await unzip(buf);
+/**
+ * Notion "Markdown & CSV" export, or any zip of .md/.csv/.html files.
+ * `signal` cancels it (rejects with an AbortError; pages made so far stay).
+ */
+export async function importZip(buf: ArrayBuffer, store: NotesStore, upload: (f: File) => Promise<string>, parentId: string | null, rootTitle: string, onProgress?: ImportProgress, signal?: AbortSignal): Promise<ImportResult> {
+  const { files: all, skipped, more } = await unzip(buf, { signal });
+  const report = skipped.length ? { skipped, skippedMore: more } : {};
   const files = new Map(all.map((f) => [f.name, f]));
-  if (isConfluence(all)) return importConfluence(all, files, store, upload, parentId, rootTitle, onProgress);
+  if (isConfluence(all)) return { ...(await importConfluence(all, files, store, upload, parentId, rootTitle, onProgress, signal)), ...report };
   const docs = all.filter((f) => /\.(md|markdown|txt|csv|html?)$/i.test(f.name) && !/(^|\/)__MACOSX\//.test(f.name) && !/_all\.csv$/i.test(f.name));
   const root = store.create({ kind: "page", parentId, title: rootTitle, icon: "📥", content: [] });
   let pages = 0;
@@ -317,6 +324,7 @@ export async function importZip(buf: ArrayBuffer, store: NotesStore, upload: (f:
       });
   const links: { parent: string; child: string; kind: "page" | "database" }[] = [];
   for (const f of byDepth) {
+    signal?.throwIfAborted();
     const dir = parentDir(f.name);
     if (csvDirs.has(dir) && /\.md$/i.test(f.name)) continue; // handled with its CSV
     const text = dec.decode(f.data);
@@ -385,7 +393,7 @@ export async function importZip(buf: ArrayBuffer, store: NotesStore, upload: (f:
     const add = kids.filter((k) => !existing.has(k)).map((k) => ({ type: "page", props: { noteId: k } }));
     if (add.length) store.update(pid, { content: [...p.content.filter((b) => !isEmptyPara(b)), ...add] }, { quiet: true });
   }
-  return { root, pages };
+  return { root, pages, ...report };
 }
 
 const PAGE_MARK = "§§NTPAGE§§";
@@ -424,7 +432,7 @@ function isConfluence(all: UnzippedFile[]): boolean {
   });
 }
 
-async function importConfluence(all: UnzippedFile[], files: Map<string, UnzippedFile>, store: NotesStore, upload: (f: File) => Promise<string>, parentId: string | null, rootTitle: string, onProgress?: ImportProgress): Promise<ImportResult> {
+async function importConfluence(all: UnzippedFile[], files: Map<string, UnzippedFile>, store: NotesStore, upload: (f: File) => Promise<string>, parentId: string | null, rootTitle: string, onProgress?: ImportProgress, signal?: AbortSignal): Promise<ImportResult> {
   const pagesHtml = all.filter((f) => /\.html?$/i.test(f.name) && !/(^|\/)index\.html$/i.test(f.name) && !/(^|\/)(styles|images|attachments)\//.test(f.name));
   const index = all.find((f) => /(^|\/)index\.html$/i.test(f.name));
   const indexDoc = index ? new DOMParser().parseFromString(dec.decode(index.data), "text/html") : null;
@@ -454,6 +462,7 @@ async function importConfluence(all: UnzippedFile[], files: Map<string, Unzipped
   const kids = new Map<string, string[]>();
   let done = 0;
   for (const x of ordered) {
+    signal?.throwIfAborted();
     const parent = x.parentFile && idOf.has(x.parentFile) ? (idOf.get(x.parentFile) as string) : root.id;
     const html = htmlPageLinks(await uploadHtmlImages(x.body, x.dir, files, upload), x.dir, (path) => idOf.get(path));
     const note = store.create({ id: idOf.get(x.f.name), kind: "page", parentId: parent, title: decodeEntities(x.title), content: htmlToBlocks(html) });
@@ -537,12 +546,12 @@ export function importEnex(text: string, store: NotesStore, parentId: string | n
   return { root, pages: notes.length };
 }
 
-/** One file of any supported type. */
-export async function importFile(file: File, store: NotesStore, upload: (f: File) => Promise<string>, parentId: string | null, onProgress?: ImportProgress): Promise<ImportResult> {
+/** One file of any supported type; `signal` cancels a ZIP import. */
+export async function importFile(file: File, store: NotesStore, upload: (f: File) => Promise<string>, parentId: string | null, onProgress?: ImportProgress, signal?: AbortSignal): Promise<ImportResult> {
   const name = file.name;
   const title = cleanTitle(baseName(name));
   const lang = uiLang();
-  if (/\.zip$/i.test(name)) return importZip(await file.arrayBuffer(), store, upload, parentId, title || "Import", onProgress);
+  if (/\.zip$/i.test(name)) return importZip(await file.arrayBuffer(), store, upload, parentId, title || "Import", onProgress, signal);
   if (/\.docx$/i.test(name)) {
     // mammoth loads only for Word files.
     const { docxToHtml } = await import("@/lib/notes/docx");

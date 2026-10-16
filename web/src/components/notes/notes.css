@@ -4276,6 +4276,53 @@ img.nt-cemoji {
   background: var(--nt-blue, #2383e2);
   transition: width 120ms linear;
 }
+.nt-import-progress .nt-btn {
+  margin-top: 4px;
+}
+/* What a ZIP left out. */
+.nt-import-report {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 16px 20px 20px;
+  font-size: 14px;
+}
+.nt-import-report p {
+  margin: 0;
+  color: var(--nt-text-2);
+  font-size: 13px;
+}
+.nt-import-report ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 44vh;
+  overflow: auto;
+  border-radius: 8px;
+  box-shadow: var(--nt-card-shadow);
+}
+.nt-import-report li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+}
+.nt-import-report li + li {
+  border-top: 1px solid var(--nt-divider);
+}
+.nt-import-report-name {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.nt-import-report small {
+  color: var(--nt-text-2);
+  font-size: 12px;
+}
+.nt-import-report-actions {
+  display: flex;
+  justify-content: flex-end;
+}
 @media (max-width: 560px) {
   .nt-import-grid {
     grid-template-columns: 1fr;
