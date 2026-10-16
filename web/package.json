@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@types/mailparser": "3.9.0",
-    "@types/node": "^24",
+    "@types/node": "^26",
     "@types/nodemailer": "^7.0.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
