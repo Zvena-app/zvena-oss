@@ -8,6 +8,8 @@
 //                                   that differ, empty strings (errors); missing keys,
 //                                   keys the code doesn't have (yet), and English that
 //                                   changed since the last extract (warnings)
+//   node scripts/i18n.mjs check --strict   the same, warnings fail too (CI): all ten
+//                                   languages have exactly the keys the code has
 //   node scripts/i18n.mjs missing <locale>   the English strings a catalog lacks or
 //                                   whose English changed, as JSON (what to translate next)
 //
@@ -172,14 +174,17 @@ function staleKeys(ns, strings) {
 
 const placeholders = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
 
-function check() {
+function check(strict) {
   const en = english();
   let errors = 0;
   let warnings = 0;
   const report = [];
   for (const [ns, strings] of Object.entries(en)) {
     const stale = staleKeys(ns, strings);
-    if (stale.length) (report.push(`${ns}: English changed since the last extract (re-translate, then extract): ${stale.slice(0, 8).join(", ")}`), (warnings += 1));
+    if (stale.length) {
+      report.push(`${ns}: English changed since the last extract (re-translate, then extract): ${stale.slice(0, 8).join(", ")}`);
+      warnings += 1;
+    }
     for (const loc of CATALOG_LOCALES) {
       const file = join(root, "src/i18n/catalogs", ns, `${loc}.json`);
       if (!existsSync(file)) {
@@ -199,15 +204,27 @@ function check() {
       const empty = Object.entries(cat).filter(([, v]) => typeof v !== "string" || !v.trim()).map(([k]) => k);
       const ph = Object.entries(cat).filter(([k, v]) => k in strings && typeof v === "string" && placeholders(v) !== placeholders(strings[k])).map(([k]) => k);
       const missing = Object.keys(strings).filter((k) => !(k in cat));
-      if (unknown.length) (report.push(`${ns}/${loc}: ${unknown.length} keys the code doesn't have (unused until it does): ${unknown.slice(0, 5).join(", ")}`), (warnings += 1));
-      if (empty.length) (report.push(`${ns}/${loc}: ${empty.length} empty: ${empty.slice(0, 5).join(", ")}`), (errors += empty.length));
-      if (ph.length) (report.push(`${ns}/${loc}: ${ph.length} placeholder mismatches: ${ph.slice(0, 5).join(", ")}`), (errors += ph.length));
-      if (missing.length) (report.push(`${ns}/${loc}: ${missing.length} of ${Object.keys(strings).length} missing (English shows)`), (warnings += 1));
+      if (unknown.length) {
+        report.push(`${ns}/${loc}: ${unknown.length} keys the code doesn't have (unused until it does): ${unknown.slice(0, 5).join(", ")}`);
+        warnings += 1;
+      }
+      if (empty.length) {
+        report.push(`${ns}/${loc}: ${empty.length} empty: ${empty.slice(0, 5).join(", ")}`);
+        errors += empty.length;
+      }
+      if (ph.length) {
+        report.push(`${ns}/${loc}: ${ph.length} placeholder mismatches: ${ph.slice(0, 5).join(", ")}`);
+        errors += ph.length;
+      }
+      if (missing.length) {
+        report.push(`${ns}/${loc}: ${missing.length} of ${Object.keys(strings).length} missing (English shows)`);
+        warnings += 1;
+      }
     }
   }
   console.log(report.join("\n") || "all catalogs complete");
   console.log(`\n${errors} errors, ${warnings} warnings`);
-  if (errors) process.exit(1);
+  if (errors || (strict && warnings)) process.exit(1);
 }
 
 const [cmd, arg] = process.argv.slice(2);
@@ -220,7 +237,7 @@ if (cmd === "extract") {
     console.log(`${ns}: ${Object.keys(strings).length} strings`);
   }
 } else if (cmd === "check") {
-  check();
+  check(arg === "--strict");
 } else if (cmd === "missing") {
   const en = english();
   const out = {};
@@ -232,6 +249,6 @@ if (cmd === "extract") {
   }
   console.log(JSON.stringify(out, null, 2));
 } else {
-  console.log("usage: node scripts/i18n.mjs extract | check | missing <locale>");
+  console.log("usage: node scripts/i18n.mjs extract | check [--strict] | missing <locale>");
   process.exit(2);
 }

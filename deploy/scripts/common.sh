@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Shared bits of the zvena server scripts (sourced, not run).
 #   ZVENA_ENV=/etc/zvena/zvena.env   the settings file (default)
 # The settings file is parsed line by line (KEY=VALUE, optional double quotes)
@@ -5,6 +6,7 @@
 
 set -euo pipefail
 DEPLOY=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck disable=SC2034 # used by the scripts that source this file
 ZVENA_DIR=$(cd "$DEPLOY/.." && pwd)
 ENV_FILE=${ZVENA_ENV:-/etc/zvena/zvena.env}
 
@@ -55,6 +57,23 @@ setup_compose() {
     case "${APP_URL:-}" in https://*) ;; *) die "APP_URL must start with https://" ;; esac
     case "${DESIGN_URL:-}" in https://*) ;; *) die "DESIGN_URL must start with https://" ;; esac
   fi
+  check_project
+  return 0
+}
+
+# Two instances on one machine (production and a stand) must never share a compose
+# project: up.sh or restore.sh with the wrong settings would replace the other one's
+# containers or data. The project's containers remember the settings file they were
+# started with; another file stops here.
+check_project() {
+  local project=${COMPOSE_PROJECT_NAME:-zvena} mine theirs f
+  mine=$(readlink -f "$ENV_FILE")
+  theirs=$(docker ps -a --filter "label=com.docker.compose.project=$project" \
+    --format '{{.Label "com.docker.compose.project.environment_file"}}' 2>/dev/null | sort -u)
+  for f in $theirs; do
+    [ "$(readlink -f "$f")" = "$mine" ] && continue
+    die "compose project \"$project\" belongs to $f, not $ENV_FILE: give this instance its own COMPOSE_PROJECT_NAME (and ports, BACKUP_DIR) in $ENV_FILE"
+  done
   return 0
 }
 
@@ -64,8 +83,8 @@ compose() {
 
 # Waits for /api/health of the web app to report every part ok.
 wait_healthy() {
-  local port=${WEB_PORT:-3100} i
-  for i in $(seq 1 60); do
+  local port=${WEB_PORT:-3100} _
+  for _ in $(seq 1 60); do
     if curl -fsS -m 5 "http://127.0.0.1:$port/api/health" 2>/dev/null | grep -q '"ok":true'; then return 0; fi
     sleep 5
   done

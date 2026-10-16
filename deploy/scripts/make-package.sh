@@ -10,7 +10,7 @@
 load_env
 out=$(cd "${1:?folder for the package}" && pwd)
 platform=${2:-linux/amd64}
-cd "$ZVENA_DIR"
+cd "$ZVENA_DIR" || exit 1
 [ -z "$(git status --porcelain --untracked-files=no)" ] || die "there are uncommitted changes: a package is built from a commit only"
 ver=$(git rev-parse --short HEAD)
 tag=$(git tag --points-at "$(cat design/UPSTREAM)" | head -1)

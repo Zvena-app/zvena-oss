@@ -1075,7 +1075,9 @@ function AvailabilityDialog({ onClose }: { onClose: () => void }) {
   const [min, setMin] = useState(Math.max(30, prefs.defaultDuration));
   const [link, setLink] = useState(boot.links[0]?.id ?? "");
   const [busy, setBusy] = useState<{ start: number; end: number }[] | null>(null);
-  const work = prefs.workDays.length ? prefs.workDays : [1, 2, 3, 4, 5];
+  // Memoized: a fresh fallback array on every render would recompute dayList, and
+  // the free/busy fetch below that depends on it would run again after every answer.
+  const work = useMemo(() => (prefs.workDays.length ? prefs.workDays : [1, 2, 3, 4, 5]), [prefs.workDays]);
   // The next `days` working days, today first (its past hours left out).
   const dayList = useMemo(() => {
     const out: string[] = [];

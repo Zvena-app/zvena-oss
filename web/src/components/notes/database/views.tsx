@@ -1220,6 +1220,7 @@ function Preview({ row, mode }: { row: Note; mode: "none" | "cover" | "content" 
   if (img) {
     return (
       <div className="nt-card-preview">
+        {/* eslint-disable-next-line @next/next/no-img-element -- the card's first image: a workspace file or a pasted URL */}
         <img src={img} alt="" loading="lazy" />
       </div>
     );

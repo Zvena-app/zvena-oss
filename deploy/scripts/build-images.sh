@@ -10,7 +10,7 @@ require_root
 load_env
 export ZVENA_BUILD_DIR=${ZVENA_BUILD_DIR:-/var/lib/zvena-build}
 mkdir -p "$ZVENA_BUILD_DIR"
-cd "$ZVENA_DIR"
+cd "$ZVENA_DIR" || exit 1
 [ -z "$(git status --porcelain -- .)" ] || die "there are uncommitted changes: images are built from a commit only"
 ver=$(git rev-parse --short HEAD)
 

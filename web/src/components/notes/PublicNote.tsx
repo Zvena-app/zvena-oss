@@ -224,6 +224,7 @@ export default function PublicNote({ snapshot, updatedAt, shareId, app = "" }: {
         <div className="nt-page" data-cover={note.cover ? "true" : "false"} data-noicon={note.icon ? "false" : "true"} data-full={note.style?.full || note.kind === "database" || undefined} data-font={note.style?.font ?? "default"} data-small={note.style?.small || undefined} style={{ paddingBottom: 0 }}>
           {note.cover && (
             <div className="nt-cover" style={note.cover.kind === "image" ? undefined : { background: coverCss(note.cover.value) }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- the cover is a workspace file or a URL the person pasted, any size */}
               {note.cover.kind === "image" && <img src={note.cover.value} alt="" style={{ objectPosition: `center ${note.cover.y}%` }} />}
             </div>
           )}

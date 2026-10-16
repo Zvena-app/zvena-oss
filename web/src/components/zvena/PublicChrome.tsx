@@ -56,7 +56,7 @@ export function PublicHeader({ signedIn }: { locale?: Locale; signedIn: boolean 
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- pages still pass `locale`
+// `_props`: pages still pass `locale`.
 export function PublicFooter(_props: { locale?: Locale }) {
   const company = config.company;
   return (

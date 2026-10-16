@@ -153,6 +153,7 @@ function Cover({ note, readOnly }: { note: Note; readOnly: boolean }) {
   };
   return (
     <div ref={ref} className="nt-cover" data-repositioning={reposition || undefined} onPointerDown={onDown} style={c.kind === "image" ? undefined : { background: coverCss(c.value) }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- the cover is a workspace file or a URL the person pasted, any size; repositioned with object-position */}
       {c.kind === "image" && <img src={c.value} alt="" style={{ objectPosition: `center ${y}%` }} draggable={false} />}
       {reposition && <div className="nt-cover-hint">{t("page.reposition")}</div>}
       {!readOnly && (

@@ -52,6 +52,7 @@ import { withWs } from "@/lib/notes/workspace";
 import type { Note } from "@/lib/notes/types";
 import type { SyncState } from "@/lib/notes/sync";
 import { NoteIcon } from "./NoteIcon";
+import { hardNavigate } from "@/lib/hard-nav";
 
 function TableGlyph() {
   return (
@@ -712,10 +713,10 @@ export function Sidebar({
                             hint: w.id === user.ws.id ? "✓" : undefined,
                             onSelect: () => {
                               setWsMenu(null);
-                              if (w.id !== user.ws.id) location.href = `/docs?ws=${encodeURIComponent(w.id)}`;
+                              if (w.id !== user.ws.id) hardNavigate(`/docs?ws=${encodeURIComponent(w.id)}`);
                             },
                           })),
-                          { key: "ws-new", label: t("side.newWorkspace"), icon: <Plus />, onSelect: () => (location.href = "/team?new=1") },
+                          { key: "ws-new", label: t("side.newWorkspace"), icon: <Plus />, onSelect: () => hardNavigate("/team?new=1") },
                         ],
                       },
                     ]
@@ -723,9 +724,9 @@ export function Sidebar({
                 {
                   key: "b",
                   items: [
-                    ...(user ? [{ key: "account", label: t("side.account"), icon: <UserCog />, onSelect: () => (location.href = "/settings") }] : []),
+                    ...(user ? [{ key: "account", label: t("side.account"), icon: <UserCog />, onSelect: () => hardNavigate("/settings") }] : []),
                     ...(user
-                      ? [{ key: "signout", label: t("side.signOut"), icon: <LogOut />, onSelect: () => void fetch("/api/auth/logout", { method: "POST" }).finally(() => (location.href = "/")) }]
+                      ? [{ key: "signout", label: t("side.signOut"), icon: <LogOut />, onSelect: () => void fetch("/api/auth/logout", { method: "POST" }).finally(() => hardNavigate("/")) }]
                       : [{ key: "signin", label: t("side.signIn"), icon: <LogIn />, onSelect: () => (setWsMenu(null), api.signIn()) }]),
                   ],
                 },

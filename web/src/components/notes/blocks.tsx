@@ -585,12 +585,14 @@ export const BookmarkBlock = createReactBlockSpec(
             <div className="nt-bookmark-title">{p.title || hostOf(p.url)}</div>
             <div className="nt-bookmark-desc">{p.description}</div>
             <div className="nt-bookmark-url">
+              {/* eslint-disable-next-line @next/next/no-img-element -- the bookmarked site's favicon, from any host */}
               {p.icon && <img src={p.icon} alt="" referrerPolicy="no-referrer" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />}
               <span>{p.url}</span>
             </div>
           </div>
           {p.image && (
             <div className="nt-bookmark-image">
+              {/* eslint-disable-next-line @next/next/no-img-element -- the bookmarked site's own preview image, from any host */}
               <img src={p.image} alt="" referrerPolicy="no-referrer" loading="lazy" onError={(e) => ((e.target as HTMLImageElement).parentElement!.style.display = "none")} />
             </div>
           )}

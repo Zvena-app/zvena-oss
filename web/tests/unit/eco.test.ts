@@ -387,7 +387,7 @@ test("one Inbox: Documents' notifications and Projects' together", async () => {
 test("a project is one folder: its page in Documents lists its issues live, and the project lists the page", async () => {
   const ctx = ctxFor(owner, ws, "edit");
   const project = createProject(ctx, { name: "Website relaunch", teamIds: [team.id] });
-  const open = createIssue(ctx, { teamId: team.id, title: "New homepage", projectId: project.id, priority: 1 });
+  createIssue(ctx, { teamId: team.id, title: "New homepage", projectId: project.id, priority: 1 });
   const done = createIssue(ctx, { teamId: team.id, title: "Old pages audit", projectId: project.id });
   await setIssueDone(actor(owner), done.id, true);
   createIssue(ctx, { teamId: team.id, title: "Not in the project" });

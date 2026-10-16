@@ -58,6 +58,7 @@ import { LanguagePicker } from "./LanguagePicker";
 import { ShareDialog } from "./Share";
 import { Toaster } from "./Toaster";
 import "./ds.css";
+import { hardNavigate } from "@/lib/hard-nav";
 
 export type ShellSection = "home" | "inbox" | "my" | "docs" | "projects" | "calendar" | "mail" | "design" | "templates" | "team" | "settings" | "admin";
 
@@ -300,7 +301,7 @@ export function Shell({ user, section, sectionNav, sectionTitle, sectionAction, 
     setOpen(false);
     setShare(true);
   };
-  const signOut = () => void fetch("/api/auth/logout", { method: "POST" }).finally(() => (location.href = "/"));
+  const signOut = () => void fetch("/api/auth/logout", { method: "POST" }).finally(() => hardNavigate("/"));
 
   return (
     <div className="zv-shell ds-shell" data-open={open || undefined} data-fill={fill || undefined}>

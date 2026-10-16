@@ -29,7 +29,7 @@ chmod 700 "$work"
 gpg --batch --quiet --decrypt --pinentry-mode loopback --passphrase-file "$BACKUP_PASSPHRASE_FILE" "$src" | tar -C "$work" -xf -
 [ -f "$work/manifest.txt" ] || die "the archive has no manifest.txt"
 log "checking checksums"
-tail -n +4 "$work/manifest.txt" | while read -r sum size f; do
+tail -n +4 "$work/manifest.txt" | while read -r sum _size f; do
   [ "$(sha256sum "$work/$f" | cut -d' ' -f1)" = "$sum" ] || die "$f is damaged"
 done
 head -3 "$work/manifest.txt"
@@ -60,7 +60,7 @@ compose stop web design-frontend design-exporter design-backend
 
 log "PostgreSQL"
 compose up -d postgres
-for i in $(seq 1 30); do compose exec -T postgres pg_isready -U penpot -d penpot >/dev/null 2>&1 && break; sleep 2; done
+for _ in $(seq 1 30); do compose exec -T postgres pg_isready -U penpot -d penpot >/dev/null 2>&1 && break; sleep 2; done
 compose exec -T postgres psql -U penpot -d postgres -q -c 'DROP DATABASE IF EXISTS penpot WITH (FORCE)' -c 'CREATE DATABASE penpot OWNER penpot'
 # All or nothing: a dump that does not load stops here, with the safety backup above to go back to.
 compose exec -T postgres pg_restore -U penpot -d penpot --no-owner --role=penpot --exit-on-error --single-transaction < "$work/penpot.dump" \

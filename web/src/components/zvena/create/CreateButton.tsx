@@ -7,7 +7,7 @@
 // itself (`hotkey={false}`: Projects makes a new issue). Esc or a click
 // outside closes it. On a phone it is a sheet from the bottom.
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, SquarePen, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n-react";
@@ -24,12 +24,12 @@ export function CreateButton({ ws, canEdit, hotkey = true, compact = false }: { 
   const btn = useRef<HTMLButtonElement>(null);
   const pop = useRef<HTMLDivElement>(null);
 
-  const show = () => {
+  const show = useCallback(() => {
     const r = btn.current?.getBoundingClientRect();
     // The rail's compose button sits at the rail's right edge: the picker opens beside the rail, under it.
     setPos(r ? { top: Math.max(8, compact ? r.bottom + 6 : r.top), left: r.right + 8 } : null);
     setOpen(true);
-  };
+  }, [compact]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -48,7 +48,7 @@ export function CreateButton({ ws, canEdit, hotkey = true, compact = false }: { 
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onDown);
     };
-  }, [open, canEdit, hotkey]);
+  }, [open, canEdit, hotkey, show]);
 
   if (!canEdit) return null;
   return (

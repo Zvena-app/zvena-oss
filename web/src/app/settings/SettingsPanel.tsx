@@ -8,6 +8,7 @@ import { LOCALES, LOCALE_INFO } from "@/i18n/locales";
 import type { Usage } from "@/lib/storage";
 import { Email } from "@/components/zvena/Email";
 import { ConnectedApps } from "./ConnectedApps";
+import { hardNavigate } from "@/lib/hard-nav";
 
 type Theme = "system" | "light" | "dark";
 
@@ -165,7 +166,7 @@ export function SettingsPanel({ name: initialName, email, usage, identities }: {
             className="zv-btn"
             onClick={async () => {
               await fetch("/api/auth/logout-all", { method: "POST" }).catch(() => null);
-              location.href = "/";
+              hardNavigate("/");
             }}
           >
             <LogOut />
@@ -192,7 +193,7 @@ export function SettingsPanel({ name: initialName, email, usage, identities }: {
             const res = await fetch("/api/auth/account", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm }) }).catch(() => null);
             if (res?.ok) {
               alert(t("settings.deleted"));
-              location.href = "/";
+              hardNavigate("/");
             } else {
               setError(t("common.error"));
               setBusy(false);

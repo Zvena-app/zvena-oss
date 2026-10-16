@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n-react";
+import { hardNavigate } from "@/lib/hard-nav";
 
 export function SignOutButtons({ signedIn }: { signedIn: boolean }) {
   const { t } = useI18n();
@@ -10,7 +11,7 @@ export function SignOutButtons({ signedIn }: { signedIn: boolean }) {
         <button
           type="button"
           className="zv-btn zv-btn-primary zv-btn-lg zv-btn-block"
-          onClick={() => void fetch("/api/auth/logout", { method: "POST" }).finally(() => (location.href = "/"))}
+          onClick={() => void fetch("/api/auth/logout", { method: "POST" }).finally(() => hardNavigate("/"))}
         >
           {t("nav.signout")}
         </button>

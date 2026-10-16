@@ -20,6 +20,7 @@ import { AssigneePicker, PriorityPicker } from "./pickers";
 import { Link, navigate, setParams, useLoc } from "./router";
 import { Tabs } from "./Screens";
 import { Avatar, confirmDialog, DatePicker, Empty, ErrorState, IconButton, LoadingRows, Menu, Modal, Popover, useFormat, usePopover, type MenuItem } from "./ui";
+import { hardNavigate } from "@/lib/hard-nav";
 
 // --- Shared bits -----------------------------------------------------------------
 
@@ -297,7 +298,7 @@ function FromDocDialog({ teamId, onClose }: { teamId?: string; onClose: () => vo
       toast(
         r.converting ? `${t("doc.done", { p: r.projects.length, i: r.issues.length })} ${t("doc.converting")}` : t("doc.done", { p: r.projects.length, i: r.issues.length }),
         "success",
-        r.converting ? { label: t("doc.openDoc"), run: () => window.location.assign(docUrl) } : undefined,
+        r.converting ? { label: t("doc.openDoc"), run: () => hardNavigate(docUrl) } : undefined,
         r.converting ? 10_000 : undefined
       );
       onClose();

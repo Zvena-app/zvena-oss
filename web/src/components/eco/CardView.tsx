@@ -157,6 +157,7 @@ export function CardView({ card, variant = "row", statusWs, busy, right, onPick,
   return (
     <a className="eco-card eco-row" href={card.url} onClick={click} data-kind={card.kind} data-done={done || canceled || undefined} data-active={active || undefined}>
       {card.image ? (
+        // eslint-disable-next-line @next/next/no-img-element -- a card's own thumbnail from any site (or a file of this workspace); next/image would need every host allow-listed
         <img className="eco-thumb" src={card.image} alt="" loading="lazy" />
       ) : (
         <span className="eco-kind">

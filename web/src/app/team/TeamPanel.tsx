@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n-react";
 import { intlTag } from "@/i18n/locales";
 import type { SessionWorkspace } from "@/lib/session";
 import type { Invite, Member, Role } from "@/lib/workspaces";
+import { hardNavigate } from "@/lib/hard-nav";
 
 const INVITE_ROLES = ["editor", "commenter", "viewer"] as const;
 
@@ -68,7 +69,7 @@ export function TeamPanel({ me, ws, members, invites, inviteDays, startNew, canI
             if (!newName.trim()) return;
             void run(() => call("POST", "/api/ws", { name: newName.trim() }), (d) => {
               const id = (d.workspace as { id: string }).id;
-              location.href = `/team?ws=${encodeURIComponent(id)}`;
+              hardNavigate(`/team?ws=${encodeURIComponent(id)}`);
             });
           }}
         >
@@ -227,7 +228,7 @@ export function TeamPanel({ me, ws, members, invites, inviteDays, startNew, canI
                     className="zv-btn zv-btn-danger"
                     disabled={busy}
                     onClick={() => {
-                      if (window.confirm(t("ws.deleteConfirm", { name: ws.name }))) void run(() => call("DELETE", `/api/ws${q}`), () => (location.href = "/home"));
+                      if (window.confirm(t("ws.deleteConfirm", { name: ws.name }))) void run(() => call("DELETE", `/api/ws${q}`), () => hardNavigate("/home"));
                     }}
                   >
                     <Trash2 />
@@ -241,7 +242,7 @@ export function TeamPanel({ me, ws, members, invites, inviteDays, startNew, canI
                 className="zv-btn zv-btn-danger"
                 disabled={busy}
                 onClick={() => {
-                  if (window.confirm(t("ws.leaveConfirm", { name: ws.name }))) void run(() => call("DELETE", `/api/ws/members${q}`, { userId: me }), () => (location.href = "/home"));
+                  if (window.confirm(t("ws.leaveConfirm", { name: ws.name }))) void run(() => call("DELETE", `/api/ws/members${q}`, { userId: me }), () => hardNavigate("/home"));
                 }}
               >
                 {t("ws.leave")}

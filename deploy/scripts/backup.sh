@@ -20,6 +20,13 @@ command -v gpg >/dev/null || die "gpg is required (apt install gnupg)"
 [ -r "${BACKUP_PASSPHRASE_FILE:-}" ] || die "no passphrase file BACKUP_PASSPHRASE_FILE"
 dir=${BACKUP_DIR:-/var/backups/zvena}
 install -d -m 700 "$dir"
+# One folder per instance: old archives are pruned and .last-ok (monitor.sh) is
+# written per folder, so a stand must not back up into production's.
+instance=${COMPOSE_PROJECT_NAME:-zvena}
+if [ -s "$dir/.instance" ] && [ "$(cat "$dir/.instance")" != "$instance" ]; then
+  die "$dir holds the backups of \"$(cat "$dir/.instance")\", not \"$instance\": set BACKUP_DIR in $ENV_FILE"
+fi
+[ -s "$dir/.instance" ] || echo "$instance" > "$dir/.instance"
 stamp=$(date -u +%Y%m%d-%H%M%S)
 work=$(mktemp -d "$dir/.work-XXXX")
 trap 'rm -rf "$work"' EXIT
@@ -48,7 +55,9 @@ fi
   (cd "$work" && for f in penpot.dump zvena.db files.tar assets.tar; do [ -f "$f" ] && echo "$(sha256sum "$f" | cut -d' ' -f1) $(stat -c %s "$f") $f"; done)
 } > "$work/manifest.txt"
 out="$dir/zvena-$stamp.tar.gpg"
-tar -C "$work" -cf - manifest.txt penpot.dump zvena.db files.tar $( [ -f "$work/assets.tar" ] && echo assets.tar ) \
+parts=(manifest.txt penpot.dump zvena.db files.tar)
+if [ -f "$work/assets.tar" ]; then parts+=(assets.tar); fi
+tar -C "$work" -cf - "${parts[@]}" \
   | gpg --batch --yes --quiet --symmetric --cipher-algo AES256 --pinentry-mode loopback --passphrase-file "$BACKUP_PASSPHRASE_FILE" -o "$out.part"
 mv "$out.part" "$out"
 chmod 600 "$out"

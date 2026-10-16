@@ -119,7 +119,7 @@ export function ChartView({ ctl }: { ctl: DbCtl }) {
   const { data, series } = useMemo<{ data: Datum[]; series: Part[] }>(() => {
     if (!xProp) return { data: [], series: [] };
     const labels = (p: DbProperty) => ({ none: t("db.noGroup", { prop: p.name }), checked: t("db.checked"), unchecked: t("db.unchecked") });
-    const measure = (rows: typeof ctl.rows) => {
+    const measure = (rows: DbCtl["rows"]) => {
       if (yFn === "count" || !yProp) return rows.length;
       const v = calcColumn(yFn, rows, yProp, snap.byId, locale);
       return typeof v === "number" ? v : 0;
