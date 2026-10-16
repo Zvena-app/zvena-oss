@@ -168,9 +168,9 @@ test("reports: an uploaded file can be reported; taking it down deletes and bloc
   const png = await noisePng(12);
   const up = await upload({ bytes: png, name: "bad.png", type: "image/png", cookie: u.cookie, ws: u.ws });
   const name = (up.body.url as string).split("/").pop() as string;
-  const t = parseTarget(`https://zvena.app/api/notes/file/${name}`);
+  const t = parseTarget(`https://zvena.example.com/api/notes/file/${name}`);
   assert.deepEqual(t, { kind: "file", target: name });
-  assert.equal(parseTarget("https://zvena.app/api/notes/file/../../etc"), null);
+  assert.equal(parseTarget("https://zvena.example.com/api/notes/file/../../etc"), null);
 
   // Through the public report endpoint.
   const { POST: report } = await import("@/app/api/report/route");
@@ -241,5 +241,5 @@ INSERT INTO reports (id, kind, target, reason, created_at) VALUES ('r1', 'page',
 test("public forms and pages: the Report abuse link's target is understood by the report endpoint", () => {
   // PublicForm links "/report?url=/f/<id>" (the same on the server and in the browser; checked in e2e docs-server 3b').
   assert.deepEqual(parseTarget("/f/Form1234567"), { kind: "form", target: "Form1234567" });
-  assert.deepEqual(parseTarget(`https://zvena.app/n/${"s".repeat(20)}`), { kind: "page", target: "s".repeat(20) });
+  assert.deepEqual(parseTarget(`https://zvena.example.com/n/${"s".repeat(20)}`), { kind: "page", target: "s".repeat(20) });
 });

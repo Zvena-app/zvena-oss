@@ -106,7 +106,7 @@ test("the server-rendered public page: escaped text, safe links only, no comment
   });
   const snap = validShareSnapshot({ notes: [root, { ...sub, parentId: root.id }], rootId: root.id });
   assert.ok(snap);
-  const html = renderToStaticMarkup(createElement(PublicStatic, { notes: snap.notes, rootId: snap.rootId, options: snap.options, updatedAt: Date.now(), locale: "ru", base: "https://zvena.app", shareId: "s".repeat(20) }));
+  const html = renderToStaticMarkup(createElement(PublicStatic, { notes: snap.notes, rootId: snap.rootId, options: snap.options, updatedAt: Date.now(), locale: "ru", base: "https://zvena.example.com", shareId: "s".repeat(20) }));
   assert.ok(html.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
   assert.ok(!html.includes("<script>alert"));
   assert.ok(html.includes("&lt;img src=x onerror=alert(1)&gt;"));

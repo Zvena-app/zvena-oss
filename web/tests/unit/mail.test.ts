@@ -153,11 +153,11 @@ test("CSS cannot name a resource the sanitizer did not check, and links to zvena
   }
   const ok = sanitizeHtml(`<p style="background:url('https://cdn.example/a(1).png')">x</p>`, { images: true, proxy: (u) => `/api/mail/img?u=${encodeURIComponent(u)}` }).html;
   assert.ok(ok.includes('url(&quot;/api/mail/img?u=https%3A%2F%2Fcdn.example%2Fa%281%29.png&quot;)'), ok);
-  const own = "https://zvena.app";
-  const links = sanitizeHtml('<a href="https://zvena.app/new?kind=design">a</a><a href="https://zvena.app/docs?ws=x#p-1">b</a><a href="https://zvena.app/api/mail/boot?ws=x">c</a><a href="https://elsewhere.example/new">d</a>', { images: false, ownOrigin: own }).html;
-  assert.ok(!links.includes("zvena.app/new") && !links.includes("/api/mail"), "zvena addresses that act on a visit are not links");
-  assert.ok(links.includes('href="https://zvena.app/docs?ws=x#p-1"') && links.includes('href="https://elsewhere.example/new"'));
-  assert.ok(!textToHtml("go https://zvena.app/new?kind=table now", own).includes("<a "), "plain text too");
+  const own = "https://zvena.example.com";
+  const links = sanitizeHtml('<a href="https://zvena.example.com/new?kind=design">a</a><a href="https://zvena.example.com/docs?ws=x#p-1">b</a><a href="https://zvena.example.com/api/mail/boot?ws=x">c</a><a href="https://elsewhere.example/new">d</a>', { images: false, ownOrigin: own }).html;
+  assert.ok(!links.includes("zvena.example.com/new") && !links.includes("/api/mail"), "zvena addresses that act on a visit are not links");
+  assert.ok(links.includes('href="https://zvena.example.com/docs?ws=x#p-1"') && links.includes('href="https://elsewhere.example/new"'));
+  assert.ok(!textToHtml("go https://zvena.example.com/new?kind=table now", own).includes("<a "), "plain text too");
 });
 
 test("plain text becomes safe HTML with links; HTML becomes readable text", () => {

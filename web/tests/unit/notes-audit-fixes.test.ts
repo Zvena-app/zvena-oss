@@ -218,6 +218,6 @@ test("HTML export: a crafted alignment can't break out of the style attribute", 
 
 test("workspace invitation letters relay no live links from what people typed", async () => {
   const { inviteLetter } = await import("@/lib/share");
-  const l = inviteLetter({ from: "Mallory https://evil.example", workspace: "Pay at evil.example", role: "viewer", link: "https://zvena.app/join/x", what: "Invoice www.evil.example", locale: "en" });
+  const l = inviteLetter({ from: "Mallory https://evil.example", workspace: "Pay at evil.example", role: "viewer", link: "https://zvena.example.com/join/x", what: "Invoice www.evil.example", locale: "en" });
   assert.ok(!/evil\.example/.test(l.subject + l.text), l.subject + l.text);
 });

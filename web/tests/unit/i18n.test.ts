@@ -64,10 +64,10 @@ test("i18n: the word typed to delete an account is the one each language's promp
   }
 });
 
-test("i18n: the language cookie is shared with Design across zvena.app, never on localhost or an IP", () => {
-  assert.equal(langCookieDomain("zvena.app"), "zvena.app");
-  assert.equal(langCookieDomain("design.zvena.app"), "zvena.app");
-  assert.equal(langCookieDomain("test-design.zvena.app"), "zvena.app");
+test("i18n: the language cookie is shared with Design across example.com and its subdomains, never on localhost or an IP", () => {
+  assert.equal(langCookieDomain("example.com"), "example.com");
+  assert.equal(langCookieDomain("design.example.com"), "example.com");
+  assert.equal(langCookieDomain("test-design.example.com"), "example.com");
   assert.equal(langCookieDomain("localhost"), null);
   assert.equal(langCookieDomain("127.0.0.1"), null);
   assert.equal(langCookieDomain("localhost:3195"), null);

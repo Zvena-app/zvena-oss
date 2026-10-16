@@ -37,12 +37,12 @@ function publish(ws: string, by: string, options: Record<string, unknown> = {}):
 }
 
 test("hosts: zvena's own hosts, IPs and container names are first-party; anything else is a custom domain", () => {
-  const app = "https://zvena.app";
+  const app = "https://zvena.example.com";
   assert.equal(hostOnly("Docs.Example.COM:443."), "docs.example.com");
   assert.equal(hostOnly("[::1]:3100"), "::1");
-  for (const h of ["zvena.app", "www.zvena.app", "ZVENA.APP:443", "127.0.0.1:3100", "10.0.0.5", "web:3100", "localhost:3100", "app.localhost", "[::1]:3954", ""]) assert.equal(isFirstPartyHost(h, app), true, h);
-  for (const h of ["docs.example.com", "zvena.app.evil.com", "evil-zvena.app", "sites.zvena.app", "test.zvena.app"]) assert.equal(isFirstPartyHost(h, app), false, h);
-  assert.equal(isFirstPartyHost("test.zvena.app", app, "test.zvena.app, other.host"), true);
+  for (const h of ["zvena.example.com", "www.zvena.example.com", "ZVENA.EXAMPLE.COM:443", "127.0.0.1:3100", "10.0.0.5", "web:3100", "localhost:3100", "app.localhost", "[::1]:3954", ""]) assert.equal(isFirstPartyHost(h, app), true, h);
+  for (const h of ["docs.example.com", "zvena.example.com.evil.com", "evil-zvena.example.com", "sites.zvena.example.com", "test.zvena.example.com"]) assert.equal(isFirstPartyHost(h, app), false, h);
+  assert.equal(isFirstPartyHost("test.zvena.example.com", app, "test.zvena.example.com, other.host"), true);
   assert.equal(normalizeDomain(" HTTPS://Docs.Example.com. "), "docs.example.com");
   assert.equal(normalizeDomain("bücher.example"), "xn--bcher-kva.example");
   for (const bad of ["localhost", "1.2.3.4", "docs.example.com/path", "a@b.com", "-x.com", "x..com", "x.123", ""]) assert.equal(normalizeDomain(bad), null, bad);

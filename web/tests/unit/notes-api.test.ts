@@ -80,7 +80,7 @@ test("blocks: Notion block objects ↔ BlockNote blocks", () => {
   const blocks = fromNotionBlocks(
     [
       { object: "block", type: "heading_2", heading_2: { rich_text: [{ type: "text", text: { content: "План" }, annotations: { bold: true, color: "red" } }] } },
-      { type: "paragraph", paragraph: { rich_text: [{ type: "text", text: { content: "сайт", link: { url: "https://zvena.app" } } }], color: "blue_background" } },
+      { type: "paragraph", paragraph: { rich_text: [{ type: "text", text: { content: "сайт", link: { url: "https://zvena.example.com" } } }], color: "blue_background" } },
       { type: "to_do", to_do: { rich_text: [{ text: { content: "Сделать" } }], checked: true } },
       { type: "bulleted_list_item", bulleted_list_item: { rich_text: [{ text: { content: "Пункт" } }], children: [{ type: "paragraph", paragraph: { rich_text: [{ text: { content: "вложено" } }] } }] } },
       { type: "code", code: { language: "javascript", rich_text: [{ text: { content: "let a = 1;" } }] } },
@@ -92,7 +92,7 @@ test("blocks: Notion block objects ↔ BlockNote blocks", () => {
       { type: "column_list", column_list: { children: [{ type: "column", column: { children: [{ type: "paragraph", paragraph: { rich_text: [] } }] } }, { type: "column", column: { children: [] } }] } },
       { type: "toggle", toggle: { rich_text: [{ text: { content: "Скрыто" } }] } },
       { type: "quote", quote: { rich_text: [{ text: { content: "Цитата" } }] } },
-      { type: "bookmark", bookmark: { url: "https://zvena.app" } },
+      { type: "bookmark", bookmark: { url: "https://zvena.example.com" } },
     ],
     ok
   );
@@ -110,7 +110,7 @@ test("blocks: Notion block objects ↔ BlockNote blocks", () => {
   assert.equal(h.rich_text[0].annotations.bold, true);
   assert.equal(h.rich_text[0].annotations.color, "red");
   assert.equal((out[1].paragraph as { color: string }).color, "blue_background");
-  assert.equal((out[1].paragraph as { rich_text: { href: string }[] }).rich_text[0].href, "https://zvena.app");
+  assert.equal((out[1].paragraph as { rich_text: { href: string }[] }).rich_text[0].href, "https://zvena.example.com");
   assert.equal((out[2].to_do as { checked: boolean }).checked, true);
   assert.equal(out[3].has_children, true);
   assert.equal((out[4].code as { language: string }).language, "javascript");

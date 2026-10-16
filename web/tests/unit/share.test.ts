@@ -25,7 +25,7 @@ test("share: addresses are cleaned, deduplicated, and the bad ones reported", ()
 });
 
 test("share: the letter is in the inviter's language, names the role and escapes what people typed", () => {
-  const l = inviteLetter({ from: "Мария <b>", workspace: "Команда", role: "commenter", link: "https://zvena.app/join/abc", what: "План", locale: "ru" });
+  const l = inviteLetter({ from: "Мария <b>", workspace: "Команда", role: "commenter", link: "https://zvena.example.com/join/abc", what: "План", locale: "ru" });
   assert.match(l.subject, /Мария <b> приглашает вас в «Команда»/);
   assert.match(l.text, /комментировать/);
   assert.ok(l.html.includes("Мария &lt;b&gt;") && !l.html.includes("<b>"), "HTML is escaped");

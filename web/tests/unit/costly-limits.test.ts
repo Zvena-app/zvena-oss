@@ -225,9 +225,9 @@ test("own identity: default addresses and the sites CNAME come from APP_URL, nev
     assert.equal(config.company.email, "admin@work.example.org");
     assert.equal(config.company.supportEmail, "admin@work.example.org", "one inbox unless the operator sets more");
   });
-  withEnv({ APP_URL: "https://zvena.app", ZVENA_SITES_CNAME: undefined, ZVENA_SUPPORT_EMAIL: undefined, ZVENA_CONTACT_EMAIL: undefined }, () => {
-    assert.equal(sitesCnameTarget(), "sites.zvena.app");
-    assert.equal(config.company.email, "admin@zvena.app");
+  withEnv({ APP_URL: "https://zvena.example.com", ZVENA_SITES_CNAME: undefined, ZVENA_SUPPORT_EMAIL: undefined, ZVENA_CONTACT_EMAIL: undefined }, () => {
+    assert.equal(sitesCnameTarget(), "sites.zvena.example.com");
+    assert.equal(config.company.email, "admin@zvena.example.com");
   });
   withEnv({ ZVENA_SITES_CNAME: "cname.example.net" }, () => assert.equal(sitesCnameTarget(), "cname.example.net"));
 });
