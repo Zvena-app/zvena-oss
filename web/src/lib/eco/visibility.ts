@@ -16,6 +16,7 @@ import { AccessResolver } from "../notes/access";
 import { accessGeneration } from "../notes/access-events";
 import { calendarPulseVisible, eventKeyVisible } from "../calendar/access";
 import { threadOwner } from "../mail-client/store";
+import { metricReadable } from "../decide/sources";
 
 const TTL = 10_000;
 const teamsCache = new Map<string, { at: number; teams: Set<string> | null }>();
@@ -78,10 +79,12 @@ function pagesOf(userId: string, ws: string): AccessResolver {
  * May this person know about this key? Private teams' issues and projects:
  * their members only; pages: whoever may read them (Documents' access);
  * events: whoever reads their calendar or is their guest (Calendar's access);
- * mail conversations: their owner only; designs and people: every member.
+ * mail conversations: their owner only; numbers: typed and pushed ones every member,
+ * counted ones whoever may see what they count; designs and people: every member.
  */
 export function keyVisible(userId: string, ws: string, key: string): boolean {
   if (key.startsWith("mail:")) return threadOwner(key.slice(5)) === userId;
+  if (key.startsWith("metric:")) return metricReadable(ws, key.slice(7), userId);
   if (key.startsWith("note:")) {
     // One cached resolver per person answers role, existence and level (this runs per event per open tab).
     const acc = pagesOf(userId, ws);

@@ -499,6 +499,8 @@ export function visibleRules(ws: string, userId: string, reactions: Reaction[], 
   const noteOk = (id: string) => docs.level(id) !== null;
   const ruleOk = (r: Reaction) =>
     (r.when.type !== "notes" || noteOk(r.when.db)) &&
+    // A rule on a number counted from what the person cannot see (someone else's mail) is not theirs to know.
+    (r.when.type !== "metric" || metricReadable(ws, r.when.key, userId)) &&
     r.then.every((a) => {
       if ((a.do === "notes.done" || a.do === "notes.set") && a.note !== "$row") return noteOk(a.note);
       if ((a.do === "issue.done" || a.do === "issue.set") && a.issue !== "$subject") return keyVisible(userId, ws, `issue:${a.issue}`);

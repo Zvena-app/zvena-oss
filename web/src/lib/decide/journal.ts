@@ -23,7 +23,7 @@ import { sql } from "../store";
 import { decisionsOf, deleteReaction, ensureSchema, metricsOf, reactionsOf, resolveDecision, visibleRules } from "./engine";
 import { cleanReaction, type Reaction } from "./model";
 import { closeGoalProposals, goalIssueOf, setGoal, type GoalOp } from "./goals";
-import { visibleMetrics } from "./sources";
+import { metricReadable, visibleMetrics } from "./sources";
 
 /** What a hub record did or proposes (kept in dz_decisions.actions). */
 export type HubPayload =
@@ -371,6 +371,8 @@ export function activityOf(ws: string, userId: string, limit = 50): ActivityItem
     if (p?.kind === "goal") {
       // A proposal for an issue that has its goal by now (one set by hand) waits for nobody.
       if (d.status === "pending" && withGoal.has(p.issue)) continue;
+      // A goal on a number the person may not read (someone else's mail) is not theirs to know.
+      if (p.reaction.when.type === "metric" && !metricReadable(ws, p.reaction.when.key, userId)) continue;
       kind = "goal_linked";
       subject = `issue:${p.issue}`;
       if (p.reaction.when.type === "metric" && p.reaction.if.kind === "compare") {
