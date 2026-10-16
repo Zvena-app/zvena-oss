@@ -6,6 +6,7 @@
 // commenters get the same pages read-only.
 
 import { withWs } from "@/lib/notes/workspace";
+import { hardNavigate } from "@/lib/hard-nav";
 import "@blocknote/ariakit/style.css";
 import "./notes.css";
 import "./theme.css";
@@ -743,7 +744,7 @@ export default function NotesApp({ initialUser }: { initialUser?: NotesUser | nu
       openMove: (id: string, anchor: Anchor) => anchor instanceof HTMLElement && setPop({ kind: "move", anchor, id }),
       upload,
       signIn: () => {
-        location.href = `/signin?next=${encodeURIComponent(`/docs${location.hash}`)}`;
+        hardNavigate(`/signin?next=${encodeURIComponent(`/docs${location.hash}`)}`);
       },
       readOnly,
       canComment: !user || user.ws.role !== "viewer",

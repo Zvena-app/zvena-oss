@@ -13,7 +13,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "rm -rf .test-dist && tsc -p tests/tsconfig.json && node --require ./tests/alias.cjs --test .test-dist/tests/unit/*.test.js",
-    "check:no-ai": "node scripts/check-no-ai.mjs"
+    "check:no-ai": "node scripts/check-no-ai.mjs",
+    "check:i18n": "node scripts/i18n.mjs check --strict"
   },
   "dependencies": {
     "@blocknote/ariakit": "0.55.0",

@@ -2246,5 +2246,21 @@
   "auto.onlyIfFieldsAdd": "Propiedad",
   "auto.onlyIfConfirm": "Preguntar siempre a una persona antes",
   "auto.onlyIfHint": "Solo se envían estas propiedades para comprobar la condición, nunca personas, correos electrónicos ni teléfonos. Si la condición se cumple con claridad, la automatización se ejecuta; si hay menos certeza, espera un sí en Automatizaciones, en Inicio; en otro caso, no se ejecuta.",
-  "auto.withOnlyIf": "solo si se cumple la condición"
+  "auto.withOnlyIf": "solo si se cumple la condición",
+  "import.cancel": "Cancelar importación",
+  "import.cancelled": "Importación cancelada. Se conservaron las páginas importadas hasta ahora.",
+  "import.badZip": "Este archivo está dañado o tiene un formato que no se puede leer.",
+  "import.skippedTitle": "Algunos archivos no se importaron",
+  "import.skippedHint": "Páginas importadas: {n}. Estos archivos del archivo comprimido se omitieron:",
+  "import.skippedMore": "…y {n} más",
+  "import.skippedToast": "Importado. Se omitieron {n} archivos del archivo comprimido.",
+  "import.skip.tooLarge": "El archivo es demasiado grande",
+  "import.skip.budget": "Supera el límite de tamaño de la importación (el archivo comprimido se descomprime en demasiados datos)",
+  "import.skip.tooMany": "Demasiados archivos en el archivo comprimido ({n} sin leer)",
+  "import.skip.tooDeep": "Archivo comprimido anidado demasiado profundo",
+  "import.skip.ratio": "Compresión sospechosa (posible bomba ZIP)",
+  "import.skip.corrupt": "Dañado o ilegible",
+  "import.skip.unsupported": "Compresión o formato no compatible",
+  "import.skip.encrypted": "Protegido con contraseña",
+  "import.ok": "Listo"
 }

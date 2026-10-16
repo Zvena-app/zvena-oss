@@ -2246,5 +2246,21 @@
   "auto.onlyIfFieldsAdd": "Properti",
   "auto.onlyIfConfirm": "Selalu tanya orang terlebih dahulu",
   "auto.onlyIfHint": "Hanya properti ini yang dikirim untuk memeriksa kondisi, tidak pernah data orang, e-mail, atau nomor telepon. Jika kondisi jelas terpenuhi, otomatisasi dijalankan; jika kurang yakin, otomatisasi menunggu persetujuan di Otomatisasi pada Beranda; jika tidak, otomatisasi tidak dijalankan.",
-  "auto.withOnlyIf": "hanya jika kondisi terpenuhi"
+  "auto.withOnlyIf": "hanya jika kondisi terpenuhi",
+  "import.cancel": "Batalkan impor",
+  "import.cancelled": "Impor dibatalkan. Halaman yang sudah diimpor tetap disimpan.",
+  "import.badZip": "Arsip ini rusak atau formatnya tidak dapat dibaca.",
+  "import.skippedTitle": "Beberapa file tidak diimpor",
+  "import.skippedHint": "Halaman diimpor: {n}. File dari arsip ini dilewati:",
+  "import.skippedMore": "…dan {n} lainnya",
+  "import.skippedToast": "Diimpor. {n} file dari arsip dilewati.",
+  "import.skip.tooLarge": "File terlalu besar",
+  "import.skip.budget": "Melebihi batas ukuran impor (arsip terurai menjadi data yang terlalu banyak)",
+  "import.skip.tooMany": "Terlalu banyak file dalam arsip ({n} tidak dibaca)",
+  "import.skip.tooDeep": "Arsip bersarang terlalu dalam",
+  "import.skip.ratio": "Kompresi mencurigakan (kemungkinan bom ZIP)",
+  "import.skip.corrupt": "Rusak atau tidak terbaca",
+  "import.skip.unsupported": "Kompresi atau format tidak didukung",
+  "import.skip.encrypted": "Dilindungi kata sandi",
+  "import.ok": "Selesai"
 }

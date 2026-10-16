@@ -2246,5 +2246,21 @@
   "auto.onlyIfFieldsAdd": "属性",
   "auto.onlyIfConfirm": "运行前始终先询问",
   "auto.onlyIfHint": "仅发送这些属性用于检查条件，绝不包含人员、电子邮件或电话。条件明确成立时，自动化会运行；把握不大时，会等待你在首页的“自动化”中确认；否则不会运行。",
-  "auto.withOnlyIf": "仅当条件成立时"
+  "auto.withOnlyIf": "仅当条件成立时",
+  "import.cancel": "取消导入",
+  "import.cancelled": "导入已取消。已导入的页面已保留。",
+  "import.badZip": "此压缩包已损坏或格式无法读取。",
+  "import.skippedTitle": "部分文件未导入",
+  "import.skippedHint": "已导入页面：{n}。压缩包中的以下文件被略过：",
+  "import.skippedMore": "……以及另外 {n} 个",
+  "import.skippedToast": "已导入。压缩包中有 {n} 个文件被略过。",
+  "import.skip.tooLarge": "文件过大",
+  "import.skip.budget": "超出导入大小限制（压缩包解压后数据过多）",
+  "import.skip.tooMany": "压缩包中文件过多（{n} 个未读取）",
+  "import.skip.tooDeep": "压缩包嵌套过深",
+  "import.skip.ratio": "可疑的压缩（可能是 ZIP 炸弹）",
+  "import.skip.corrupt": "已损坏或无法读取",
+  "import.skip.unsupported": "不支持的压缩方式或格式",
+  "import.skip.encrypted": "受密码保护",
+  "import.ok": "完成"
 }

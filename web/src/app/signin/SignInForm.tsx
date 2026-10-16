@@ -8,6 +8,7 @@ import { useState } from "react";
 import { KeyRound, Mail } from "lucide-react";
 import { TermsNote } from "@/components/zvena/TermsNote";
 import { useI18n } from "@/lib/i18n-react";
+import { hardNavigate } from "@/lib/hard-nav";
 
 export interface Providers {
   email: boolean;
@@ -99,7 +100,7 @@ export function ReconsentForm({ next }: { next: string }) {
       <button
         type="button"
         className="zv-btn zv-btn-block"
-        onClick={() => void fetch("/api/auth/logout", { method: "POST" }).finally(() => window.location.assign("/"))}
+        onClick={() => void fetch("/api/auth/logout", { method: "POST" }).finally(() => hardNavigate("/"))}
       >
         {t("consent.signout")}
       </button>

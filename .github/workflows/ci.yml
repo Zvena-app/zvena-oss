@@ -53,7 +53,7 @@ jobs:
       - name: Unit and API tests
         run: npm test
       - name: Translations (all ten languages, same keys and placeholders)
-        run: node scripts/i18n.mjs check --strict
+        run: npm run check:i18n
       - name: Decision model only in lib/decide/smart.ts
         run: npm run check:no-ai
       - name: Production build

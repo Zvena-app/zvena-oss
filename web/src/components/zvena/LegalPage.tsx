@@ -3,7 +3,6 @@
 // ZVENA_COMPANY_* is set, see deploy/.env.example).
 
 import type { ReactNode } from "react";
-import { config } from "@/lib/config";
 import { pageUser } from "@/lib/page";
 import { PublicFooter, PublicHeader } from "./PublicChrome";
 

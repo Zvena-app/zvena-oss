@@ -2246,5 +2246,21 @@
   "auto.onlyIfFieldsAdd": "Propriété",
   "auto.onlyIfConfirm": "Toujours demander d’abord à une personne",
   "auto.onlyIfHint": "Seules ces propriétés sont envoyées pour vérifier la condition, jamais les personnes, e-mails ou téléphones. Si la condition est clairement remplie, l’automatisation s’exécute ; si elle l’est moins, elle attend un accord dans Automatisations sur Accueil ; sinon, elle ne s’exécute pas.",
-  "auto.withOnlyIf": "uniquement si la condition est remplie"
+  "auto.withOnlyIf": "uniquement si la condition est remplie",
+  "import.cancel": "Annuler l’import",
+  "import.cancelled": "Import annulé. Les pages déjà importées ont été conservées.",
+  "import.badZip": "Cette archive est endommagée ou dans un format illisible.",
+  "import.skippedTitle": "Certains fichiers n’ont pas été importés",
+  "import.skippedHint": "Pages importées : {n}. Ces fichiers de l’archive ont été laissés de côté :",
+  "import.skippedMore": "…et {n} de plus",
+  "import.skippedToast": "Importé. {n} fichiers de l’archive ont été laissés de côté.",
+  "import.skip.tooLarge": "Le fichier est trop volumineux",
+  "import.skip.budget": "Dépasse la limite de taille de l’import (l’archive se décompresse en trop de données)",
+  "import.skip.tooMany": "Trop de fichiers dans l’archive ({n} non lus)",
+  "import.skip.tooDeep": "Archive imbriquée trop profondément",
+  "import.skip.ratio": "Compression suspecte (bombe ZIP possible)",
+  "import.skip.corrupt": "Endommagé ou illisible",
+  "import.skip.unsupported": "Compression ou format non pris en charge",
+  "import.skip.encrypted": "Protégé par mot de passe",
+  "import.ok": "Terminé"
 }
