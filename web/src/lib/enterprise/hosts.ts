@@ -127,7 +127,7 @@ export function normalizeDomain(raw: unknown): string | null {
   return host;
 }
 
-/** Whether `host` is `base` or under it ("docs.zvena.app" is under "zvena.app"). */
+/** Whether `host` is `base` or under it ("docs.example.com" is under "example.com"). */
 export function isSameOrSub(host: string, base: string): boolean {
   return Boolean(base) && (host === base || host.endsWith(`.${base}`));
 }

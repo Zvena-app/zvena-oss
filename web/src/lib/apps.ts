@@ -3,7 +3,7 @@
 // the phone apps (clients/mobile: Capacitor). Browser-only helpers, plus the
 // pure link mapping the tests cover.
 
-/** The app's link for a page of this site: https://zvena.app/docs?ws=a#Page → zvena://docs?ws=a#Page (null: another site). */
+/** The app's link for a page of this site: https://example.com/docs?ws=a#Page → zvena://docs?ws=a#Page (null: another site). */
 export function desktopLink(href: string, origin: string): string | null {
   try {
     const u = new URL(href, origin);

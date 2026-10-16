@@ -8,7 +8,7 @@
 //   TXT    _zvena-site.docs.example.com = "zvena-site=<token>" (for a bare
 //          domain, whose A record then points at this server)
 //
-// Both carry the claim's own secret: a CNAME to the shared sites.zvena.app
+// Both carry the claim's own secret: a CNAME to the shared sites.example.com
 // alone proves nothing (anyone could claim a domain whose old CNAME was left
 // dangling), so it routes but does not verify. A domain is verified by one
 // workspace at a time; other claims stay pending. Once verified, requests

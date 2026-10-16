@@ -75,9 +75,9 @@ export function designFileKey(r: Ref): string | null {
 }
 
 export interface Origins {
-  /** zvena's own origin (https://zvena.app). */
+  /** zvena's own origin (https://example.com). */
   app: string;
-  /** Design's origin (https://design.zvena.app), when it has one. */
+  /** Design's origin (https://design.example.com), when it has one. */
   design?: string;
 }
 

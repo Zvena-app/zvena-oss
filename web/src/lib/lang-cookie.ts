@@ -7,8 +7,8 @@ import type { Locale } from "@/i18n/locales";
 export const UI_LANG_COOKIE = "zv_lang";
 
 /**
- * The domain the language cookie is shared on: zvena.app for zvena.app and its
- * subdomains (Design on design.zvena.app reads it too), none for localhost or an IP.
+ * The domain the language cookie is shared on: example.com for example.com and its
+ * subdomains (Design on design.example.com reads it too), none for localhost or an IP.
  */
 export function langCookieDomain(host: string): string | null {
   const h = host.toLowerCase().replace(/:\d+$/, "");

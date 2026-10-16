@@ -33,7 +33,7 @@ export function I18nProvider({ initialLocale, messages, children }: { initialLoc
   });
   const [locale, setLocale] = useState<Locale>(initialLocale);
   // A language chosen before the cookie was shared with Design (host-only, so
-  // design.zvena.app never saw it) is written again, shared, once a session.
+  // design.example.com never saw it) is written again, shared, once a session.
   useEffect(() => {
     try {
       if (!langCookieDomain(location.hostname) || sessionStorage.getItem("zv-lang-shared")) return;

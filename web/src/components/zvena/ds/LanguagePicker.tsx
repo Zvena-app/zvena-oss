@@ -2,7 +2,7 @@
 
 // The interface language, from anywhere: the rail's footer and the public
 // site. The choice is a cookie (zv_lang, read by the server for the first
-// paint, shared with Design on Domain=zvena.app); the page reloads in the new language.
+// paint, shared with Design on Domain=example.com); the page reloads in the new language.
 
 import { Globe } from "lucide-react";
 import { writeLangCookie } from "@/lib/i18n";

@@ -21,8 +21,8 @@ function hostOf(origin: string): string {
 /**
  * Same-site comparison: host (+port) must match, scheme is ignored.
  * The site sits behind a TLS-terminating proxy (Cloudflare → nginx over
- * plain HTTP), so the backend routinely sees `http://zvena.app`
- * while the browser sends `Origin: https://zvena.app`. Rejecting on
+ * plain HTTP), so the backend routinely sees `http://example.com`
+ * while the browser sends `Origin: https://example.com`. Rejecting on
  * scheme mismatch 403s every real user POST (observed live: all /api/chat
  * from the public origin returned `{"error":"forbidden origin"}`). An
  * attacker's origin never shares our host, so host comparison keeps the
