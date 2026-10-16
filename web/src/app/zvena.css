@@ -167,7 +167,7 @@ h1, h2, h3 { font-family: var(--zv-font); font-weight: 700; letter-spacing: -0.0
 .zv-btn-lg { height: 40px; padding: 0 18px; font-size: 15px; border-radius: 6px; }
 .zv-btn-sm { height: 28px; padding: 0 10px; font-size: 14px; border-radius: 4px; }
 .zv-btn-block { width: 100%; }
-/* Sign-in provider buttons: neutral, as Google's and GitHub's brand rules ask. */
+/* Sign-in method buttons (single sign-on). */
 .zv-btn-provider { gap: 10px; font-weight: 500; }
 .zv-btn-provider svg { width: 18px; height: 18px; }
 .zv-or { display: flex; align-items: center; gap: 12px; color: var(--zv-text-3); font-size: 13px; margin: 6px 0; }

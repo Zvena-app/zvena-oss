@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 // POST /api/internal/design-events   x-zvena-key: ZVENA_INTERNAL_KEY
 // { "events": [{ "team": "<penpot team uuid>", "file": "<file uuid>", "name": "update-file",
-//                "login": "u-<id>@users.zvena.app" }, …] }   (up to 100)
+//                "login": "u-<id>@users.zvena.invalid" }, …] }   (up to 100)
 // → { delivered: n }
 //
 // Design's backend (app.zvena.*) reports what changed in a team; the team's

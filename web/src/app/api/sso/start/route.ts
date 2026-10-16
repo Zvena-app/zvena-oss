@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 // GET /api/sso/start?email=…&next=…  (or ?ws=<workspace>) → the workspace's
 // identity provider. The address picks the workspace by its verified domain.
 // The SSO button sits next to "By continuing, you agree to the Terms…", so
-// the Terms version travels with the sign-in, as with Google and GitHub.
+// the Terms version travels with the sign-in, as with the e-mail link.
 export async function GET(req: Request) {
   const rl = rateLimited(req, "auth-start");
   if (rl) return rl;

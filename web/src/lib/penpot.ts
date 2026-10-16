@@ -4,7 +4,8 @@
 // mirrors them. Calls go to the Penpot backend's internal management API
 // (zvena/design: backend/src/app/zvena/management.clj), loopback / docker
 // network only, authenticated with a shared key (PENPOT_MGMT_KEY). Design
-// knows a person by a technical login "u-<id>@users.zvena.app": no real
+// knows a person by a technical login "u-<id>@users.zvena.invalid" (a domain
+// that never receives mail; PENPOT_EMAIL_DOMAIN overrides it): no real
 // e-mail or name beyond the display name is copied into it.
 //
 // Every call is best effort with a timeout: Design being down never breaks
@@ -20,7 +21,7 @@ export function designConfigured(): boolean {
 }
 
 export function designLogin(userId: string): string {
-  const domain = (process.env.PENPOT_EMAIL_DOMAIN || "users.zvena.app").trim();
+  const domain = (process.env.PENPOT_EMAIL_DOMAIN || "users.zvena.invalid").trim();
   return `u-${userId}@${domain}`;
 }
 

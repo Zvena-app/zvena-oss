@@ -5,7 +5,7 @@
 // client_secret_basic), userinfo endpoint; no id_token (Penpot reads claims
 // from /userinfo). Codes are one-time and live 2 minutes; access tokens are
 // HMAC-signed and live 10 minutes (used once, right after the exchange).
-// Design learns only a technical login (u-<id>@users.zvena.app), the display
+// Design learns only a technical login (u-<id>@users.zvena.invalid), the display
 // name, the id and the interface language (`locale`, from the zv_lang cookie
 // at /authorize) — not the person's real e-mail or provider identities.
 

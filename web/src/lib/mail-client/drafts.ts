@@ -70,7 +70,7 @@ export function saveDraft(userId: string, id: string, raw: unknown): Draft | nul
     // Another mailbox now: the old one's copy goes.
     if (prev.account_id && prev.account_id !== d.accountId && prev.imap_uid) enqueueOp(prev.account_id, "draft-delete", [], { items: [], draftId: id, raw: JSON.stringify({ folder: prev.imap_folder, uid: prev.imap_uid }) });
     sql("UPDATE mail_drafts SET account_id = ?, json = ?, updated_at = ? WHERE id = ?").run(d.accountId || null, json, now, id);
-  } else sql("INSERT INTO mail_drafts (id, user_id, account_id, json, msgid, updated_at) VALUES (?, ?, ?, ?, ?, ?)").run(id, userId, d.accountId || null, json, newMessageId(acct?.email ?? "x@zvena.app"), now);
+  } else sql("INSERT INTO mail_drafts (id, user_id, account_id, json, msgid, updated_at) VALUES (?, ?, ?, ?, ?, ?)").run(id, userId, d.accountId || null, json, newMessageId(acct?.email ?? "x@localhost"), now);
   if (acct) {
     // One pending save per draft: the newest text wins.
     sql("DELETE FROM mail_ops WHERE account_id = ? AND kind = 'draft-save' AND json_extract(arg, '$.draftId') = ?").run(acct.id, id);

@@ -90,7 +90,8 @@ No proprietary Linear code, logos, trademarks or illustrations are used.
 zvena Design is a modified Penpot 2.18.3, © Kaleidos INC and contributors,
 under the Mozilla Public License 2.0 (`design/src/LICENSE`). Penpot's license
 headers are kept in every file we changed; files we added carry the MPL 2.0
-header. The modified source is published at https://zvena.app/source.
+header. The modified source is `design/src/` in this repository (each server also
+links the source of the version it runs on its `/source` page).
 
 ### figma-squircle — smooth corner geometry
 

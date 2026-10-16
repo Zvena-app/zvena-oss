@@ -57,7 +57,7 @@ sudo mkdir -p /opt/zvena && cd /opt/zvena
 sudo git clone https://github.com/Zvena-app/zvena-oss.git src && cd src
 sudo git fetch origin tag penpot-2.18.3     # Design's build compares against it
 sudo deploy/scripts/init-env.sh             # /etc/zvena/zvena.env with fresh secrets
-sudoedit /etc/zvena/zvena.env               # domains, sign-in keys, mail, your legal pages
+sudoedit /etc/zvena/zvena.env               # domains, SMTP mail, your legal pages
 sudo deploy/scripts/up.sh
 ```
 

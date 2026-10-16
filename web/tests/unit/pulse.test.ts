@@ -374,7 +374,7 @@ test("design events: Design's backend reports a file change, the team's workspac
   const post = (key: string, events: unknown[]) =>
     POST(new Request("http://x/api/internal/design-events", { method: "POST", headers: { "x-zvena-key": key, "content-type": "application/json" }, body: JSON.stringify({ events }) }));
   assert.equal((await post("wrong", [{ team, file }])).status, 403);
-  const login = `u-${"a".repeat(24)}@users.zvena.app`;
+  const login = `u-${"a".repeat(24)}@users.zvena.invalid`;
   const res = await post("k".repeat(40), [{ team, file, name: "update-file", login }, { team, file, name: "update-file" }, { team: "not-a-uuid", file }]);
   assert.deepEqual(await res.json(), { delivered: 2 });
   await tick(20);

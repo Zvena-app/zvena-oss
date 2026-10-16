@@ -33,7 +33,7 @@ function applyTheme(theme: Theme) {
   document.documentElement.style.colorScheme = dark ? "dark" : "light";
 }
 
-const PROVIDER: Record<string, string> = { google: "Google", github: "GitHub", email: "Email link", dev: "Test sign-in", sso: "SSO" };
+const PROVIDER: Record<string, string> = { email: "Email link", dev: "Test sign-in", sso: "SSO" };
 
 export function SettingsPanel({ name: initialName, email, usage, identities }: { name: string; email?: string; usage: Usage; identities: string[] }) {
   const { t, locale, setLocale } = useI18n();

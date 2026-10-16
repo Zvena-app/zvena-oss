@@ -25,7 +25,7 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
       {state === "error" && <p className="zv-banner zv-banner-error">{t("common.error")}</p>}
       <label className="zv-field">
         <span className="zv-label">{t("report.target")}</span>
-        <input className="zv-input" required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://zvena.app/n/…" />
+        <input className="zv-input" required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/n/…" />
       </label>
       <label className="zv-field">
         <span className="zv-label">{t("report.reason")}</span>

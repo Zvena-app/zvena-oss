@@ -5,7 +5,7 @@ import { docsUsage } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/internal/usage?login=u-<id>@users.zvena.app → { quota, docs }
+// GET /api/internal/usage?login=u-<id>@users.zvena.invalid → { quota, docs }
 // For Design's backend (app.zvena.limits): the account's quota and what its
 // documents and files take. Internal: the shared key ZVENA_INTERNAL_KEY in
 // x-zvena-key; the public nginx never routes /api/internal/.

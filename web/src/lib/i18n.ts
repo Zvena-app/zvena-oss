@@ -39,7 +39,7 @@ const ru = {
 
   "brand.tagline": "Бесплатное рабочее пространство для дизайна, документов и проектов",
 
-  "landing.lead": "zvena объединяет редактор интерфейсов и документы с базами данных. Макеты, прототипы, спецификации и база знаний команды — в одном месте, с общими ролями. Бесплатно для всех.",
+  "landing.lead": "zvena объединяет редактор интерфейсов и документы с базами данных. Макеты, прототипы, спецификации и база знаний команды — в одном месте, с общими ролями.",
   "landing.terms": "Продолжая, вы принимаете {terms} и {privacy}.",
 
   "signin.title": "Вход в zvena",
@@ -675,7 +675,7 @@ const en: Record<MessageKey, string> = {
 
   "brand.tagline": "The free workspace for design, docs and projects",
 
-  "landing.lead": "zvena brings a professional interface design tool and powerful docs with databases into one place — with one team and one set of roles. Free for everyone.",
+  "landing.lead": "zvena brings a professional interface design tool and powerful docs with databases into one place — with one team and one set of roles.",
   "landing.terms": "By continuing, you agree to the {terms} and acknowledge the {privacy}.",
 
   "signin.title": "Sign in to zvena",

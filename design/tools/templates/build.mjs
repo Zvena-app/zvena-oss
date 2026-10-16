@@ -68,7 +68,7 @@ try {
   await Promise.all([page.waitForNavigation(), page.click('form[action="/api/auth/dev"] button[type=submit]')]);
   const me = await page.evaluate(() => fetch("/api/auth/session").then((r) => r.json()));
   const ws = me.user.ws.id;
-  const login = `u-${me.user.id}@${process.env.PENPOT_EMAIL_DOMAIN || "users.zvena.app"}`;
+  const login = `u-${me.user.id}@${process.env.PENPOT_EMAIL_DOMAIN || "users.zvena.invalid"}`;
 
   // One file per template; a failed run (the editor still settling) retries
   // in a fresh file.

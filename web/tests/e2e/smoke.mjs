@@ -15,7 +15,7 @@ try {
   check("sign-in shows the Terms line", (await page.locator(".zv-terms").first().innerText()).includes("Terms of Service"));
   await devSignIn(page, ANNA);
   check("sign-in → home", page.url().includes("/home"), page.url());
-  // Home (Linear-style since rc-next3): the page is titled Home; the account's name is in the workspace menu (the rail's header).
+  // Home: the page is titled Home; the account's name is in the workspace menu (the rail's header).
   await page.click(".ds-ws-btn");
   check("home shows, signed in as Anna", /home/i.test((await page.locator("h1").first().textContent()) ?? "") && (await page.locator(".zv-user-name").first().textContent())?.includes("Anna"));
   await page.keyboard.press("Escape");

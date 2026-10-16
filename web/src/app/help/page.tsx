@@ -49,7 +49,7 @@ export default async function HelpPage() {
       <h2 id="start">Getting started</h2>
       <ol className="zc-steps">
         <li>
-          <b>Sign in without a password.</b> Continue with Google, GitHub, or enter your email and we&apos;ll send you a one-time sign-in link. The same email address
+          <b>Sign in without a password.</b> Enter your email and you&apos;ll get a one-time sign-in link, or use your organization&apos;s single sign-on. The same email address
           always leads to the same account.
         </li>
         <li>
