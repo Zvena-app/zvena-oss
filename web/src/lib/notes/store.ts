@@ -57,6 +57,14 @@ const GUEST_KEY = "guest";
  * next load takes the newer copy.
  */
 const JOURNAL_KEY = "zvena-docs-unsaved";
+/** An account's unsent edits put aside (kv key + owner) while it is signed out or another account uses this browser. */
+const HELD_PREFIX = "held:";
+
+interface Held {
+  notes: Note[];
+  deleted: string[];
+  fields: Record<string, string[]>;
+}
 
 interface Journal {
   owner: string;
@@ -257,11 +265,14 @@ export class NotesStore {
   }
 
   /** The journal's notes newer than IndexedDB's (the page went away before its write finished) come back as local edits. */
-  private replayJournal(): void {
+  private async replayJournal(): Promise<void> {
     const j = readJournal();
     if (!j) return;
     if (j.owner !== this.meta.owner) {
-      // Another account's or workspace's notes: never into this store (this one's own load clears it).
+      // Another account's or workspace's edits: never into this store, and not
+      // left readable in localStorage either — aside for that owner (adoptHeld).
+      if (j.owner !== "") await this.putHeld(j.owner, { notes: j.notes.filter((n) => n && typeof n.id === "string"), deleted: [], fields: j.fields ?? {} });
+      writeJournal(null);
       return;
     }
     let taken = false;
@@ -319,7 +330,7 @@ export class NotesStore {
       } catch {
         // A broken store still lets the workspace run in memory.
       }
-      this.replayJournal();
+      await this.replayJournal();
     } else {
       this.setSaveState("memory");
     }
@@ -617,6 +628,75 @@ export class NotesStore {
     this.lastSig.clear();
     this.lastSnap.clear();
     this.emit();
+  }
+
+  /**
+   * The account signs out (or another one opens here) with edits not yet on
+   * the server: they are put aside under its name — never shown to whoever
+   * uses this browser next — and come back when it signs in again (adoptHeld).
+   */
+  async holdUnsent(): Promise<void> {
+    const owner = this.meta.owner;
+    if (!owner || this.detached) return;
+    this.takeHeldEdits();
+    const ids = this.meta.pending.filter((id) => this.notes.has(id));
+    if (ids.length === 0 && this.meta.deleted.length === 0) return;
+    const keep = new Set(ids);
+    const fields = Object.fromEntries(Object.entries(this.meta.fields ?? {}).filter(([id]) => keep.has(id)));
+    await this.putHeld(owner, { notes: ids.map((id) => this.notes.get(id) as Note), deleted: [...this.meta.deleted], fields });
+  }
+
+  private async putHeld(owner: string, add: Held): Promise<void> {
+    if (!this.db) return;
+    try {
+      const t = this.db.transaction("kv", "readwrite");
+      const kv = t.objectStore("kv");
+      const got = kv.get(HELD_PREFIX + owner);
+      got.onsuccess = () => {
+        const prev = (got.result as Held | undefined) ?? { notes: [], deleted: [], fields: {} };
+        const ids = new Set(add.notes.map((n) => n.id));
+        kv.put({ notes: [...prev.notes.filter((n) => !ids.has(n.id)), ...add.notes], deleted: union(prev.deleted, add.deleted), fields: { ...prev.fields, ...add.fields } } satisfies Held, HELD_PREFIX + owner);
+      };
+      await txDone(t);
+    } catch {
+      // Nowhere to keep them: they go, as before this existed.
+    }
+  }
+
+  /** This owner's edits put aside earlier come back as unsent local edits (a newer copy here wins). */
+  async adoptHeld(): Promise<void> {
+    const owner = this.meta.owner;
+    if (!owner || !this.db || this.detached) return;
+    let held: Held | undefined;
+    try {
+      held = await reqDone(this.db.transaction("kv", "readonly").objectStore("kv").get(HELD_PREFIX + owner) as IDBRequest<Held | undefined>);
+    } catch {
+      return;
+    }
+    if (!held) return;
+    for (const n of held.notes) {
+      const cur = this.notes.get(n.id);
+      if (cur && cur.updatedAt > n.updatedAt) continue;
+      this.notes.set(n.id, n);
+      this.dirty.add(n.id);
+      this.unsaved.add(n.id);
+      const had = this.meta.fields?.[n.id] ?? [];
+      const mine = held.fields[n.id] ?? ["*"];
+      const fields = had.includes("*") || mine.includes("*") ? ["*"] : [...new Set([...had, ...mine])];
+      this.meta = { ...this.meta, pending: union(this.meta.pending, [n.id]), fields: { ...(this.meta.fields ?? {}), [n.id]: fields } };
+    }
+    this.meta = { ...this.meta, deleted: union(this.meta.deleted, held.deleted) };
+    for (const id of held.deleted) if (this.notes.delete(id)) this.removed.add(id);
+    this.emit();
+    await this.flush();
+    if (this.detached || this.dirty.size > 0) return;
+    try {
+      const t = this.db.transaction("kv", "readwrite");
+      t.objectStore("kv").delete(HELD_PREFIX + owner);
+      await txDone(t);
+    } catch {
+      // Taken again next time (an older copy loses to the one here).
+    }
   }
 
   /** Before a shared workspace opens: keeps a guest's pages aside (they never go into a shared workspace). */

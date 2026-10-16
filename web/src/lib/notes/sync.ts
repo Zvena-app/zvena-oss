@@ -92,9 +92,12 @@ export class NotesSync {
         // Guest documents move into the personal workspace: upload everything once.
         this.store.saveMeta({ owner: key, cursor: 0, pending: this.store.all().map((n) => n.id) });
       } else if (owner !== key) {
+        // The previous account's unsent edits wait aside for it, never shown here.
+        await this.store.holdUnsent();
         await this.store.reset(key);
       }
       if (target.adoptGuest) await this.store.adoptGuestStash();
+      await this.store.adoptHeld();
       this.set({ user: key });
       this.stopped = false;
       this.store.onLocalChange = () => this.schedulePush();
@@ -114,8 +117,12 @@ export class NotesSync {
       window.addEventListener("offline", this.onOffline);
     } else {
       // Signed out (or the session expired). The account's notes stay on the
-      // server; this browser forgets them unless it holds unsent edits.
-      if (owner !== "" && this.store.meta.pending.length === 0 && this.store.meta.deleted.length === 0) await this.store.reset("");
+      // server and this browser forgets them; unsent edits wait aside for the
+      // account's next sign-in (whoever uses this browser meanwhile never sees them).
+      if (owner !== "") {
+        await this.store.holdUnsent();
+        await this.store.reset("");
+      }
       // A guest's favorites stay on the pages of the local workspace.
       this.store.setFavorites(null);
       this.store.onFavorite = null;

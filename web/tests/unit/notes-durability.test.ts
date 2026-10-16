@@ -4,6 +4,7 @@ import "./env";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { NotesStore } from "@/lib/notes/store";
+import { NotesSync } from "@/lib/notes/sync";
 
 // ---------------------------------------------------------------------------
 // A small in-memory IndexedDB (what store.ts uses of it) whose writes can be
@@ -227,4 +228,48 @@ test("without IndexedDB the store says it keeps nothing", async () => {
   } finally {
     (globalThis as { indexedDB?: unknown }).indexedDB = saved;
   }
+});
+
+test("signed out with unsent edits: the next visitor sees none of the account's pages; the account gets them back", async () => {
+  fresh();
+  const a = new NotesStore();
+  await a.load();
+  await a.reset("ann@example.com:ws1");
+  a.saveMeta({ owner: "ann@example.com:ws1" });
+  const n = a.create({ kind: "page", title: "Salary plan" });
+  // The tab closes before IndexedDB has the edit: only the journal has it.
+  mode.hang = true;
+  a.persistNow();
+  await tick();
+  mode.hang = false;
+
+  // Signed out (another tab, the session expired): the next load starts signed out.
+  const b = new NotesStore();
+  await b.load();
+  await new NotesSync(b).start(null);
+  assert.equal(b.all().length, 0);
+  assert.equal(b.meta.owner, "");
+  assert.equal(local.size, 0);
+
+  // Ann signs in again: her unsent page is back and goes out.
+  await b.reset("ann@example.com:ws1");
+  await b.adoptHeld();
+  assert.equal(b.get(n.id)?.title, "Salary plan");
+  assert.ok(b.meta.pending.includes(n.id));
+});
+
+test("another account's journal is put aside for it, not left in localStorage", async () => {
+  fresh();
+  const a = new NotesStore();
+  await a.load();
+  const n = a.create({ kind: "page", title: "Guest page" });
+  await a.flush();
+  local.set("zvena-docs-unsaved", JSON.stringify({ owner: "bob@example.com:ws2", notes: [{ ...a.get(n.id), id: "bob-1", title: "Bob's draft", updatedAt: Date.now() }] }));
+  const b = new NotesStore();
+  await b.load();
+  assert.equal(b.get("bob-1"), undefined);
+  assert.equal(local.size, 0);
+  await b.reset("bob@example.com:ws2");
+  await b.adoptHeld();
+  assert.equal(b.get("bob-1")?.title, "Bob's draft");
 });
