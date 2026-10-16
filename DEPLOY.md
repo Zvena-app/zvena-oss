@@ -291,7 +291,7 @@ If you installed from a package, `install.sh --start` has already written this t
 
 Every 5 minutes `monitor.sh` checks:
 
-- the app's health (`/api/health`: web, database, files, Design, e-mail);
+- the app's health (`/api/health`: web, database, files, Design, e-mail) — its `ok` (and HTTP 200/503) is readiness: false when the database, the files volume or Design is down; a part that only works with limits (the files volume short of `ZVENA_MIN_FREE_BYTES`, mail whose last letter or SMTP login failed) leaves `ok` true but is reported as `degraded` here and on the status page (`status`: operational / degraded / partial_outage / major_outage). E-mail reads `unverified` while it is set up but nothing has shown yet that it works: a letter that went out or, for SMTP, a login check (never a letter) at most every 30 minutes;
 - both public HTTPS addresses (`APP_URL`, `DESIGN_URL`);
 - free disk space;
 - the age of the last backup.
@@ -301,7 +301,8 @@ When the state changes (outage / back to normal) it e-mails `ALERT_EMAIL` throug
 Logs:
 
 - **Service logs**: `cd /opt/zvena/src/deploy && sudo docker compose --env-file /etc/zvena/zvena.env -f docker-compose.yml -f docker-compose.prod.yml logs --tail 200 web`. Rotated at 20 MB × 5.
-- **Caddy's request log**: the `caddy-data` volume, file `logs/access.log`, kept 30 days. IP addresses are cut to /16; cookies, tokens, OAuth codes and the Referer are removed.
+- **Caddy's request log**: the `caddy-data` volume, file `logs/access.log`, kept 30 days. IP addresses are cut to /16; cookies, the Authorization header and the Referer are removed; a URL keeps its shape but every private link's secret (invite, share, booking, RSVP and calendar-feed tokens, public form and published-page ids, file hashes, signed links) and every query value that carries a secret or what someone typed (`code`, `state`, `token`, `next`, `sig`, `q`, `email`, …) reads `***`. Caddy's own log (`docker compose logs caddy`, where a failed request appears too) goes through the same filter. `deploy/caddy/test-log-masking.sh` (docker) proves it against the real Caddyfile.
+- **Design's nginx** (`logs design-frontend`) writes the path without its query string and without the Referer.
 - **The web app** logs only counters and error codes, never names, e-mail addresses or content.
 
 ## 13. Fonts

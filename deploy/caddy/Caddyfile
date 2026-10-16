@@ -2,6 +2,8 @@
 # the web app and Design. Domains and the ACME e-mail come from .env.
 # Access log: client addresses cut to /16 (IPv4) and /32 (IPv6), no cookies,
 # tokens or OAuth codes — the log holds no personal data (privacy policy).
+# The same filter covers Caddy's own log (stderr → docker logs), where a
+# failed request is written with its address and URL too.
 #
 # Custom domains of published sites (Notion Sites → Custom domain, see
 # DEPLOY.md "Custom domains for sites"): any other host name that reaches
@@ -9,8 +11,53 @@
 # but only when the web app says it is a verified, live site domain (the
 # "ask" endpoint answers 200 for those and 404 for everything else, so
 # nobody can make Caddy fetch certificates for arbitrary names).
+
+# What any log line may say about a request (see the top of this file). It
+# stands above the global options: their `log default` imports it, and an
+# import finds only a snippet defined above it.
+# A URL keeps its shape and loses its secrets: a path segment that is a
+# capability (the link itself is the key) and the value of a query parameter
+# that carries a secret or a person's data become "***" — none of the secret
+# stays. One rule for request>uri: a field takes one filter (a second line
+# for the same field replaces the first), so the query parameters are in the
+# same expression. deploy/caddy/test-log-masking.sh proves it.
+#   Paths: /join/<token> (workspace invite), /share/<token> (page invite),
+#   /f/<id> and /api/notes/form/<id> (public form), /n/<id> (published page),
+#   /api/notes/file/<hash>.<ext> (a page's file: the hash is the key),
+#   /cal/<slug>/<token> and /cal/invite/<token> (a booking, an RSVP),
+#   /api/calendar/feed/<token>.ics, /api/calendar/invite/<token>,
+#   /api/calendar/public/<slug>/booking/<token>/….
+#   Query: OAuth (code, state), sign-in links (token, next — a path that may
+#   hold one of the links above), signed links (sig, s, key, t — a booking's
+#   token), Design's share links (share-id), what people type or paste (q,
+#   email, emails, filter, name, url, u, note, download — a file's name).
+(log-filter) {
+	format filter {
+		request>remote_ip ip_mask 16 32
+		request>client_ip ip_mask 16 32
+		request>headers>Cookie delete
+		request>headers>Authorization delete
+		request>headers>X-Forwarded-For delete
+		request>headers>X-Real-Ip delete
+		request>headers>Cf-Connecting-Ip delete
+		request>headers>Cf-Connecting-Ipv6 delete
+		request>headers>True-Client-Ip delete
+		request>headers>Referer delete
+		request>headers>X-Zvena-Key delete
+		request>headers>X-File-Name delete
+		request>headers>X-Name delete
+		request>uri regexp `(?i)(/(?:join|share|f|n|cal/[^/?#]+|api/calendar/(?:feed|invite|public/[^/?#]+/booking)|api/notes/(?:form|file))/)[^/?#.]+|([?&](?:code|state|token|device_id|access_token|id_token|password|secret|signature|sig|s|key|t|next|login|share-id|q|email|emails|filter|name|url|u|note|download)=)[^&#]*` "${1}${2}***"
+		resp_headers>Set-Cookie delete
+		resp_headers>Location delete
+	}
+}
+
 {
 	email {$ACME_EMAIL}
+	log default {
+		output stderr
+		import log-filter
+	}
 	# Behind Cloudflare the TCP peer is a Cloudflare edge: the visitor's address
 	# comes from Cf-Connecting-Ip, and only from these ranges
 	# (https://www.cloudflare.com/ips), so the log's client_ip is the visitor's,
@@ -41,26 +88,7 @@
 			roll_keep 10
 			roll_keep_for 720h
 		}
-		format filter {
-			request>remote_ip ip_mask 16 32
-			request>client_ip ip_mask 16 32
-			request>headers>Cookie delete
-			request>headers>Authorization delete
-			request>headers>X-Forwarded-For delete
-			request>headers>X-Real-Ip delete
-			request>headers>Cf-Connecting-Ip delete
-			request>headers>Cf-Connecting-Ipv6 delete
-			request>headers>True-Client-Ip delete
-			request>headers>Referer delete
-			request>uri query {
-				delete code
-				delete state
-				delete token
-				delete device_id
-			}
-			resp_headers>Set-Cookie delete
-			resp_headers>Location delete
-		}
+		import log-filter
 	}
 }
 

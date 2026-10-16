@@ -100,17 +100,22 @@ async function toOutbox(letter: Letter): Promise<"outbox" | "skipped"> {
   return "outbox";
 }
 
+async function smtpTransport(timeouts?: { ms: number }) {
+  const nodemailer = (await import("nodemailer")).default;
+  const port = Number(process.env.SMTP_PORT || 587);
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    secure: process.env.SMTP_SECURE === "1" || port === 465,
+    requireTLS: port === 587,
+    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || "" } : undefined,
+    ...(timeouts ? { connectionTimeout: timeouts.ms, greetingTimeout: timeouts.ms, socketTimeout: timeouts.ms } : {}),
+  });
+}
+
 async function viaSmtp(letter: Letter): Promise<"sent" | "failed"> {
   try {
-    const nodemailer = (await import("nodemailer")).default;
-    const port = Number(process.env.SMTP_PORT || 587);
-    const transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port,
-      secure: process.env.SMTP_SECURE === "1" || port === 465,
-      requireTLS: port === 587,
-      auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || "" } : undefined,
-    });
+    const transport = await smtpTransport();
     await transport.sendMail({
       from: process.env.SMTP_FROM,
       to: letter.to,
@@ -119,17 +124,87 @@ async function viaSmtp(letter: Letter): Promise<"sent" | "failed"> {
       ...(letter.html ? { html: letter.html } : {}),
       ...(letter.attachments?.length ? { attachments: letter.attachments.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })) } : {}),
     });
+    noteMailCheck(true, "delivery");
     return "sent";
   } catch (e) {
     console.error(`[mail] smtp send failed (${e instanceof Error ? e.name : "error"})`);
+    // One address the server refused says nothing about the mail service.
+    if (!SMTP_LETTER_ONLY.has(smtpCode(e))) noteMailCheck(false, "delivery");
     return "failed";
   }
+}
+
+// --- How far mail is known to work (the status page) ----------------------------
+// Configured is not working: what /status says about mail comes from the
+// last real evidence — a letter the service accepted or refused, the budget
+// stopping letters, or (SMTP only) a connection that got as far as the login
+// (EHLO, STARTTLS, AUTH; no letter is ever sent for a check). Kept in memory:
+// after a restart mail is "configured, not verified" until the next evidence.
+
+export interface MailCheck {
+  ok: boolean;
+  how: "delivery" | "budget" | "login";
+  at: number;
+}
+
+let lastCheck: MailCheck | null = null;
+let loginCheck: Promise<void> | null = null;
+
+export function noteMailCheck(ok: boolean, how: MailCheck["how"], at = Date.now()): void {
+  lastCheck = { ok, how, at };
+}
+
+export function mailCheck(): MailCheck | null {
+  return lastCheck;
+}
+
+/** For tests: forget every check. */
+export function resetMailCheck(): void {
+  lastCheck = null;
+  loginCheck = null;
+}
+
+// nodemailer's codes for a letter the server refused (an address, the
+// envelope, the message), as opposed to the server being unreachable or the
+// login failing.
+const SMTP_LETTER_ONLY = new Set(["EENVELOPE", "EMESSAGE"]);
+function smtpCode(e: unknown): string {
+  return e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
+}
+
+/**
+ * Starts an SMTP login check (never a letter) when the last evidence is older
+ * than `maxAgeMs`; one at a time, 5 s per step. Nobody needs to wait for it
+ * (the status page shows the result once it is in): the promise is the
+ * running check, null when none started.
+ */
+export function refreshSmtpCheck(maxAgeMs = 30 * 60_000, now = Date.now()): Promise<void> | null {
+  if (!smtpConfigured() || loginCheck) return null;
+  if (lastCheck && now - lastCheck.at < maxAgeMs) return null;
+  loginCheck = (async () => {
+    try {
+      const transport = await smtpTransport({ ms: 5000 });
+      await transport.verify();
+      transport.close();
+      noteMailCheck(true, "login");
+    } catch (e) {
+      console.error(`[mail] smtp check failed (${e instanceof Error ? e.name : "error"})`);
+      noteMailCheck(false, "login");
+    }
+  })().finally(() => {
+    loginCheck = null;
+  });
+  return loginCheck;
 }
 
 /** The one function every letter goes through (the budget above is enforced here). */
 export async function sendMail(letter: Letter): Promise<"sent" | "outbox" | "skipped" | "failed"> {
   if (!lettersLeave()) return "skipped";
-  if (!takeMailBudget(letter.kind)) return "failed";
+  if (!takeMailBudget(letter.kind)) {
+    // Letters stop at the budget: the status page says mail is degraded.
+    if (mailConfigured()) noteMailCheck(false, "budget");
+    return "failed";
+  }
   if (smtpConfigured()) return viaSmtp(letter);
   return toOutbox(letter);
 }

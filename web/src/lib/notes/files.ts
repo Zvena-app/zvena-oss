@@ -110,10 +110,15 @@ export function noteFileName(bytes: Uint8Array, ext: string): string {
   return `${createHash("sha256").update(bytes).digest("hex").slice(0, 40)}.${ext}`;
 }
 
-/** Keeps the disk from filling up: uploads stop below this much free space. */
-function minFreeBytes(): number {
+/** Keeps the disk from filling up: uploads stop below this much free space (ZVENA_MIN_FREE_BYTES, 5 GB). */
+export function minFreeBytes(): number {
   const v = Number(process.env.ZVENA_MIN_FREE_BYTES);
   return Number.isFinite(v) && v >= 0 ? v : 5 * 1024 ** 3;
+}
+
+/** At start: the files directory exists before anything is uploaded, so /status can tell a missing one. */
+export async function ensureNotesFilesDir(): Promise<void> {
+  await mkdir(notesFilesDir(), { recursive: true, mode: 0o750 }).catch(() => {});
 }
 
 export async function saveNoteFile(bytes: Uint8Array, ext: string): Promise<{ name: string } | { error: "disk" }> {

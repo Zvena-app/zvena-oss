@@ -22,6 +22,16 @@ RUN sed -i 's|^    map $http_upgrade $connection_upgrade {$|    map $status $zv_
  && sed -i 's|add_header Cache-Control "public, max-age=604800" always; # 7 days|add_header Cache-Control $zv_static_cache always; # 7 days when found|' /tmp/nginx.conf.template \
  && grep -q 'map $status $zv_static_cache' /tmp/nginx.conf.template \
  && grep -q 'add_header Cache-Control $zv_static_cache always;' /tmp/nginx.conf.template
+# The access log (docker logs) keeps the path, not the query string or the
+# Referer: a share link's share-id travels in the query of the viewer's
+# requests, and neither may outlive the request (deploy/caddy/Caddyfile masks
+# the same things in front of Design).
+RUN sed -i \
+      -e 's|"\$request" |"$request_method $uri $server_protocol" |' \
+      -e 's| "\$http_referer" | "-" |' \
+      /tmp/nginx.conf.template \
+ && grep -qF '"$request_method $uri $server_protocol"' /tmp/nginx.conf.template \
+ && ! grep -qF -e 'http_referer' -e '"$request"' /tmp/nginx.conf.template
 # The management API is internal (zvena.app calls the backend directly):
 # never reachable through the public frontend.
 RUN sed -i 's|^    server {$|    server {\n        location /management/ { return 404; }|' /tmp/nginx.conf.template \

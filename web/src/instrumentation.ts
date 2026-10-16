@@ -8,6 +8,9 @@ export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   // Translations for server code outside pages (letters, API answers).
   await import("./i18n/server-catalogs");
+  // The files volume's directory (src/lib/health.ts reports a missing one as down).
+  const { ensureNotesFilesDir } = await import("./lib/notes/files");
+  await ensureNotesFilesDir();
   const { startMaintenance } = await import("./lib/maintenance");
   startMaintenance();
   const { startReminderTicker } = await import("./lib/notes/reminders-server");

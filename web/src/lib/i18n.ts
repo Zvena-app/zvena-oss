@@ -628,6 +628,25 @@ const ru = {
   "joinDomain.continue": "Продолжить",
   "joinDomain.none": "Для вашего домена почты нет пространств, в которые можно вступить.",
   // (end of Business / Enterprise)
+
+  "status.title": "Состояние zvena",
+  "status.operational": "Все системы работают.",
+  "status.degraded": "Часть zvena сейчас работает с ограничениями. Мы уже разбираемся.",
+  "status.partial": "Частичный сбой: одна из частей zvena недоступна. Мы уже разбираемся.",
+  "status.major": "Серьёзный сбой: zvena работает с перебоями. Мы уже разбираемся.",
+  "status.part.web": "Сайт и Документы",
+  "status.part.database": "База данных",
+  "status.part.files": "Хранилище файлов",
+  "status.part.design": "Дизайн",
+  "status.part.mail": "Почта",
+  "status.state.ok": "Работает",
+  "status.state.degraded": "Работает с ограничениями",
+  "status.state.down": "Сбой",
+  "status.state.off": "Не настроено",
+  "status.state.unverified": "Настроено, не проверено",
+  "status.checked": "Проверено:",
+  "status.live": "Страница проверяет каждую часть заново при каждом открытии.",
+  "status.mailNote": "Почта отмечена как работающая, только если за последние сутки письмо ушло или почтовый сервер принял вход; до тех пор — «Настроено, не проверено».",
 } as const;
 
 export type MessageKey = keyof typeof ru;
@@ -1246,6 +1265,25 @@ const en: Record<MessageKey, string> = {
   "joinDomain.continue": "Continue",
   "joinDomain.none": "There are no workspaces to join with your email domain.",
   // (end of Business / Enterprise)
+
+  "status.title": "zvena status",
+  "status.operational": "All systems operational.",
+  "status.degraded": "Degraded performance: part of zvena is working with limits right now. We're on it.",
+  "status.partial": "Partial outage: a part of zvena is down. We're on it.",
+  "status.major": "Major outage: zvena is having problems. We're on it.",
+  "status.part.web": "Website and Docs",
+  "status.part.database": "Database",
+  "status.part.files": "File storage",
+  "status.part.design": "Design",
+  "status.part.mail": "Email",
+  "status.state.ok": "Operational",
+  "status.state.degraded": "Degraded performance",
+  "status.state.down": "Outage",
+  "status.state.off": "Not configured",
+  "status.state.unverified": "Configured, not verified",
+  "status.checked": "Checked:",
+  "status.live": "This page checks every part live each time it loads.",
+  "status.mailNote": "Email shows as operational only when a letter went out or the mail server accepted a login in the past day; until then it reads “Configured, not verified”.",
 };
 
 const DICTS: Partial<Record<Locale, Record<MessageKey, string>>> = { ru, en };

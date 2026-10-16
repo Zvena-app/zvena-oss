@@ -17,6 +17,9 @@ problems=()
 
 health=$(curl -sS -m 10 "http://127.0.0.1:${WEB_PORT:-3100}/api/health" 2>/dev/null || true)
 echo "$health" | grep -q '"ok":true' || problems+=("health: ${health:-no response}")
+# Parts that still answer but with limits (the files volume short of space, mail failing).
+degraded=$(echo "$health" | grep -o '"parts":{[^}]*}' | grep -o '"[a-z]*":"degraded"' | cut -d'"' -f2 | xargs || true)
+[ -z "$degraded" ] || problems+=("degraded: $degraded")
 if [ "${ZVENA_STAND:-}" != "test" ]; then
   for u in "$APP_URL/" "$DESIGN_URL/"; do
     code=$(curl -sS -o /dev/null -m 15 -w '%{http_code}' "$u" 2>/dev/null || echo 000)
