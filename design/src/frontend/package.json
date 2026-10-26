@@ -61,7 +61,7 @@
     "@playwright/test": "1.62.1",
     "@storybook/addon-docs": "10.5.10",
     "@storybook/addon-themes": "10.5.10",
-    "@storybook/addon-vitest": "10.5.10",
+    "@storybook/addon-vitest": "10.6.2",
     "@storybook/react-vite": "10.5.10",
     "@tokens-studio/sd-transforms": "2.0.3",
     "@types/node": "^26.4.0",
