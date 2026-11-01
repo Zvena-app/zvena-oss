@@ -42,7 +42,7 @@
     "mailparser": "3.9.40",
     "mammoth": "1.13.0",
     "mermaid": "^11.17.2",
-    "next": "16.4.0",
+    "next": "16.4.1",
     "nodemailer": "^10.1.2",
     "openid-client": "6.8.8",
     "prosemirror-model": "1.25.12",
